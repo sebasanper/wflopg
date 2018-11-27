@@ -39,6 +39,8 @@ properties:
       This is the radius in km of the smallest disc covering the site.
       It is used to make all site distances adimensional and give a
       single-value indication of its size.
+      Specifying distances adimensionally makes it easy to scale sites by just
+      changing this property.
     type: number
     exclusiveMinimum: 0
   #~
