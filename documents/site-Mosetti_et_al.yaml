@@ -1,0 +1,19 @@
+uuid: dbf772f4-fa16-4868-9746-b1848096b1d6
+name: Mosetti et al. (1994) site
+particulars:
+  - square site
+  - conceived as 10 by 10 matrix of 5-rotor diameter square cells
+  - intended for 40 m rotor diameter turbines
+radius: 1.414 # sqrt(2) * 10 * 40 m * 5 / 2 / 1000 m/km
+subsites:
+  - constraints:
+      - {"x":  1.0, "1": -1.0}
+      - {"x": -1.0, "1": -1.0}
+      - {"y":  1.0, "1": -1.0}
+      - {"y": -1.0, "1": -1.0}
+boundaries:
+  - boundary:
+      - [ 1.0,  1.0]
+      - [-1.0,  1.0]
+      - [-1.0, -1.0]
+      - [ 1.0, -1.0]
