@@ -1,0 +1,33 @@
+uuid: e1cecfe8-717a-49ba-8894-95ead37919aa
+name: Horns Rev site
+particulars:
+  - the site is almost parallelogram-shaped
+  - site derived from corners of the farm layout data, so it may be that the
+    original site was larger
+  - >-
+    Used, e.g., in the following references:
+
+    Feng, J. and Shen, W. Z. (2015) Solving the wind farm layout optimization
+    problem using random search algorithm. Renewable Energy 78:182–192.
+
+    Park, J. and Law, K. H. (2015) Layout optimization for maximizing wind farm
+    power production using sequential convex programming. Applied Energy
+    151:320–334.
+
+    Niayifar, A. and Porté-Agel, F. (2016) Analytical modeling of wind farms:
+    A new approach for power prediction. Energies 9(9):741.
+
+radius: 3.355
+location: {latitude: 55.486, longitude: 7.840} # https://www.4coffshore.com/windfarms/horns-rev-1-denmark-dk03.html
+subsites:
+  - constraints:
+      - {"y":  1.0, "1": -0.58184}
+      - {"y": -1.0, "1": -0.58184}
+      - {"x": -1.0, "y": -0.10554, "1": -0.75190}
+      - {"x":  1.0, "y":  0.10682, "1": -0.75115}
+boundaries:
+  - boundary:
+      - [ 0.68900,  0.58184]
+      - [-0.81330,  0.58184]
+      - [-0.69049, -0.58184]
+      - [ 0.81330, -0.58184]
