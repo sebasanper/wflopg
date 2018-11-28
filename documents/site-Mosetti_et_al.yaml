@@ -2,8 +2,26 @@ uuid: dbf772f4-fa16-4868-9746-b1848096b1d6
 name: Mosetti et al. (1994) site
 particulars:
   - square site
-  - conceived as 10 by 10 matrix of 5-rotor diameter square cells
+  - conceived as 10-by-10 matrix of 5-rotor diameter square cells
   - intended for 40 m rotor diameter turbines
+  - >-
+    Used in the following references:
+
+    Mosetti, G., Poloni, C., and Diviacco, B. (1994) Optimization of wind
+    turbine positioning in large windfarms by means of a genetic algorithm.
+    Journal of Wind Engineering and Industrial Aerodynamics 51(1):105–116.
+
+    Turner, S., Romero, D., Zhang, P., Amon, C., and Chan, T. (2014) A new
+    mathematical programming approach to optimize wind farm layouts. Renewable
+    Energy 63:674–680.
+
+    Feng, J. and Shen, W. Z. (2015) Solving the wind farm layout optimization
+    problem using random search algorithm. Renewable Energy 78:182–192.
+
+    Pillai, A. C., Chick, J., Johanning, L., and Khorasanchi, M. (2018)
+    Offshore wind farm layout optimization using particle swarm optimization.
+    Journal of Ocean Engineering and Marine Energy 4(1):73–88.
+
 radius: 1.414 # sqrt(2) * 10 * 40 m * 5 / 2 / 1000 m/km
 subsites:
   - constraints:
