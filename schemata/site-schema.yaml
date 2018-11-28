@@ -36,11 +36,11 @@ properties:
   radius:
     title: Site radius [km]
     description: >-
-      This is the radius in km of the smallest disc covering the site.
-      It is used to make all site distances adimensional and give a
-      single-value indication of its size.
-      Specifying distances adimensionally makes it easy to scale sites by just
-      changing this property.
+      This is the radius in km of the smallest disc covering the site. Three
+      fractional digits must be given, so with a half-meter accuracy. This
+      radius is used to make all site distances adimensional and give a
+      single-value indication of its size. Specifying distances adimensionally
+      makes it easy to scale sites by just changing this property.
     type: number
     exclusiveMinimum: 0
   #~
@@ -139,7 +139,8 @@ definitions:
       "#/definitions/coordinates".
       The expression must be negative (positive) for points inside (outside)
       the site. Points on the border, for which the expression is zero, are
-      always assumed to lie inside the site.
+      always assumed to lie inside the site. (This means that it is assumed
+      turbines can be placed on the site border.)
     type: object
     required:
       - "1"
@@ -166,6 +167,9 @@ definitions:
         $ref: "#/definitions/coefficient"
   #~
   coefficient:
+    description: >-
+      A coefficient value must be given with five significant digits.
+      (Significant trailing zeros may be omitted, but are assumed.)
     type: number
     default: 0
   #~
@@ -211,6 +215,9 @@ definitions:
         $ref: "#/definitions/coordinate_value"
   #~
   coordinate_value:
+    description: >-
+      A coordinate value must be given with five significant digits.
+      (Significant trailing zeros may be omitted, but are assumed.)
     type: number
     minimum: -1
     maximum: 1

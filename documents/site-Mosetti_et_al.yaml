@@ -5,7 +5,7 @@ particulars:
   - conceived as 10-by-10 matrix of 5-rotor diameter square cells
   - intended for 40 m rotor diameter turbines
   - >-
-    Used in the following references:
+    Used, e.g., in the following references:
 
     Mosetti, G., Poloni, C., and Diviacco, B. (1994) Optimization of wind
     turbine positioning in large windfarms by means of a genetic algorithm.
@@ -25,13 +25,13 @@ particulars:
 radius: 1.414 # sqrt(2) * 10 * 40 m * 5 / 2 / 1000 m/km
 subsites:
   - constraints:
-      - {"x":  1.0, "1": -0.707}
-      - {"x": -1.0, "1": -0.707}
-      - {"y":  1.0, "1": -0.707}
-      - {"y": -1.0, "1": -0.707}
+      - {"x":  1.0, "1": -0.70711}
+      - {"x": -1.0, "1": -0.70711}
+      - {"y":  1.0, "1": -0.70711}
+      - {"y": -1.0, "1": -0.70711}
 boundaries:
   - boundary:
-      - [ 0.707,  0.707]
-      - [-0.707,  0.707]
-      - [-0.707, -0.707]
-      - [ 0.707, -0.707]
+      - [ 0.70711,  0.70711]
+      - [-0.70711,  0.70711]
+      - [-0.70711, -0.70711]
+      - [ 0.70711, -0.70711]
