@@ -11,6 +11,7 @@ title: Wind farm site description
 type: object
 required:
   - uuid
+  - rotor_constraints
   - radius
   - parcels
 additionalProperties: false
@@ -33,6 +34,23 @@ properties:
       The name of the wind farm site
     type: string
   #~
+  particulars:
+    description: >-
+      A list of relevant pieces of information, such as further site
+      description and details about the choices made in the ‘parcels’ and
+      ‘boundaries’ formulations.
+    type: array
+    uniqueItems: true
+    minItems: 1
+    items:
+      type: str
+  #~
+  location:
+    title: Site location
+    description: >-
+      The geographical location of the center of the smallest covering disc
+    $ref: "#/definitions/location"
+  #~
   radius:
     title: Site radius [km]
     description: >-
@@ -45,22 +63,13 @@ properties:
     type: number
     exclusiveMinimum: 0
   #~
-  location:
-    title: Site location
+  rotor_constraints:
     description: >-
-      The geographical location of the center of the smallest covering disc
-    $ref: "#/definitions/location"
-  #~
-  particulars:
-    description: >-
-      A list of relevant pieces of information, such as further site
-      description and details about the choices made in the ‘parcels’ and
-      ‘boundaries’ formulations.
-    type: array
-    uniqueItems: true
-    minItems: 1
-    items:
-      type: str
+      Whether the site description constrains the tower location or also the
+      rotor. If ‘false’, only the tower is constrained. If ‘true’ also the
+      rotor is constrained. In the last case, this means the tower must be
+      placed at least a rotor radius inside the site away from the boundary.
+    type: boolean
   #~
   parcels:
     title: Parcels

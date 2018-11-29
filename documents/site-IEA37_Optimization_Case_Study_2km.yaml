@@ -3,6 +3,7 @@ name: Medium IEA Wind Task 37 plant optimization case study site
 particulars:
   - disc-shaped site
   - meant for a 36-turbine farm
+rotor_constraints: false
 radius: 2.0
 subsites:
   - constraints:
