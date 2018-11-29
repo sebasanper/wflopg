@@ -12,7 +12,7 @@ type: object
 required:
   - uuid
   - radius
-  - subsites
+  - parcels
 additionalProperties: false
 
 # PROPERTIES
@@ -36,11 +36,12 @@ properties:
   radius:
     title: Site radius [km]
     description: >-
-      This is the radius in km of the smallest disc covering the site. Three
-      fractional digits must be given, so with a half-meter accuracy. This
-      radius is used to make all site distances adimensional and give a
-      single-value indication of its size. Specifying distances adimensionally
-      makes it easy to scale sites by just changing this property.
+      This is the radius in km of the smallest disc covering the site. Four
+      fractional digits must be given. (Otherwise the trailing significant
+      digits are assumed to be 0.) This radius is used to make all site
+      distances adimensional and give a single-value indication of its size.
+      Specifying distances adimensionally makes it easy to scale sites by just
+      changing this property.
     type: number
     exclusiveMinimum: 0
   #~
@@ -53,7 +54,7 @@ properties:
   particulars:
     description: >-
       A list of relevant pieces of information, such as further site
-      description and details about the choices made in the ‘subsites’ and
+      description and details about the choices made in the ‘parcels’ and
       ‘boundaries’ formulations.
     type: array
     uniqueItems: true
@@ -61,10 +62,10 @@ properties:
     items:
       type: str
   #~
-  subsites:
-    title: Subsites
+  parcels:
+    title: Parcels
     description: >-
-      A set of recursively defined subsites.
+      A set of recursively defined parcels.
     type: array
     uniqueItems: true
     minItems: 1
@@ -87,25 +88,48 @@ definitions:
   # convenient reuse
   #~
   location:
-    title: Longitude and Latitude
+    title: Geographical coordinates
     description: >-
-      A geographical coordinate on a planet (most commonly Earth).
+      Coordinates for a location on Earth
     required:
-      - latitude
-      - longitude
+      anyOf:
+        - geo
+        - utm
     type: object
     properties:
       name:
         description: The name of the location
         type: string
-      latitude:
-        type: number
-        minimum: -90
-        maximum: 90
-      longitude:
-        type: number
-        exclusiveMinimum: -180
-        maximum: 180
+      reference_system:
+        title: Geodetic reference frame
+        type: string
+      geo:
+        title: Geographical coordinates
+        description: >-
+          The latitude and longitude of the location expressed in degrees
+        type: array
+        items:
+          - title: Latitude
+            type: number
+            minimum: -90
+            maximum: 90
+          - title: Longitude
+            type: number
+            exclusiveMinimum: -180
+            maximum: 180
+      utm_zone:
+        title: UTM zone
+        type: integer
+        minimum: 1
+        maximum: 60
+      utm:
+        title: UTM coordinates
+        type: array
+        items:
+        - title: Easterly [m]
+          type: number
+        - title: Northerly [m]
+          type: number
     additionalProperties: false
   #~
   area_nesting:
@@ -168,7 +192,7 @@ definitions:
   #~
   coefficient:
     description: >-
-      A coefficient value must be given with five significant digits.
+      A coefficient value must be given with six significant digits.
       (Significant trailing zeros may be omitted, but are assumed.)
     type: number
     default: 0
@@ -216,7 +240,7 @@ definitions:
   #~
   coordinate_value:
     description: >-
-      A coordinate value must be given with five significant digits.
+      A coordinate value must be given with six significant digits.
       (Significant trailing zeros may be omitted, but are assumed.)
     type: number
     minimum: -1

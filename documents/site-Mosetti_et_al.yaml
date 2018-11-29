@@ -22,16 +22,16 @@ particulars:
     Offshore wind farm layout optimization using particle swarm optimization.
     Journal of Ocean Engineering and Marine Energy 4(1):73–88.
 
-radius: 1.414 # sqrt(2) * 10 * 40 m * 5 / 2 / 1000 m/km
-subsites:
+radius: 1.4142 # sqrt(2) * 10 * 40 m * 5 / 2 / 1000 m/km
+parcels:
   - constraints:
-      - {"x":  1.0, "1": -0.70711}
-      - {"x": -1.0, "1": -0.70711}
-      - {"y":  1.0, "1": -0.70711}
-      - {"y": -1.0, "1": -0.70711}
+      - {"x":  1.0, "1": -0.707107}
+      - {"x": -1.0, "1": -0.707107}
+      - {"y":  1.0, "1": -0.707107}
+      - {"y": -1.0, "1": -0.707107}
 boundaries:
   - boundary:
-      - [ 0.70711,  0.70711]
-      - [-0.70711,  0.70711]
-      - [-0.70711, -0.70711]
-      - [ 0.70711, -0.70711]
+      - [ 0.707107,  0.707107]
+      - [-0.707107,  0.707107]
+      - [-0.707107, -0.707107]
+      - [ 0.707107, -0.707107]

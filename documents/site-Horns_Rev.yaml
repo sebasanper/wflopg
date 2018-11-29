@@ -2,8 +2,10 @@ uuid: e1cecfe8-717a-49ba-8894-95ead37919aa
 name: Horns Rev site
 particulars:
   - the site is almost parallelogram-shaped
-  - site derived from corners of the farm layout data, so it may be that the
-    original site was larger
+  - The site is derived from the vertices of the farm layout data with
+    distances expressed in integer meters. So it may be that there are
+    discrepancies with the true site due to round-off errors and not all
+    extreme points of the site being the location of a turbine.
   - >-
     Used, e.g., in the following references:
 
@@ -17,17 +19,25 @@ particulars:
     Niayifar, A. and Porté-Agel, F. (2016) Analytical modeling of wind farms:
     A new approach for power prediction. Energies 9(9):741.
 
-radius: 3.355
-location: {latitude: 55.486, longitude: 7.840} # https://www.4coffshore.com/windfarms/horns-rev-1-denmark-dk03.html
-subsites:
+radius: 3.3548
+location:
+  geo: [55.486, 7.840] # https://www.4coffshore.com/windfarms/horns-rev-1-denmark-dk03.html
+  utm: [426702.5, 6149495.0] # center of smallest enclosing circle of vertices
+parcels:
   - constraints:
-      - {"y":  1.0, "1": -0.58184}
-      - {"y": -1.0, "1": -0.58184}
-      - {"x": -1.0, "y": -0.10554, "1": -0.75190}
-      - {"x":  1.0, "y":  0.10682, "1": -0.75115}
+      - {"y":  1.0, "1": -0.581844}
+      - {"y": -1.0, "1": -0.581844}
+      - {"x":  1.0, "y":  0.106631, "1": -0.751258}
+      - {"x":  1.0, "y":  0.106726, "1": -0.751234}
+      - {"x":  1.0, "y":  0.107527, "1": -0.751566}
+      - {"x": -1.0, "y": -0.105414, "1": -0.751966}
+      - {"x": -1.0, "y": -0.105830, "1": -0.752069}
 boundaries:
   - boundary:
-      - [ 0.68900,  0.58184]
-      - [-0.81330,  0.58184]
-      - [-0.69049, -0.58184]
-      - [ 0.81330, -0.58184]
+      - [-0.690493, -0.581844]
+      - [ 0.813300, -0.581844]
+      - [ 0.777829, -0.249191]
+      - [ 0.706887,  0.415518]
+      - [ 0.689003,  0.581844]
+      - [-0.813300,  0.581844]
+      - [-0.725666, -0.249490]
