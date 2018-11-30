@@ -172,14 +172,18 @@ definitions:
       "#/definitions/coordinates".
       The expression must be negative (positive) for points inside (outside)
       the site. Points on the border, for which the expression is zero, are
-      always assumed to lie inside the site. (This means that it is assumed
+      by default assumed to lie inside the site. (This means that it is assumed
       turbines can be placed on the site border.)
     type: object
     required:
       - "1"
-    minProperties: 2
+      - oneOf: ["x", "y", "xy", "xx", "yy"]
     additionalProperties: false
     properties:
+      border_included:
+        description: Whether or not the border is included in the site.
+        type: boolean
+        default: true
       "1":
         description: The constant term in the expression
         $ref: "#/definitions/coefficient"
