@@ -1,0 +1,28 @@
+uuid: 0e1bb45c-0d6f-4c4b-8fae-da4a32bb9a90
+name: IEA Wind Task 37 offshore reference wind farm site
+particulars:
+  - Adapted from Borssele III and IV
+
+rotor_constraints: false
+radius: 12.2680
+location:
+  - reference_system: ETRS89
+  - utm_zone: 31
+  - utm: [494863.24, 5726454.39]
+parcels:
+  - constraints:
+      - {"x": -0.316688, "y":  1.0, "1": -0.767208}
+      - {"x": -0.965168, "y": -1.0, "1": -0.349210}
+      - {"x":  1.0, "y": -0.144082, "1": -0.644846}
+      - {"x":  1.0, "y":  0.362028, "1": -0.756270}
+    exclusions:
+      - constraints:
+          - {"x":  0.466179, "y":  1.0, "1": -0.535559}
+          - {"x":  1.0, "y": -0.497298, "1":  0.019840}
+boundaries:
+  - boundary:
+      - [ 0.521948, -0.852978]
+      - [ 0.676567,  0.220158]
+      - [ 0.200103,  0.442276]
+      - [ 0.429300,  0.903162]
+      - [-0.870939,  0.491392]
