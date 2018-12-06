@@ -13,7 +13,8 @@ description: >-
   curve is given explicitly as a list of speed/power pairs, it is assumed that
   the power curve is zero up to cut-in, continuous and cubic between cut-in and
   rated wind speeds, constant between rated and cut-out, and zero above
-  cut-out. If the curve is explicitly given, it amends the above described power curve between and including the lowest and highest wind speed values
+  cut-out. If the curve is explicitly given, it amends the above described
+  power curve between and including the lowest and highest wind speed values
   given.
 type: object
 required:
