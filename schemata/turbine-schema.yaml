@@ -147,7 +147,8 @@ properties:
     title: Thrust coefficient [adimensional]
     description: >-
       In case the thrust coefficient is assumed to be constant, that constant
-      value should be given here. Otherwise, specify a thrust curve.
+      value should be given here. Three fractional digits must be given.
+      Otherwise, specify a thrust curve.
     type: number
     minimum: 0
   #~
