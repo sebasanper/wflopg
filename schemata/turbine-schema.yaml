@@ -1,0 +1,162 @@
+# Author: Erik Quaeghebeur
+# Date: 2018-12-06
+
+# HEADER
+$schema: "http://json-schema.org/draft-07/schema#"
+  # NOTE: consult the above-referenced site for the schema language definition
+$id: "https://bitbucket.org/equaeghe/pseudo_gradients-code/\
+                                      src/master/schemata/turbine-schema.yaml"
+  # TODO: the $id uri must point to a git tag, ideally
+title: Wind turbine description
+description: >-
+  A description of a wind turbine as a set of defining parameters. Unless the
+  curve is given explicitly as a list of speed/power pairs, it is assumed that
+  the power curve is zero up to cut-in, continuous and cubic between cut-in and
+  rated wind speeds, constant between rated and cut-out, and zero above
+  cut-out. If the curve is explicitly given, it amends the above described power curve between and including the lowest and highest wind speed values
+  given.
+type: object
+required:
+  - uuid
+  - rotor_radius
+  - hub_height
+  - rated_power
+  - rated_wind_speed
+  - cut_in
+  - cut_out
+additionalProperties: false
+
+# PROPERTIES
+properties:
+  #~
+  uuid:
+    title: Universally unique identifier (UUID)
+    description: >-
+      The UUID should follow RFC 4122.
+      It is meant to distinguish different site descriptions.
+      This is especially relevant for different versions and variants of the
+      same site.
+    type: string
+    pattern: ^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$
+  #~
+  name:
+    description: >-
+      The name of the wind turbine; typically manufacturer and model number
+    type: string
+  #~
+  particulars:
+    description: >-
+      A list of relevant pieces of information.
+    type: array
+    uniqueItems: true
+    minItems: 1
+    items:
+      type: str
+  #~
+  rotor_radius:
+    title: Rotor radius [m]
+    description: >-
+      This is the radius of the turbine rotor in meters. It should be given
+      with meter accuracy. This value is used to make all further turbine
+      length values adimensional.
+    type: number
+    exclusiveMinimum: 0
+  #~
+  hub_height:
+    title: Hub_height [adimensional]
+    description: >-
+      This is the height of the turbine rotor center in terms of rotor radii.
+      With three fractional digits. (Otherwise the trailing significant digits
+      are assumed to be 0.)
+    type: number
+    exclusiveMinimum: {$data: "1/rotor_radius"}
+  #~
+  rated_power:
+    title: Rated power [MW]
+    description: >-
+      This is the rated power in MW of the turbine. Four fractional digits must
+      be given. (Otherwise the trailing significant digits are assumed to be
+      0.) This value is used to make all further turbine power values
+      adimensional. Specifying powers adimensionally makes it easy to scale
+      turbines by just changing this property.
+    type: number
+    exclusiveMinimum: 0
+  #~
+  rated_wind_speed:
+    title: Rated wind speed [m/s]
+    description: >-
+      This is the rated wind speed in m/s of the turbine. Two fractional digits
+      must be given. (Otherwise the trailing significant digits are assumed to
+      be 0.) This value is used to make all further turbine wind speed values
+      adimensional. Specifying wind speeds adimensionally makes it easy to
+      scale turbines by just changing this property.
+    type: number
+    exclusiveMinimum: 0
+  #~
+  cut_in:
+    title: Cut-in wind speed [adimensional]
+    description: >-
+      This is the cut-in wind speed of the turbine in terms of the rated wind
+      speed. Three fractional digits must be given. (Otherwise the trailing
+      significant digits are assumed to be 0.)
+    type: number
+    exclusiveMinimum: 0
+    exclusiveMaximum: 1 # never as high or higher than rated
+  #~
+  cut_out:
+    title: Cut-out wind speed [adimensional]
+    description: >-
+      This is the cut-out wind speed of the turbine in terms of the rated wind
+      speed. Three fractional digits must be given. (Otherwise the trailing
+      significant digits are assumed to be 0.)
+    type: number
+    exclusiveMinimum: 1 # never as low or lower than rated
+  re_cut_in:
+    title: Re-cut-in wind speed [adimensional]
+    description: >-
+      This is the wind speed—in terms of the rated wind speed—at which, after
+      cut-out, the turbine starts again of the turbine. Three fractional digits
+      must be given. (Otherwise the trailing significant digits are assumed to
+      be 0.)
+    type: number
+    default: {$data: "1/cut_out"}
+    exclusiveMinimum: 1 # never as low or lower than rated
+    maximum: {$data: "1/cut_out"} # never higher than cut-out
+  #~
+  power_curve:  # TODO: deal with air-density-dependency of power curves
+    title: Power curve
+    description: >-
+      A discrete power curve as a list of wind speed/power. Components must
+      be ordered according to increasing wind speed. The proper interpolation
+      for wind speed values not included is assumed to be linear.
+    type: array
+    uniqueItems: True
+    minitems: 1
+    items:
+      type: array
+      items:
+        - title: Wind speed [adimensional]
+          type: number
+          minimum: 0
+        - title: Power [adimensional]
+          type: number
+          minimum: 0
+  #~
+  power_curve:
+    title: Thrust curve
+    description: >-
+      A discrete thrust curve as a list of wind speed/thrust coefficient.
+      Components must be ordered according to increasing wind speed. The proper
+      interpolation for wind speed values not included is assumed to be linear.
+    type: array
+    uniqueItems: True
+    minitems: 1
+    items:
+      type: array
+      items:
+        - title: Wind speed [adimensional]
+          type: number
+          minimum: 0
+        - title: Thrust coefficient [adimensional]
+          type: number
+          minimum: 0
