@@ -57,7 +57,7 @@ properties:
   rotor_radius:
     title: Rotor radius [m]
     description: >-
-      This is the radius of the turbine rotor in meters. It should be given
+      This is the radius of the turbine rotor in meter. It should be given
       with meter accuracy. This value is used to make all further turbine
       length values adimensional.
     type: number
@@ -70,7 +70,7 @@ properties:
       With three fractional digits. (Otherwise the trailing significant digits
       are assumed to be 0.)
     type: number
-    exclusiveMinimum: {$data: "1/rotor_radius"}
+    exclusiveMinimum: 1
   #~
   rated_power:
     title: Rated power [MW]
