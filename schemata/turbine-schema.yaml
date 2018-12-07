@@ -11,7 +11,7 @@ title: Wind turbine description
 description: >-
   A description of a wind turbine as a set of defining parameters. Unless the
   curve is given explicitly as a list of speed/power pairs, it is assumed that
-  the power curve is zero up to cut-in, continuous and cubic between cut-in and
+  the power curve is zero up to cut-in (0 by default), cubic between cut-in and
   rated wind speeds, constant between rated and cut-out, and zero above
   cut-out. If the curve is explicitly given, it amends the above described
   power curve between and including the lowest and highest wind speed values
@@ -23,8 +23,6 @@ required:
   - hub_height
   - rated_power
   - rated_wind_speed
-  - cut_in
-  - cut_out
 additionalProperties: false
 
 # PROPERTIES
@@ -101,7 +99,8 @@ properties:
       speed. Three fractional digits must be given. (Otherwise the trailing
       significant digits are assumed to be 0.)
     type: number
-    exclusiveMinimum: 0
+    default: 0
+    minimum: 0
     exclusiveMaximum: 1 # never as high or higher than rated
   #~
   cut_out:
@@ -109,8 +108,10 @@ properties:
     description: >-
       This is the cut-out wind speed of the turbine in terms of the rated wind
       speed. Three fractional digits must be given. (Otherwise the trailing
-      significant digits are assumed to be 0.)
+      significant digits are assumed to be 0.) There is no cut-out if this
+      property is omitted.
     type: number
+    default: null # represents +∞
     exclusiveMinimum: 1 # never as low or lower than rated
   re_cut_in:
     title: Re-cut-in wind speed [adimensional]
