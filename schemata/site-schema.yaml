@@ -90,6 +90,11 @@ properties:
     minItems: 1
     items:
       $ref: "#/definitions/boundary_nesting"
+  #~
+  roughness:
+    title: Roughness length [m]
+    type: number
+    exclusiveMinimum: 0
 
 # DEFINITIONS
 definitions:
