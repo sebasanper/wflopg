@@ -1,0 +1,35 @@
+uuid: 466fd5cf-13c3-41e9-96fd-5a1a4aadbf55
+name: Mosetti et al. (1994) turbine
+particulars:
+  - cubic with cut-in at 0 m/s
+  - no cut-out
+  - >-
+    Rated power and wind speed deduced from Figure 2 in Mosetti et al. (1994)
+    and the description that the cubic's coefficient is 0.3 in Equation (8) of
+    Grady et al. (2005).
+  - >-
+    Used, e.g., in the following references:
+
+    Mosetti, G., Poloni, C., and Diviacco, B. (1994) Optimization of wind
+    turbine positioning in large windfarms by means of a genetic algorithm.
+    Journal of Wind Engineering and Industrial Aerodynamics 51(1):105–116.
+
+    Grady, S., Hussaini, M., and Abdullah, M. (2005) Placement of wind turbines
+    using genetic algorithms. Renewable Energy 30(2):259–270.
+
+    Turner, S., Romero, D., Zhang, P., Amon, C., and Chan, T. (2014) A new
+    mathematical programming approach to optimize wind farm layouts. Renewable
+    Energy 63:674–680.
+
+    Feng, J. and Shen, W. Z. (2015) Solving the wind farm layout optimization
+    problem using random search algorithm. Renewable Energy 78:182–192.
+
+    Pillai, A. C., Chick, J., Johanning, L., and Khorasanchi, M. (2018)
+    Offshore wind farm layout optimization using particle swarm optimization.
+    Journal of Ocean Engineering and Marine Energy 4(1):73–88.
+
+rotor_radius: 20
+hub_height: 3 # 60 m
+rated_power: 0.630
+rated_wind_speed: 12.8
+thrust_coefficient: 0.88
