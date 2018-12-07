@@ -1,5 +1,7 @@
 uuid: d14b8983-a639-422f-93e2-36d8a440a76a
 name: IEA Wind Task 37 3.35 MW onshore reference turbine
+particulars:
+  - cubic
 rotor_radius: 65
 hub_height: 1.692 # 110 m
 rated_power: 3.35
