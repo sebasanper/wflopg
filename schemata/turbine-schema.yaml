@@ -131,7 +131,7 @@ properties:
         - $ref: "#/definitions/wind_speed"
         - $ref: "#/definitions/thrust_coefficient"
 
-# PROPERTIES
+# DEFINITIONS
 definitions:
   #~
   length:
