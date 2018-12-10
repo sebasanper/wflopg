@@ -3,9 +3,9 @@ name: IEA Wind Task 37 3.35 MW onshore reference turbine
 particulars:
   - cubic
 rotor_radius: 65
-hub_height: 1.692 # 110 m
+hub_height: 110
 rated_power: 3.35
 rated_wind_speed: 9.8
-cut_in: 0.408 # 4 m/s
-cut_out: 2.551 # 25 m/s
+cut_in: 4
+cut_out: 25
 thrust_coefficient: 0.889

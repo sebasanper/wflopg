@@ -29,7 +29,7 @@ particulars:
     Journal of Ocean Engineering and Marine Energy 4(1):73–88.
 
 rotor_radius: 20
-hub_height: 3 # 60 m
+hub_height: 60
 rated_power: 0.630
 rated_wind_speed: 12.8
 thrust_coefficient: 0.88
