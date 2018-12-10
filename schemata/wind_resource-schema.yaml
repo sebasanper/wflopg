@@ -37,6 +37,16 @@ properties:
     description: The name of the wind resource
     type: string
   #~
+  particulars:
+    description: >-
+      A list of relevant pieces of information, such as further wind resource
+      description and details about the how the values were obtained.
+    type: array
+    uniqueItems: true
+    minItems: 1
+    items:
+      type: str
+  #~
   location:
     description: The geographical location of the wind resource
     $ref: "#/definitions/location"
