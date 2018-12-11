@@ -20,6 +20,10 @@ particulars:
     Pookpunt, S. and Ongsakul, W. (2013) Optimal placement of wind turbines
     within wind farm using binary particle swarm optimization with time-varying
     acceleration coefficients. Renewable Energy 55:266–276.
+    [For unclear reasons, they assume a cut-in of 2.3 m/s, but this should not
+    really substantially affect results. They also assume a cut-out of 18 m/s,
+    but this is wholly irrelevant, as no wind speeds above 17 m/s are
+    considered in the case study.]
 
     Turner, S., Romero, D., Zhang, P., Amon, C., and Chan, T. (2014) A new
     mathematical programming approach to optimize wind farm layouts. Renewable
