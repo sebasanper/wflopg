@@ -1,0 +1,47 @@
+[Personal communication of Ju Feng]
+
+Frequency [%] table of wind condition in Case (3) of ideal test problem in Ref 1
+Note: this table is used in Ref 1, and the numbers presented here are estimated from Figure 7 in Ref 2. For wind direction, 0 deg represent North, 90 deg East, 180 deg South and 270 deg West.
+
+[Ref 1] Feng, Ju, and Wen Zhong Shen. "Solving the wind farm layout optimization problem using random search algorithm." Renewable Energy 78 (2015): 182-192.
+[Ref 2] Mosetti, G. P. C. D. B., Carlo Poloni, and B. Diviacco. "Optimization of wind turbine positioning in large windfarms by means of a genetic algorithm." Journal of Wind Engineering and Industrial Aerodynamics 51, no. 1 (1994): 105-116.
+
+wd [deg]	ws[m/s]
+	8	12	17
+0	0,4045	0,8427	1,1461
+10	0,4045	0,8427	1,1461
+20	0,4045	0,8427	1,1461
+30	0,4045	0,8427	1,1461
+40	0,4045	0,8427	1,1461
+50	0,4045	0,8427	1,1461
+60	0,4045	0,8427	1,1461
+70	0,4045	0,8427	1,1461
+80	0,4045	0,8427	1,1461
+90	0,4045	0,8427	1,1461
+100	0,4045	0,8427	1,1461
+110	0,4045	0,8427	1,1461
+120	0,4045	0,8427	1,1461
+130	0,4045	0,8427	1,1461
+140	0,4045	0,8427	1,1461
+150	0,4045	0,8427	1,1461
+160	0,4045	0,8427	1,1461
+170	0,4045	0,8427	1,1461
+180	0,4045	0,8427	1,1461
+190	0,4045	0,8427	1,1461
+200	0,4045	0,8427	1,1461
+210	0,4045	0,8427	1,1461
+220	0,4045	0,8427	1,1461
+230	0,4045	0,8427	1,1461
+240	0,4045	0,8427	1,1461
+250	0,4045	0,8427	1,1461
+260	0,4045	0,8427	1,1461
+270	0,4045	1,0618	1,3652
+280	0,4045	1,264	1,6349
+290	0,4045	1,5	1,9045
+300	0,4045	1,4664	3,0674
+310	0,4045	1,9551	3,5898
+320	0,4045	1,4664	3,0674
+330	0,4045	1,5	1,9045
+340	0,4045	1,264	1,6349
+350	0,4045	1,0618	1,3652
+Total	14,562	35,2924	50,4785	100,3329

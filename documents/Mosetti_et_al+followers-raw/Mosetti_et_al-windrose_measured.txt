@@ -1,0 +1,15 @@
+[Obtained by measuring pixel heights of bars in the original paper.
+Assumed bars are cumulative over wind speeds.]
+
+Wind speed [m/s]	Wind directions [degree]	weight	bins	summed weight
+8	0–350	0.836	36	30.096
+12	0–260	0.292	27	7.884
+12	270,-10	0.578	2	1.157
+12	280,-20	0.870	2	1.740
+12	290,-30	1.161	2	2.322
+12	300,-40	1.128	2	2.256
+12	310	1.762	1	1.762
+17	-30–290	0.135	33	4.455
+17	300–320	1.431	3	4.293
+
+total				55.964
