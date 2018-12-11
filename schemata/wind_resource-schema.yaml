@@ -9,15 +9,18 @@ $id: "https://bitbucket.org/equaeghe/pseudo_gradients-code/\
   # TODO: the $id uri must point to a git tag, ideally
 title: Wind resource description
 description: >-
-  A description of a location’s wind resource as a probability mass function or
-  as a case
+  A description of a location’s wind resource as a probability mass
+  function—using relative weights—, possibly using Weibull distributions for
+  the wind speed, or as a case.
 type: object
 required:
   - uuid
   - averaging_interval_length
   - reference_height
   - variables
-  - probability
+  - oneOf:
+      - weights
+      - weibull_parameters
 additionalProperties: false
 
 # PROPERTIES
@@ -101,9 +104,7 @@ properties:
       or an array of values of length equal over all variables
     type: object
     required:
-      - oneOf:
-          - wind_speed
-          - weibull_parameters
+      - wind_speed  # TODO: unless Weibull parameters are given
     additionalProperties: false
     properties:
       # NOTE: one for each variable defined in "#/definitions/variables/"
@@ -120,15 +121,6 @@ properties:
           - type: array
             items:
               $ref: "#/definitions/variables/wind_speed"
-            minItems: 2
-      #~~
-      weibull_parameters:
-        anyOf:
-          - $ref: "#/definitions/variables/weibull_parameters"
-              # Constant wind speed distribution
-          - type: array
-            items:
-              $ref: "#/definitions/variables/weibull_parameters"
             minItems: 2
       #~~
       wind_direction:
@@ -168,17 +160,29 @@ properties:
             minItems: 2
   #~
   probability:
-    # TODO:
-    # 1. Probability mass sums up to 1.
-    # 2. Array length should be the same as for variables.
+    # TODO: Array length should be the same as for variables.
     description: >-
-      The probability mass function as an array of probability mass-pairs
+      The probability mass function as an array of relative weights. When used,
+      these values should be scaled by their sum to get probability values!
+      This way, round-off errors in these values are not important and a
+      realistic number of significant digits can be used.
     oneOf:
       - const: null
           # Case; all variables should be constant.
       - type: array
         items:
-          $ref: "#/definitions/probability"
+          - title: Relative weight
+            type: number
+            minimum: 0
+        minItems: 2
+  #~
+  weibull_parameters:
+    oneOf:
+      - $ref: "#/definitions/weibull_parameters"
+          # Constant wind speed distribution
+      - type: array
+        items:
+          $ref: "#/definitions/weibull_parameters"
         minItems: 2
 
 # DEFINITIONS
@@ -241,17 +245,6 @@ definitions:
         type: number
         minimum: 0.0
       #~~
-      weibull_parameters:
-        title: Weibull parameters
-        type: array
-        items:
-          - title: Scale parameter [m]
-            type: number
-            exclusiveMinimum: 0
-          - title: Shape parameter [adimensional]
-            type: number
-            exclusiveMinimum: 0
-      #~~
       wind_direction:
         title: Wind direction [degree]
         type: number
@@ -278,8 +271,13 @@ definitions:
           - neutral
           - unstable
   #~
-  probability:
-    title: Probability
-    type: number
-    minimum: 0
-    maximum: 1
+  weibull_parameters:
+    title: Weibull parameters
+    type: array
+    items:
+      - title: Scale parameter [m]
+        type: number
+        exclusiveMinimum: 0
+      - title: Shape parameter [adimensional]
+        type: number
+        exclusiveMinimum: 0
