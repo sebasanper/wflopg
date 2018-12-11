@@ -101,7 +101,9 @@ properties:
       or an array of values of length equal over all variables
     type: object
     required:
-      - wind_speed
+      - oneOf:
+          - wind_speed
+          - weibull_parameters
     additionalProperties: false
     properties:
       # NOTE: one for each variable defined in "#/definitions/variables/"
@@ -118,6 +120,15 @@ properties:
           - type: array
             items:
               $ref: "#/definitions/variables/wind_speed"
+            minItems: 2
+      #~~
+      weibull_parameters:
+        anyOf:
+          - $ref: "#/definitions/variables/weibull_parameters"
+              # Constant wind speed distribution
+          - type: array
+            items:
+              $ref: "#/definitions/variables/weibull_parameters"
             minItems: 2
       #~~
       wind_direction:
@@ -224,14 +235,22 @@ definitions:
     description: The schemata for the physical variables
     type: object
     properties:
-      # TODO: The ‘unit’ field of the variables is not defined by the schema
-      # language and therefore may require an extension to that language to
-      # ‘properly’ deal with it.
       #~~
       wind_speed:
         title: Wind speed [m/s]
         type: number
         minimum: 0.0
+      #~~
+      weibull_parameters:
+        title: Weibull parameters
+        type: array
+        items:
+          - title: Scale parameter [m]
+            type: number
+            exclusiveMinimum: 0
+          - title: Shape parameter [adimensional]
+            type: number
+            exclusiveMinimum: 0
       #~~
       wind_direction:
         title: Wind direction [degree]
