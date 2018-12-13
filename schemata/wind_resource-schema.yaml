@@ -190,51 +190,6 @@ definitions:
   # NOTE: Any of these definitions can be externalized (to a file) for
   # convenient reuse
   #~
-  location:
-    title: Geographical coordinates
-    description: >-
-      Coordinates for a location on Earth
-    required:
-      anyOf:
-        - geo
-        - utm
-    type: object
-    properties:
-      name:
-        description: The name of the location
-        type: string
-      reference_system:
-        title: Geodetic reference frame
-        type: string
-      geo:
-        title: Geographical coordinates
-        description: >-
-          The latitude and longitude of the location expressed in degrees
-        type: array
-        items:
-          - title: Latitude
-            type: number
-            minimum: -90
-            maximum: 90
-          - title: Longitude
-            type: number
-            exclusiveMinimum: -180
-            maximum: 180
-      utm_zone:
-        title: UTM zone
-        type: integer
-        minimum: 1
-        maximum: 60
-      utm:
-        title: UTM coordinates
-        type: array
-        items:
-        - title: Easterly [m]
-          type: number
-        - title: Northerly [m]
-          type: number
-    additionalProperties: false
-  #~
   variables:
     description: The schemata for the physical variables
     type: object
