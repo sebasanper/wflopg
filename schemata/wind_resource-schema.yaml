@@ -51,8 +51,8 @@ properties:
       type: str
   #~
   location:
-    description: The geographical location of the wind resource
-    $ref: "#/definitions/location"
+    title: Wind resource location
+    $ref: "location-schema.yaml"
   #~
   period:
     description: >-
