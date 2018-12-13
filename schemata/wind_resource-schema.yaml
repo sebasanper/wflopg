@@ -2,10 +2,10 @@
 # Date: 2018-12-10
 
 # HEADER
-$schema: "http://json-schema.org/draft-07/schema#"
-  # NOTE: consult the above-referenced site for the schema language definition
+$schema: "https://bitbucket.org/equaeghe/pseudo_gradients-code/\
+                                src/master/schemata/extended-json-schema.yaml#"
 $id: "https://bitbucket.org/equaeghe/pseudo_gradients-code/\
-                                 src/master/schemata/wind_resource-schema.yaml"
+                                src/master/schemata/wind_resource-schema.yaml#"
   # TODO: the $id uri must point to a git tag, ideally
 title: Wind resource description
 description: >-
@@ -17,9 +17,9 @@ required:
   - uuid
   - averaging_interval_length
   - reference_height
-  - variables
+  - probability
   - oneOf:
-      - weights
+      - wind_speed
       - weibull_parameters
 additionalProperties: false
 
@@ -74,90 +74,104 @@ properties:
     uniqueItems: true
   #~
   averaging_interval_length:
-    title: Averaging interval length [s]
+    title: Averaging interval length
     description: >-
       The length in s of the interval over which the resource variables have
       been averaged
     type: number
+    unit: s
     exclusiveMinimum: 0
   #~
   reference_height:
     # TODO: make it clear what a height of 0 m corresponds to
-    title: Reference height [m]
+    title: Reference height
     description: >-
       The common height all the physical measurements have been transformed to
     type: number
     unit: m
   #
-  # NOTE: Below come the arrays with data, first for the variables and then for
-  # the probabilities
+  # NOTE: Below come the arrays with data, each either a constant, or an array
+  # of values of length equal over all variables
   #
   # TODO: A more tabular representation of the probability mass function
   # (e.g., as an array of value-tuple/probability pairs) would be more
   # natural, but seems impossible to nicely specify as a (sufficiently
   # validatable) JSON schema, although it can be easily represented using
   # JSON/YAML.
+  #
+  # TODO:
+  # 1. Any way to not have to repeat the variable names here, but instead
+  #    loop over a provided list somehow?
+  # 2. Array length should be the same over all variables.
   #~
-  variables:
-    description: >-
-      The variables of the probability mass function; each either a constant,
-      or an array of values of length equal over all variables
-    type: object
-    required:
-      - wind_speed  # TODO: unless Weibull parameters are given
-    additionalProperties: false
-    properties:
-      # NOTE: one for each variable defined in "#/definitions/variables/"
-      #
-      # TODO:
-      # 1. Any way to not have to repeat the variable names here, but instead
-      #    loop over a list defined in ‘definitions’ somehow?
-      # 2. Array length should be the same over all variables.
-      #~~
-      wind_speed:
-        anyOf:
-          - $ref: "#/definitions/variables/wind_speed"
-              # Constant wind speed
-          - type: array
-            items:
-              $ref: "#/definitions/variables/wind_speed"
-            minItems: 2
-      #~~
-      wind_direction:
-        anyOf:
-          - $ref: "#/definitions/variables/wind_direction"
-              # Constant wind direction
-          - type: array
-            items:
-              $ref: "#/definitions/variables/wind_direction"
-            minItems: 2
-      #~~
-      air_density:
-        anyOf:
-          - $ref: "#/definitions/variables/air_density"
-              # Constant air density
-          - type: array
-            items:
-              $ref: "#/definitions/variables/air_density"
-            minItems: 2
-      #~~
-      turbulence_intensity:
-        anyOf:
-          - $ref: "#/definitions/variables/turbulence_intensity"
-              # Constant turbulence intensity
-          - type: array
-            items:
-              $ref: "#/definitions/variables/turbulence_intensity"
-            minItems: 2
-      #~~
-      atmospheric_stability:
-        anyOf:
-          - $ref: "#/definitions/variables/atmospheric_stability"
-              # Constant atmospheric stability
-          - type: array
-            items:
-              $ref: "#/definitions/variables/atmospheric_stability"
-            minItems: 2
+  air_density:
+    anyOf:
+      - $ref: "variables-schema.yaml#/definitions/variables/air_density"
+          # Constant air density
+      - type: array
+        items:
+          $ref: "variables-schema.yaml#/definitions/variables/air_density"
+        minItems: 2
+  #~
+  atmospheric_stability:
+    anyOf:
+      - $ref: "variables-schema.yaml#/definitions/variables/\
+                                                         atmospheric_stability"
+          # Constant atmospheric stability
+      - type: array
+        items:
+          $ref: "variables-schema.yaml#/definitions/variables/\
+                                                         atmospheric_stability"
+          minItems: 2
+  #~
+  turbulence_intensity:
+    anyOf:
+      - $ref: "variables-schema.yaml#/definitions/variables/\
+                                                          turbulence_intensity"
+          # Constant turbulence intensity
+      - type: array
+        items:
+          $ref: "variables-schema.yaml#/definitions/variables/\
+                                                          turbulence_intensity"
+        minItems: 2
+  #~
+  wind_direction:
+    anyOf:
+      - $ref: "variables-schema.yaml#/definitions/variables/wind_direction"
+          # Constant wind direction
+      - type: array
+        items:
+          $ref: "variables-schema.yaml#/definitions/variables/wind_direction"
+        minItems: 2
+  #~
+  wind_speed:
+    anyOf:
+      - $ref: "variables-schema.yaml#/definitions/wind_speed"
+          # Constant wind speed
+      - type: array
+        items:
+          $ref: "variables-schema.yaml#/definitions/variables/wind_speed"
+        minItems: 2
+  #~
+  weibull_parameters:
+    oneOf:
+      - title: Weibull parameters
+        $id: "#weibull_parameter_definition"
+        type: array
+        items:
+          - title: Scale parameter
+            type: number
+            unit: m
+            exclusiveMinimum: 0
+          - title: Shape parameter
+            type: number
+            unit: 1
+            exclusiveMinimum: 0
+          # Constant wind speed distribution
+      - type: array
+        items:
+          $ref: "#weibull_parameter_definition"
+        minItems: 2
   #~
   probability:
     # TODO: Array length should be the same as for variables.
@@ -175,64 +189,3 @@ properties:
             type: number
             minimum: 0
         minItems: 2
-  #~
-  weibull_parameters:
-    oneOf:
-      - $ref: "#/definitions/weibull_parameters"
-          # Constant wind speed distribution
-      - type: array
-        items:
-          $ref: "#/definitions/weibull_parameters"
-        minItems: 2
-
-# DEFINITIONS
-definitions:
-  # NOTE: Any of these definitions can be externalized (to a file) for
-  # convenient reuse
-  #~
-  variables:
-    description: The schemata for the physical variables
-    type: object
-    properties:
-      #~~
-      wind_speed:
-        title: Wind speed [m/s]
-        type: number
-        minimum: 0.0
-      #~~
-      wind_direction:
-        title: Wind direction [degree]
-        type: number
-        minimum: 0.0
-        exclusiveMaximum: 360.0
-      #~~
-      air_density:
-        title: Air density [kg/m³]
-        type: number
-        minimum: 0.0
-        default: 1.2041
-      #~~
-      turbulence_intensity:
-        title: Turbulence intensity [adimensional]
-        type: number
-        minimum: 0.0
-        maximum: 1.0
-      #~~
-      atmospheric_stability:
-        title: Atmospheric stability
-        type: string
-        enum:
-          - stable
-          - neutral
-          - unstable
-  #~
-  weibull_parameters:
-    title: Weibull parameters
-    type: array
-    items:
-      - title: Scale parameter [m]
-        type: number
-        exclusiveMinimum: 0
-      - title: Shape parameter [adimensional]
-        type: number
-        exclusiveMinimum: 0

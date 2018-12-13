@@ -2,10 +2,10 @@
 # Date: 2018-12-06
 
 # HEADER
-$schema: "http://json-schema.org/draft-07/schema#"
-  # NOTE: consult the above-referenced site for the schema language definition
+$schema: "https://bitbucket.org/equaeghe/pseudo_gradients-code/\
+                                src/master/schemata/extended-json-schema.yaml#"
 $id: "https://bitbucket.org/equaeghe/pseudo_gradients-code/\
-                                      src/master/schemata/turbine-schema.yaml"
+                                      src/master/schemata/turbine-schema.yaml#"
   # TODO: the $id uri must point to a git tag, ideally
 title: Wind turbine description
 description: >-
@@ -53,43 +53,49 @@ properties:
       type: str
   #~
   rotor_radius:
-    title: Rotor radius [m]
-    description: This is the radius of the turbine rotor.
-    $ref: "#/definitions/wind_speed"
+    title: Rotor radius
+    description: >-
+      This is the radius of the turbine rotor. The number of significant digits
+      should reflect the actual information available.
+    type: number
+    unit: m
     exclusiveMinimum: 0
   #~
   hub_height:
-    title: Hub_height [m]
-    description: This is the height of the turbine rotor hub center.
-    $ref: "#/definitions/wind_speed"
+    title: Hub_height
+    description: >-
+      This is the height of the turbine rotor hub center. The number of
+      significant digits should reflect the actual information available.
+    type: number
+    unit: m
     exclusiveMinimum: {$data: "1/rotor_radius"}
   #~
   rated_power:
-    title: Rated power [MW]
+    title: Rated power
     $ref: "#/definitions/power"
     exclusiveMinimum: 0
   #~
   rated_wind_speed:
     title: Rated wind speed [m/s]
-    $ref: "#/definitions/wind_speed"
+    $ref: "variables-schame.yaml#/definitions/wind_speed"
     exclusiveMinimum: 0
   #~
   cut_in:
     title: Cut-in wind speed [m/s]
-    $ref: "#/definitions/wind_speed"
+    $ref: "variables-schame.yaml#/definitions/wind_speed"
     default: 0
     exclusiveMaximum: {$data: "1/rated_wind_speed"}
   #~
   cut_out:
     title: Cut-out wind speed [m/s]
-    $ref: "#/definitions/wind_speed"
+    $ref: "variables-schame.yaml#/definitions/wind_speed"
     default: null # represents +∞
     exclusiveMinimum: {$data: "1/rated_wind_speed"}
   re_cut_in:
     title: Re-cut-in wind speed [m/s]
     description: >-
       This is the wind speed at which, after cut-out, the turbine starts again.
-    $ref: "#/definitions/wind_speed"
+    $ref: "variables-schema.yaml#/definitions/wind_speed"
     default: {$data: "1/cut_out"}
     exclusiveMinimum: {$data: "1/rated_wind_speed"}
     maximum: {$data: "1/cut_out"}
@@ -106,11 +112,11 @@ properties:
     items:
       type: array
       items:
-        - $ref: "#/definitions/wind_speed"
+        - $ref: "variables-schame.yaml#/definitions/wind_speed"
         - $ref: "#/definitions/power"
   #~
   thrust_coefficient:
-    title: Thrust coefficient [adimensional]
+    title: Thrust coefficient
     description: >-
       In case the thrust coefficient is assumed to be constant, that constant
       value should be given here. Otherwise, specify a thrust curve.
@@ -134,34 +140,20 @@ properties:
 # DEFINITIONS
 definitions:
   #~
-  length:
-    title: Length [m]
-    description: >-
-      A length value in m. The number of significant digits should reflect the
-      actual information available.
-    type: number
-    minimum: 0
-  #~
-  wind_speed:
-    title: Wind speed [m/s]
-    description: >-
-      A wind speed value in m/s. The number of significant digits should
-      reflect the actual information available.
-    type: number
-    minimum: 0
-  #~
   power:
-    title: Power [MW]
+    title: Power output
     description: >-
-      A power value in MW. The number of significant digits should reflect the
-      actual information available.
+      A turbine power output. The number of significant digits should reflect
+      the actual information available.
     type: number
+    unit: MW
     minimum: 0
   #~
   thrust_coefficient:
-    title: Thrust coefficient [adimensional]
+    title: Thrust coefficient
     description: >-
       A thrust coefficient value. The number of significant digits should
       reflect the actual information available.
     type: number
+    unit: 1
     minimum: 0

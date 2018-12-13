@@ -2,10 +2,10 @@
 # Date: 2018-12-13
 
 # HEADER
-$schema: "http://json-schema.org/draft-07/schema#"
-  # NOTE: consult the above-referenced site for the schema language definition
+$schema: "https://bitbucket.org/equaeghe/pseudo_gradients-code/\
+                                src/master/schemata/extended-json-schema.yaml#"
 $id: "https://bitbucket.org/equaeghe/pseudo_gradients-code/\
-                                      src/master/schemata/location-schema.yaml"
+                                     src/master/schemata/location-schema.yaml#"
   # TODO: the $id uri must point to a git tag, ideally
 title: Geographical coordinates
 description: Coordinates for a location on Earth
@@ -37,10 +37,12 @@ properties:
         type: number
         minimum: -90
         maximum: 90
+        unit: °
       - title: Longitude
         type: number
         exclusiveMinimum: -180
         maximum: 180
+        unit: °
   #~
   utm_zone:
     title: UTM zone
@@ -52,7 +54,9 @@ properties:
     title: UTM coordinates
     type: array
     items:
-    - title: Easterly [m]
+    - title: Easterly
       type: number
-    - title: Northerly [m]
+      unit: m
+    - title: Northerly
       type: number
+      unit: m
