@@ -129,7 +129,7 @@ definitions:
       A representation of a quadratic constraint in terms of coefficients
       of a quadratic multinomial expression in the coordinate variables
       x and y. These variables form a coordinate pair as described in
-      "#/definitions/coordinates".
+      "coordinate-schema.yaml#/definitions/coordinates".
       The expression must be negative (positive) for points inside (outside)
       the site. Points on the border, for which the expression is zero, are
       by default assumed to lie inside the site. (This means that it is assumed
@@ -187,34 +187,11 @@ definitions:
         minItems: 1
         items:
           title: Vertex coordinates
-          $ref: "#/definitions/coordinates"
+          $ref: "coordinate-schema.yaml#/definitions/coordinates"
       exclusions:
         type: array
         uniqueItems: true
         minItems: 1
         items:
           $ref: "#/definitions/boundary_nesting"
-  #~
-  coordinates:
-    title: Site point coordinates
-    description: >-
-      A (x,y) pair of Cartesian coordinates describing a point in the site.
-      The x-coordinate corresponds to a fraction along the West-East axis,
-      so points East (West) of center have a positive (negative) x-coordinate.
-      The y-coordinate corresponds to a fraction along the South-North axis,
-      so points North (South) of center have a positive (negative)
-      y-coordinate.
-    type: array
-    items:
-      - title: x-coordinate
-        $ref: "#/definitions/coordinate_value"
-      - title: y-coordinate
-        $ref: "#/definitions/coordinate_value"
-  #~
-  coordinate_value:
-    description: >-
-      A coordinate value must be given with six significant digits.
-      (Significant trailing zeros may be omitted, but are assumed.)
-    type: number
-    minimum: -1
-    maximum: 1
+
