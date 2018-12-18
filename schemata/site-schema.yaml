@@ -43,7 +43,7 @@ properties:
     uniqueItems: true
     minItems: 1
     items:
-      type: str
+      type: string
   #~
   location:
     title: Site location
