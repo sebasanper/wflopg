@@ -15,7 +15,6 @@ description: >-
 type: object
 required:
   - uuid
-  - averaging_interval_length
   - reference_height
   - probability
   - oneOf:
