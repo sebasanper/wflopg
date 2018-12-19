@@ -95,8 +95,8 @@ properties:
           - type: integer  # TODO: modify so that there is no upper bound?
             exclusiveMinimum: {$data: "1/0"}
   #~
-  initial_layout:
-    title: Initial coordinates for turbines
+  layout:
+    title: Initial coordinates for the turbines
     description: >-
       A reference to a wind farm layout based on the schema at
       "https://bitbucket.org/equaeghe/pseudo_gradients-code/\
