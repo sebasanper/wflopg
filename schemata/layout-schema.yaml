@@ -19,12 +19,8 @@ additionalProperties: false
 properties:
   #~
   uuid:
-    title: Universally unique identifier (UUID)
-    description: >-
-      The UUID should follow RFC 4122.
-      It is meant to distinguish different layout descriptions.
-    type: string
-    pattern: ^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$
+    description: It is meant to distinguish different layout descriptions.
+    $ref: "uuid-schema.yaml#"
   #~
   name:
     description: >-

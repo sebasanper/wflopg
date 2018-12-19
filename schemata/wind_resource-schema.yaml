@@ -26,14 +26,11 @@ additionalProperties: false
 properties:
   #~
   uuid:
-    title: Universally unique identifier (UUID)
     description: >-
-      The UUID should follow RFC 4122.
       It is meant to distinguish different turbine descriptions.
       This is especially relevant for different versions and variants of the
       same turbine.
-    type: string
-    pattern: ^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$
+    $ref: "uuid-schema.yaml#"
   #~
   name:
     description: The name of the wind resource
