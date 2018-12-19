@@ -46,7 +46,7 @@ properties:
     description: >-
       A reference to a wind farm site based on the schema at
       "https://bitbucket.org/equaeghe/pseudo_gradients-code/\
-                                src/master/schemata/wind_resource-schema.yaml#"
+                                         src/master/schemata/site-schema.yaml#"
     type: string
     format: uri-reference
   #~
