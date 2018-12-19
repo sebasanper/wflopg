@@ -1,0 +1,27 @@
+uuid: a793c2ed-e367-4a0c-960f-2550ef15f970
+name: Mosetti et al (1994) layout for the non-constant non-uniform case
+particulars:
+  - >-
+    Derived from Figure 10 in
+
+    Mosetti, G., Poloni, C., and Diviacco, B. (1994) Optimization of wind
+    turbine positioning in large windfarms by means of a genetic algorithm.
+    Journal of Wind Engineering and Industrial Aerodynamics 51(1):105–116.
+
+site: "site-Mosetti_et_al.yaml"
+layout:
+  - [-0.636396, -0.636396]
+  - [-0.636396,  0.070711]
+  - [-0.494975,  0.636396]
+  - [-0.353553, -0.636396]
+  - [-0.353553, -0.353553]
+  - [-0.353553,  0.494975]
+  - [-0.070711,  0.070711]
+  - [ 0.070711, -0.636396]
+  - [ 0.070711,  0.636396]
+  - [ 0.212132,  0.212132]
+  - [ 0.353553, -0.636396]
+  - [ 0.353553, -0.353553]
+  - [ 0.494975,  0.494975]
+  - [ 0.636396, -0.494975]
+  - [ 0.636396,  0.212132]
