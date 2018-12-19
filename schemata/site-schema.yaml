@@ -49,7 +49,7 @@ properties:
     title: Site location
     description: >-
       The geographical location of the center of the smallest covering disc
-    $ref: "location-schema.yaml"
+    $ref: "location-schema.yaml#"
   #~
   radius:
     title: Site radius [km]
