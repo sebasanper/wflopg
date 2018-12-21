@@ -67,6 +67,19 @@ properties:
     type: string
     format: uri-reference
   #~
+  wind_direction_subdivisions:
+    description: The number of subdivisions per wind sector to use.
+    type: integer
+    minimum: 1
+    default: 1
+  #~
+  wind_speed_bins:
+    description: The wind speeds used to discretize the Weibull distribution
+    type: array
+    minItems: 1
+    items:
+      $ref: "variables-schema.yaml#/definitions/wind_speed"
+  #~
   turbine:
     title: Turbine type
     description: >-
