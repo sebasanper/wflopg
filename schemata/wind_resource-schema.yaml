@@ -1,5 +1,5 @@
 # Author: Erik Quaeghebeur
-# Date: 2018-12-10
+# Date: 2018-12-21
 
 # HEADER
 $schema: "https://bitbucket.org/equaeghe/pseudo_gradients-code/\
@@ -9,17 +9,13 @@ $id: "https://bitbucket.org/equaeghe/pseudo_gradients-code/\
   # TODO: the $id uri must point to a git tag, ideally
 title: Wind resource description
 description: >-
-  A description of a location’s wind resource as a probability mass
-  function—using relative weights—, possibly using Weibull distributions for
-  the wind speed, or as a case.
+  A description of a location’s wind resource as a wind rose and some other
+  meteorological parameters.
 type: object
 required:
   - uuid
   - reference_height
-  - probability
-  - oneOf:
-      - wind_speed
-      - weibull_parameters
+  - wind_rose
 additionalProperties: false
 
 # PROPERTIES
@@ -85,103 +81,83 @@ properties:
       The common height all the physical measurements have been transformed to
     type: number
     unit: m
-  #
-  # NOTE: Below come the arrays with data, each either a constant, or an array
-  # of values of length equal over all variables
-  #
-  # TODO: A more tabular representation of the probability mass function
-  # (e.g., as an array of value-tuple/probability pairs) would be more
-  # natural, but seems impossible to nicely specify as a (sufficiently
-  # validatable) JSON schema, although it can be easily represented using
-  # JSON/YAML.
-  #
-  # TODO:
-  # 1. Any way to not have to repeat the variable names here, but instead
-  #    loop over a provided list somehow?
-  # 2. Array length should be the same over all variables.
   #~
   air_density:
-    anyOf:
-      - $ref: "variables-schema.yaml#/definitions/variables/air_density"
-          # Constant air density
-      - type: array
-        items:
-          $ref: "variables-schema.yaml#/definitions/variables/air_density"
-        minItems: 2
+    $ref: "variables-schema.yaml#/definitions/variables/air_density"
+    # TODO: allow for non-constant air density
   #~
   atmospheric_stability:
-    anyOf:
-      - $ref: "variables-schema.yaml#/definitions/variables/\
-                                                         atmospheric_stability"
-          # Constant atmospheric stability
-      - type: array
-        items:
-          $ref: "variables-schema.yaml#/definitions/variables/\
-                                                         atmospheric_stability"
-          minItems: 2
+    $ref: "variables-schema.yaml#/definitions/variables/atmospheric_stability"
+    # TODO: allow for non-constant atmospheric stability
   #~
   turbulence_intensity:
-    anyOf:
-      - $ref: "variables-schema.yaml#/definitions/variables/\
-                                                          turbulence_intensity"
-          # Constant turbulence intensity
-      - type: array
-        items:
-          $ref: "variables-schema.yaml#/definitions/variables/\
-                                                          turbulence_intensity"
-        minItems: 2
+    $ref: "variables-schema.yaml#/definitions/variables/turbulence_intensity"
+    # TODO: allow for non-constant turbulence intensity
   #~
-  wind_direction:
-    anyOf:
-      - $ref: "variables-schema.yaml#/definitions/variables/wind_direction"
-          # Constant wind direction
-      - type: array
-        items:
-          $ref: "variables-schema.yaml#/definitions/variables/wind_direction"
-        minItems: 2
-  #~
-  wind_speed:
-    anyOf:
-      - $ref: "variables-schema.yaml#/definitions/wind_speed"
-          # Constant wind speed
-      - type: array
-        items:
-          $ref: "variables-schema.yaml#/definitions/variables/wind_speed"
-        minItems: 2
-  #~
-  weibull_parameters:
-    oneOf:
-      - title: Weibull parameters
-        $id: "#weibull_parameter_definition"
+  wind_rose:
+    title: Wind rose
+    type: object
+    required:
+      - directions
+      - direction_pmf
+      - oneOf:
+          - allOf:
+              - speeds
+              - speed_cpmf
+          - speed_cweibull
+    additionalProperties: false
+    properties:
+      #~~
+      directions:
+        title: Wind directions
         type: array
         items:
-          - title: Scale parameter
-            type: number
-            unit: m
-            exclusiveMinimum: 0
-          - title: Shape parameter
-            type: number
-            unit: 1
-            exclusiveMinimum: 0
-          # Constant wind speed distribution
-      - type: array
+          $ref: "variables-schema.yaml#/definitions/variables/wind_direction"
+      #~~
+      direction_pmf:
+        title: Wind direction probability mass function
+        description: >-
+          The wind direction probability mass function given as an array of
+          positive weights not necessarily summing up to one. So normalization
+          needs to be done when to obtain probabilities
+        type: array  # NOTE: should have same length as "1/directions"
         items:
-          $ref: "#weibull_parameter_definition"
-        minItems: 2
-  #~
-  probability:
-    # TODO: Array length should be the same as for variables.
-    description: >-
-      The probability mass function as an array of relative weights. When used,
-      these values should be scaled by their sum to get probability values!
-      This way, round-off errors in these values are not important and a
-      realistic number of significant digits can be used.
-    oneOf:
-      - const: null
-          # Case; all variables should be constant.
-      - type: array
+          title: Weight
+          type: number
+          minimum: 0
+      #~~
+      speeds:
+        title: Wind speeds
+        type: array
         items:
-          - title: Relative weight
+          $ref: "variables-schema.yaml#/definitions/wind_speed"
+      #~~
+      speed_cpmf:
+        title: Wind speed probability mass function conditional on direction
+        description: >-
+          The wind speed probability mass function conditional on direction
+          given as an array of arrays of positive weights not necessarily
+          summing up to one. So normalization needs to be done when to obtain
+          probabilities
+        type: array  # NOTE: should have same length as "1/directions"
+        items:
+          type: array  # NOTE: should have same length as "2/speeds"
+          items:
+            title: Weight
             type: number
             minimum: 0
-        minItems: 2
+      #~~
+      speed_cweibull:
+        title: Wind speed Weibull parameters conditional on direction
+        type: array  # NOTE: should have same length as "1/directions"
+        items:
+          type: array
+          items:
+            - title: Scale parameter
+              type: number
+              unit: m
+              exclusiveMinimum: 0
+            - title: Shape parameter
+              type: number
+              unit: 1
+              exclusiveMinimum: 0
