@@ -119,7 +119,7 @@ properties:
         description: >-
           The wind direction probability mass function given as an array of
           positive weights not necessarily summing up to one. So normalization
-          needs to be done when to obtain probabilities
+          needs to be done to obtain probabilities
         type: array  # NOTE: should have same length as "1/directions"
         items:
           title: Weight

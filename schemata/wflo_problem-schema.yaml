@@ -14,6 +14,7 @@ required:
   - site
   - wind_resource
   - turbine  # TODO: allow for multiple turbine types
+  - turbines
   - objective
   - wake_model
   - wake_combination
@@ -73,7 +74,7 @@ properties:
     minimum: 1
     default: 1
   #~
-  wind_speed_bins:
+  wind_speeds:
     description: The wind speeds used to discretize the Weibull distribution
     type: array
     minItems: 1
@@ -92,8 +93,7 @@ properties:
   turbines:
     title: The allowed number of turbines
     description: >-
-      Either a fixed number of turbines, or a range. When absent, there is no
-      constraint on the number of turbines.
+      Either a fixed number of turbines, or a range.
     oneOf:
       - type: integer
         minimum: 1
