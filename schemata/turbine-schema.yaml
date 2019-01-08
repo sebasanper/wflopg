@@ -23,6 +23,9 @@ required:
   - hub_height
   - rated_power
   - rated_wind_speed
+  - oneOf:
+      - thrust_coefficient
+      - thrust_curve
 additionalProperties: false
 
 # PROPERTIES
@@ -74,18 +77,18 @@ properties:
   #~
   rated_wind_speed:
     title: Rated wind speed [m/s]
-    $ref: "variables-schame.yaml#/definitions/wind_speed"
+    $ref: "variables-schema.yaml#/definitions/wind_speed"
     exclusiveMinimum: 0
   #~
   cut_in:
     title: Cut-in wind speed [m/s]
-    $ref: "variables-schame.yaml#/definitions/wind_speed"
+    $ref: "variables-schema.yaml#/definitions/wind_speed"
     default: 0
     exclusiveMaximum: {$data: "1/rated_wind_speed"}
   #~
   cut_out:
     title: Cut-out wind speed [m/s]
-    $ref: "variables-schame.yaml#/definitions/wind_speed"
+    $ref: "variables-schema.yaml#/definitions/wind_speed"
     default: null # represents +∞
     exclusiveMinimum: {$data: "1/rated_wind_speed"}
   re_cut_in:
@@ -109,7 +112,7 @@ properties:
     items:
       type: array
       items:
-        - $ref: "variables-schame.yaml#/definitions/wind_speed"
+        - $ref: "variables-schema.yaml#/definitions/wind_speed"
         - $ref: "#/definitions/power"
   #~
   thrust_coefficient:
