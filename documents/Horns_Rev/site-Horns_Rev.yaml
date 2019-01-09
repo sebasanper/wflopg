@@ -18,6 +18,7 @@ particulars:
 
     Niayifar, A. and Porté-Agel, F. (2016) Analytical modeling of wind farms:
     A new approach for power prediction. Energies 9(9):741.
+  - roughness length obtained via personal communication 2019-01-09
 
 rotor_constraints: false
 radius: 3.3548
@@ -42,3 +43,4 @@ boundaries:
       - [ 0.689003,  0.581844]
       - [-0.813300,  0.581844]
       - [-0.725666, -0.249490]
+roughness: 0.0001
