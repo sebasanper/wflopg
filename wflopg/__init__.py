@@ -3,6 +3,7 @@ import xarray as xr
 from ruamel.yaml import YAML as yaml
 
 import .create_turbine
+import .create_wind
 
 
 class Owflop():
@@ -63,9 +64,11 @@ class Owflop():
         # extract and process information and data from linked documents
         cut_in, cut_out = self.process_turbine(
                                      yaml(typ='safe').load(problem['turbine']))
-        self.process_site(yaml(typ='safe').load(problem['site']))
+        roughness_length = self.process_site(
+                                        yaml(typ='safe').load(problem['site']))
         self.process_wind_resource(
             yaml(typ='safe').load(problem['wind_resource']),
+            roughness_length,
             problem.get('wind_direction_subdivisions', None),
             problem.get('wind_speeds', None),
             cut_in, cut_out
@@ -110,17 +113,21 @@ class Owflop():
         self.rotor_constraints = site['rotor_constraints']
         self.site_radius = site['radius']
         # TODO: import site parcels and boundaries
-        self.roughness = site.get('roughness', None)
+        return site.get('roughness', None)
 
 
-    def process_wind_resource(wind_resource,
-                              dir_subs, speeds, cut_in, cout_out):
-        self.reference_height = wind_resource['reference_height']
+    def process_wind_resource(wind_resource, roughness_length,
+                              dir_subs, speeds, cut_in, cut_out):
+        reference_height = wind_resource['reference_height']
         self.air_density = wind_resource.get('air_density', 1.2041)
         self.atmospheric_stability = wind_resource.get(
             'atmospheric_stability', None)
         self.turbulence_intensity = wind_resource.get(
             'turbulence_intensity', None)
+
+        # Create the wind shear function
+        self.wind_shear = create_wind.logarithmic_wind_shear(reference_height,
+                                                             roughness_length)
 
         # Create and store the wind direction distribution
         wind_rose = wind_resource['wind_rose']
@@ -145,12 +152,16 @@ class Owflop():
 
         # Create and store the conditional wind speed probability mass function
         #
+        # NOTE: All at reference height; don't forget to apply wind shear on
+        #       use!
+        #
         # NOTE: Of the conditional wind speed probability mass function, only
         #       the values within the [cut_in, cut_out] interval are stored in
         #       self._ds['wind_speed_cpmf'] (defined below), as the others give
         #       no contribution to the power production. (This part may need to
         #       be revised if, e.g., we want to take into account loads, where
         #       wind speeds above cut_out are certainly relevant.)
+        #
         if 'speed_cweibull' in wind_rose:
             if not speeds:
                 raise ValueError(
