@@ -1,0 +1,28 @@
+uuid: 844e24f4-c8bd-4196-80a7-f524b9ae8ca3
+name: Horns Rev optimization following Feng & Shen (2015)
+particulars:
+  - >-
+    We follow
+
+    Feng, J. and Shen, W. Z. (2015) Solving the wind farm layout optimization
+    problem using random search algorithm. Renewable Energy 78:182–192.
+
+    and in particular their Section 5.
+
+  - >-
+    The wind speed discretization was obtained via personal communication on
+    2019-01-09.
+
+site: "site-Horns_Rev.yaml"
+wind_resource: "wind_resource-Feng+Shen.yaml"
+wind_direction_subdivisions: 30  # results in 360 1° bins
+wind_speeds: [ 4.,  5.,  6.,  7.,  8.,  9., 10., 11., 12., 13., 14.,
+              15., 16., 17., 18., 19., 20., 21., 22., 23., 24., 25.]
+turbine: "turbine-V80_2000.yaml"
+turbine_distance: 5
+turbines: 80
+layout: "layout-Horns_Rev.yaml"
+objective: "maximize expected power"
+wake_model: "Jensen"
+wake_combination: "RMS"
+partial_wake: "analytical integration"
