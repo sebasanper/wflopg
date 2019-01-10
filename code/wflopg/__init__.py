@@ -2,8 +2,8 @@ import numpy as np
 import xarray as xr
 from ruamel.yaml import YAML as yaml
 
-import .create_turbine
-import .create_wind
+import wflopg.create_turbine
+import wflopg.create_wind
 
 
 class Owflop():
@@ -175,7 +175,7 @@ class Owflop():
                                             (speeds[:-1] + speeds[1:]) /2,
                                             [cut_out]))
             speed_bins = xr.DataArray(
-                [speed_borders[:-1], speed_borders[1:]]).T,
+                [speed_borders[:-1], speed_borders[1:]].T,
                 coords=[('wind_speed', speeds), ('bound', ['start', 'end'])]
             )
             cweibull = xr.DataArray(
@@ -196,7 +196,7 @@ class Owflop():
             speed_cpmf /= np.sum(speed_cpmf, axis=1)  # normalize weights
             wc = speeds >= cut_in & speeds <= cut_out # within cut
             self._ds['wind_speed_cpmf'] = xr.DataArray(
-                speed_cpmf[:, wc]),
+                speed_cpmf[:, wc],
                 coords=[('directions', dir_pmf[:, 0]), ('wind_speed', speeds)]
             )
         else:
