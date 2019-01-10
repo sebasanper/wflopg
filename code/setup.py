@@ -10,9 +10,5 @@ setup(
     author="Erik Quaeghebeur",
     author_email="E.R.G.Quaeghebeur@tudelft.nl",
     url='https://bitbucket.org/equaeghe/pseudo_gradients-code',
-    packages=[
-      'wflopg',
-      'wflopg.create_turbine',
-      'wflopg.create_wind'
-    ]
+    packages=['wflopg']
 )
