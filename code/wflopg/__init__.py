@@ -219,10 +219,10 @@ class Owflop():
                                                      method='linear')
         else:
             dir_weights = xr.DataArray(dir_weights,
-                                       coords={'directions': dirs})
+                                       coords=[('direction', dirs)])
             speed_weights = xr.DataArray(
                 speed_weights,
-                coords={'direction': dirs, 'wind_speed': speeds}
+                coords=[('direction', dirs), ('wind_speed', speeds)]
             )
 
         # Store pmfs; obtain them from the weight arrays by normalization
