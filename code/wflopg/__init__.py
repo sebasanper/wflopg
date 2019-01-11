@@ -2,8 +2,8 @@ import numpy as np
 import xarray as xr
 from ruamel.yaml import YAML as yaml
 
-import wflopg.create_turbine
-import wflopg.create_wind
+from wflopg import create_turbine
+from wflopg import create_wind
 
 
 class Owflop():
@@ -19,29 +19,28 @@ class Owflop():
             ('dc_coord', ['d', 'c'])   # downwind/crosswind
         ]
         # _ds is the main working Dataset
-        self._ds = xr.Dataset(coords=coords)
+        self._ds = xr.Dataset(coords=dict(coords))
         self._ds.xy_coord.attrs['description'] = (
             "Cartesian coordinates, where ‘x’ corresponds to the "
             "South-North direction and ‘y’ to the West-East direction.")
         self._ds.dc_coord.attrs['description'] = (
             "Cartesian coordinates determined by a given wind direction, "
             "where ‘d’ corresponds to the downwind direction "
-            "and ‘y’ to the crosswind direction.")
+            "and ‘c’ to the crosswind direction.")
         # _history is the Dataset containing a history of layouts
-        self._history = xr.Dataset(coords=[coords[0]])
+        self._history = xr.Dataset(coords=dict(coords[:1]))
         self._history.xy_coord.attrs['description'] = (
                                         self._ds.xy_coord.attrs['description'])
         # A single turbine at the origin as default initial layout
         initial_layout = [[0, 0]]
-        self._ds['layout'] = xr.DataArray(
-            np.array(initial_layout, np.float32),
-            dims=['target', 'xy_coord']
-        )
+        self._ds['layout'] = xr.DataArray(initial_layout,
+                                          dims=['target', 'xy_coord'])
         self._history['initial'] = xr.DataArray(
-            np.array(initial_layout, np.float32),
+            initial_layout,
             dims=['target_initial', 'xy_coord'],
             attrs={'description': 'initial layout'}
-        )
+        )  # TODO: perhaps handle target_* dims more concisely using missing
+           #       values
 
     def load_problem(self, filename):
         """Load wind farm layout optimization problem file
@@ -51,7 +50,8 @@ class Owflop():
         src/master/schemata/wflo_problem-schema.yaml#.
 
         """
-        problem = yaml(typ='safe').load(filename)
+        with open(filename) as f:
+            problem = yaml(typ='safe').load(f)
         # extract required parameters directly contained in problem document
         self.problem_uuid = problem['uuid']
         self.turbines = problem['turbines']
@@ -62,23 +62,23 @@ class Owflop():
         self.turbine_distance = problem.get('turbine_distance', 0)
 
         # extract and process information and data from linked documents
-        cut_in, cut_out = self.process_turbine(
-                                     yaml(typ='safe').load(problem['turbine']))
-        roughness_length = self.process_site(
-                                        yaml(typ='safe').load(problem['site']))
-        self.process_wind_resource(
-            yaml(typ='safe').load(problem['wind_resource']),
-            roughness_length,
-            problem.get('wind_direction_subdivisions', None),
-            problem.get('wind_speeds', None),
-            cut_in, cut_out
-        )
+        with open(problem['turbine']) as f:
+            cut_in, cut_out = self.process_turbine(yaml(typ='safe').load(f))
+        with open(problem['site']) as f:
+            roughness_length = self.process_site(yaml(typ='safe').load(f))
+        with open(problem['wind_resource']) as f:
+            self.process_wind_resource(
+                yaml(typ='safe').load(f),
+                roughness_length,
+                problem.get('wind_direction_subdivisions', None),
+                problem.get('wind_speeds', None),
+                cut_in, cut_out
+            )
         if 'layout' in problem:
-            self.process_layout(
-                            yaml(typ='safe').load(problem['layout'])['layout'])
+            with open(problem['layout']) as f:
+                self.process_layout(yaml(typ='safe').load(f)['layout'])
 
-
-    def process_turbine(turbine):
+    def process_turbine(self, turbine):
         self.rotor_radius = turbine['rotor_radius']
         self.hub_height = turbine['hub_height']
         rated_power = turbine['rated_power']
@@ -87,7 +87,7 @@ class Owflop():
         cut_out = turbine.get('cut_out', np.inf)
         # define power curve
         if 'power_curve' in turbine:
-            pc = np.array(turbine['power_curve'], np.float32)
+            pc = np.array(turbine['power_curve'])
             self.power_curve = create_turbine.interpolated_power_curve(
                                  rated_power, rated_speed, cut_in, cut_out, pc)
         else:
@@ -98,7 +98,7 @@ class Owflop():
             self.thrust_curve = create_turbine.constant_thrust_curve(
                                 cut_in, cut_out, turbine['thrust_coefficient'])
         elif 'thrust_curve' in turbine:
-            tc = np.array(turbine['thrust_curve'], np.float32)
+            tc = np.array(turbine['thrust_curve'])
             self.thrust_curve = create_turbine.interpolated_thrust_curve(
                                                            cut_in, cut_out, tc)
         else:
@@ -108,15 +108,13 @@ class Owflop():
 
         return cut_in, cut_out
 
-
-    def process_site(site):
+    def process_site(self, site):
         self.rotor_constraints = site['rotor_constraints']
         self.site_radius = site['radius']
         # TODO: import site parcels and boundaries
         return site.get('roughness', None)
 
-
-    def process_wind_resource(wind_resource, roughness_length,
+    def process_wind_resource(self, wind_resource, roughness_length,
                               dir_subs, speeds, cut_in, cut_out):
         reference_height = wind_resource['reference_height']
         self.air_density = wind_resource.get('air_density', 1.2041)
@@ -126,34 +124,24 @@ class Owflop():
             'turbulence_intensity', None)
 
         # Create the wind shear function
-        self.wind_shear = create_wind.logarithmic_wind_shear(reference_height,
-                                                             roughness_length)
+        self.wind_shear = create_wind.logarithmic_wind_shear(
+                                            reference_height, roughness_length)
 
-        # Create and store the wind direction distribution
         wind_rose = wind_resource['wind_rose']
-        dir_pmf = np.array([wind_rose['directions'],
-                            wind_rose['direction_pmf']], np.float32).T
-        dir_pmf = dir_pmf[dirs.argsort()]
-        dirs = dir_pmf[:, 0]
-        # optionally subdivide windrose
-        if dir_subs:
-            dir_pmf = np.repeat(dir_pmf, dir_subs, axis=0)
-            dirs_cy = np.concatenate(([dirs[-1] - 360], dirs, [dirs[0] + 360]))
-            dir_bins = np.array([(dirs_cy[1:-1] + dirs_cy[:-2]) / 2,
-                                 (dirs_cy[2:] + dirs_cy[1:-1]) / 2]).T
-            for k, bounds in enumerate(dir_bins):
-                dir_pmf[k*dir_subs:(k+1)*dir_subs] = np.linspace(
-                                bounds[0], bounds[1], 2 * dir_subs + 1)[1:-1:2]
-        # normalize wind rose (before we just had weights, not probabilities)
-        dir_pmf[:, 1] /= np.sum(dir_pmf[:, 1])
-        # add direction probability mass function to the object's Dataset
-        self._ds['direction_pmf'] = xr.DataArray(
-                      dir_pmf[:, 1], dims=['directions'], coords=dir_pmf[:, 0])
 
-        # Create and store the conditional wind speed probability mass function
+        # Create wind direction probability mass function
+        dirs = np.array(wind_rose['directions'])
+        dir_weights = np.array(wind_rose['direction_pmf'])
+        # we do not assume the wind directions are sorted in the data file and
+        # therefore sort them here
+        dir_sort_index = dirs.argsort()
+        dirs = dirs[dir_sort_index]
+        dir_weights = dir_weights[dir_sort_index]
+
+        # Create the conditional wind speed probability mass function
         #
-        # NOTE: All at reference height; don't forget to apply wind shear on
-        #       use!
+        # NOTE: All of this is at reference height; don't forget to apply wind
+        #       shear on use!
         #
         # NOTE: Of the conditional wind speed probability mass function, only
         #       the values within the [cut_in, cut_out] interval are stored in
@@ -170,45 +158,88 @@ class Owflop():
                     "distributions")
             # prepare the data structures used to discretize the Weibull
             # distribution
-            speeds = speeds[speeds >= cut_in & speeds <= cut_out]
+            speeds = np.array(speeds)
+            speeds = speeds[(speeds >= cut_in) & (speeds <= cut_out)]
             speed_borders = np.concatenate(([cut_in],
-                                            (speeds[:-1] + speeds[1:]) /2,
+                                            (speeds[:-1] + speeds[1:]) / 2,
                                             [cut_out]))
             speed_bins = xr.DataArray(
-                [speed_borders[:-1], speed_borders[1:]].T,
+                np.vstack((speed_borders[:-1], speed_borders[1:])).T,
                 coords=[('wind_speed', speeds), ('bound', ['start', 'end'])]
             )
             cweibull = xr.DataArray(
                 wind_rose['speed_cweibull'],
-                coords=[('directions', dir_pmf[:, 0]),
-                        ('param', ['scale', 'shape'])]
+                coords=[('direction', dirs), ('param', ['scale', 'shape'])]
             )
             # Weibull CDF: 1 - exp(-(x/scale)**shape), so the probability for
             # an interval is
             # exp(-(xstart/scale)**shape) - exp(-(xend/scale)**shape)
-            speed_bins /= cweibull.loc[:, 'scale']
+            speed_bins = speed_bins / cweibull.loc[:, 'scale']
             terms = np.exp(- speed_bins ** cweibull.loc[:, 'shape'])
-            self._ds['wind_speed_cpmf'] = (terms.sel(bound='start') -
-                                           terms.sel(bound='end'))
+            speed_cpmf = terms.sel(bound='start') - terms.sel(bound='end')
+            speed_weights = speed_cpmf.values.T
         elif 'speed_cpmf' in wind_rose and 'speeds' in wind_rose:
-            speeds = np.array(wind_rose['speeds'], np.float32)
-            speed_cpmf = np.array(wind_rose['speed_cpmf'], np.float32)
-            speed_cpmf /= np.sum(speed_cpmf, axis=1)  # normalize weights
-            wc = speeds >= cut_in & speeds <= cut_out # within cut
-            self._ds['wind_speed_cpmf'] = xr.DataArray(
-                speed_cpmf[:, wc],
-                coords=[('directions', dir_pmf[:, 0]), ('wind_speed', speeds)]
-            )
+            speeds = np.array(wind_rose['speeds'])
+            speed_weights = np.array(wind_rose['speed_cpmf'])
+            wc = (speeds >= cut_in) & (speeds <= cut_out)  # within cut
+            speeds = speeds[wc]
+            speed_weights = speed_weights[:, wc]  # TODO: check if needs to be transposed
         else:
-          raise ValueError(
-            "A conditional wind speed probability distribution "
-            "should be given either as parameters for conditional Weibull "
-            "distributions or as a conditional probability mass function.")
+            raise ValueError(
+                "A conditional wind speed probability distribution "
+                "should be given either as parameters for conditional Weibull "
+                "distributions or as a conditional probability mass function.")
 
+        # Subdivide wind direction and speed pmfs if needed
+        if dir_subs:
+            dirs_cyc = np.concatenate((dirs, 360 + dirs[:1]))
+            dir_weights_cyc = xr.DataArray(
+                np.concatenate((dir_weights, dir_weights[:1])),
+                coords=[('direction', dirs_cyc)]
+            )
+            speed_weights_cyc = xr.DataArray(
+                np.concatenate((speed_weights, speed_weights[:1])),
+                coords=[('direction', dirs_cyc), ('wind_speed', speeds)]
+            )
+            dirs_cyc = xr.DataArray(
+                dirs_cyc,
+                coords=[('rel', np.linspace(0., 1., len(dirs) + 1))]
+            )
+            dirs_interp = dirs_cyc.interp(
+                rel=np.linspace(0., 1., dir_subs * len(dirs) + 1)
+            ).values
+            dirs_interp = dirs_interp[:-1]  # drop the last, cyclical value
 
-    def process_layout(initial_layout):
-        self._ds['layout'].values = np.array(initial_layout, np.float32)
-        self._history['layout'].values = np.array(initial_layout, np.float32)
+            # the interpolation method can be 'nearest' or 'linear'
+            # (other options—such as 'cubic'—exist, but require even more
+            # careful handling of the cyclical nature of directions)
+            dir_weights = dir_weights_cyc.interp(direction=dirs_interp,
+                                                 method='linear')
+            speed_weights = speed_weights_cyc.interp(direction=dirs_interp,
+                                                     method='linear')
+        else:
+            dir_weights = xr.DataArray(dir_weights,
+                                       coords={'directions': dirs})
+            speed_weights = xr.DataArray(
+                speed_weights,
+                coords={'direction': dirs, 'wind_speed': speeds}
+            )
+
+        # Store pmfs; obtain them from the weight arrays by normalization
+        self._ds['direction_pmf'] = dir_weights / dir_weights.sum()
+        self._ds['wind_speed_cpmf'] = (speed_weights /
+                                       speed_weights.sum(dim='wind_speed'))
+
+    def process_layout(self, initial_layout):
+        self._ds.update(
+            {'layout': (['target', 'xy_coord'], np.array(initial_layout))},
+            inplace=True
+        )
+        self._history.update(
+            {'initial': (['target_initial', 'xy_coord'],
+                         np.array(initial_layout))},
+            inplace=True
+        )
 
 
 # dimensions = {'source', 'target',  # source and target turbine dummy dimensions

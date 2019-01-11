@@ -11,11 +11,12 @@ def _check_start(interpolation_data, start_speed, start_value):
     interpolation_data coordinate value.
 
     """
-    if start_speed < interpolation_data[0, 0]:
+    min_interpolation_speed = np.min(interpolation_data[:, 0])
+    if start_speed < min_interpolation_speed:
         interpolation_data = np.concatenate(([[start_speed, start_value]],
                                              interpolation_data))
     else:
-        start_speed = interpolation_data[0, 0]
+        start_speed = min_interpolation_speed
     return interpolation_data, start_speed
 
 
@@ -28,11 +29,12 @@ def _check_end(interpolation_data, end_speed, end_value):
     interpolation_data coordinate value.
 
     """
-    if end_speed > interpolation_data[-1, 0]:
+    max_interpolation_speed = np.max(interpolation_data[:, 0])
+    if end_speed > max_interpolation_speed:
         interpolation_data = np.concatenate((interpolation_data,
                                              [[end_speed, end_value]]))
     else:
-        end_speed = interpolation_data[-1, 0]
+        end_speed = max_interpolation_speed
     return interpolation_data, end_speed
 
 
@@ -46,7 +48,7 @@ def _create_interpolator(coord_name, interpolation_data):
 
     """
     return xr.DataArray(interpolation_data[:, 1],
-                                      [(coord_name, interpolation_data[:, 0])])
+                        [(coord_name, interpolation_data[:, 0])])
 
 
 def _common(speeds, cut_in, cut_out):
@@ -54,7 +56,7 @@ def _common(speeds, cut_in, cut_out):
         raise ValueError("Wind speeds may not be negative.")
     powers = np.zeros(speeds.shape)
     wc = speeds > cut_in & speeds < cut_out  # within cut
-    return out_array, wc
+    return powers, wc
 
 
 def cubic_power_curve(rated_power, rated_speed, cut_in, cut_out):
@@ -76,14 +78,14 @@ def cubic_power_curve(rated_power, rated_speed, cut_in, cut_out):
 
 
 def interpolated_power_curve(rated_power, rated_speed, cut_in, cut_out,
-                                    interpolation_data):
+                             interpolation_data):
     """Return an interpolated power curve function
 
     Interpolation data is assumed to be authorative over other specified
     parameters.
 
     """
-    interpolation_data = interpolation_data[interpolation_data.argsort(axis=0)]
+    interpolation_data = interpolation_data[interpolation_data[:, 0].argsort()]
     interpolation_data, cut_in = _check_start(interpolation_data, cut_in, 0)
     interpolation_data, end_speed = _check_end(interpolation_data,
                                                rated_speed, rated_power)
@@ -126,7 +128,7 @@ def interpolated_thrust_curve(cut_in, cut_out, interpolation_data):
     parameters.
 
     """
-    interpolation_data = interpolation_data[interpolation_data.argsort(axis=0)]
+    interpolation_data = interpolation_data[interpolation_data[:, 0].argsort()]
     interpolation_data, cut_in = _check_start(interpolation_data, cut_in, 0.)
     interpolation_data, cut_out = _check_end(interpolation_data, cut_out, 0.)
     interpolator = _create_interpolator('speeds', interpolation_data)
