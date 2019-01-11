@@ -8,13 +8,21 @@ particulars:
     turbine positioning in large windfarms by means of a genetic algorithm.
     Journal of Wind Engineering and Industrial Aerodynamics 51(1):105–116.
 
+  - The partial wake model is not clear from the paper.
+  - >-
+    The 5D turbine distance is based on the paper's 5D discretization cell
+    size.
+  - >-
+    The upper bound on the number of turbines is equal to the number of
+    discrete cells in the paper.
+
 site: "site-Mosetti_et_al.yaml"
 wind_resource: "wind_resource-Mosetti_et_al.yaml"
 turbine: "turbine-Mosetti_et_al.yaml"
-turbine_distance: 5 # TODO
-turbines: 15 # TODO
+turbine_distance: 5
+turbines: [1, 100]
 layout: "layout-Mosetti_et_al.yaml"
 objective: "minimize cost of energy (Mosetti)"
-wake_model: "Jensen" # TODO
-wake_combination: "RMS" # TODO
-partial_wake: "analytical integration" # TODO
+wake_model: "Jensen"
+wake_combination: "RMS"
+partial_wake: "analytical integration"
