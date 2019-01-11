@@ -1,0 +1,20 @@
+uuid: 844e24f4-c8bd-4196-80a7-f524b9ae8ca3
+name: Horns Rev optimization following Feng & Shen (2015)
+particulars:
+  - >-
+    We follow
+
+    Mosetti, G., Poloni, C., and Diviacco, B. (1994) Optimization of wind
+    turbine positioning in large windfarms by means of a genetic algorithm.
+    Journal of Wind Engineering and Industrial Aerodynamics 51(1):105–116.
+
+site: "site-Mosetti_et_al.yaml"
+wind_resource: "wind_resource-Mosetti_et_al.yaml"
+turbine: "turbine-Mosetti_et_al.yaml"
+turbine_distance: 5 # TODO
+turbines: 15 # TODO
+layout: "layout-Mosetti_et_al.yaml"
+objective: "minimize cost of energy (Mosetti)"
+wake_model: "Jensen" # TODO
+wake_combination: "RMS" # TODO
+partial_wake: "analytical integration" # TODO
