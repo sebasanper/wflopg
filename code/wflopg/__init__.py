@@ -237,10 +237,9 @@ class Owflop():
         # - from upwind to downwind: +180
         # - from degrees to radians
         directions_rad = np.radians(90 - self._ds.coords['direction'] + 180)
-        self._ds['downwind'] = xr.DataArray(
-            np.array([np.cos(directions_rad), np.sin(directions_rad)]).T,
-            dims=['direction', 'xy_coord']
-        )
+        self._ds['downwind'] = xr.concat(
+                  [np.cos(directions_rad), np.sin(directions_rad)], 'xy_coord'
+        ).transpose()  # transpose to get direction as first dimension
 
     def process_layout(self, initial_layout):
         # turbines affected by the wake
