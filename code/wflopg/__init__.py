@@ -4,6 +4,7 @@ from ruamel.yaml import YAML as yaml
 
 from wflopg import create_turbine
 from wflopg import create_wind
+from wflopg import layout_geometry
 
 
 class Owflop():
@@ -75,7 +76,7 @@ class Owflop():
                 initial_layout = yaml(typ='safe').load(f)['layout']
         else:
             initial_layout = [[0, 0]]
-        self.process_layout(initial_layout)
+        self.process_layout(initial_layout, self._ds['downwind'])
 
     def process_turbine(self, turbine):
         self.rotor_radius = turbine['rotor_radius']
@@ -241,7 +242,7 @@ class Owflop():
                   [np.cos(directions_rad), np.sin(directions_rad)], 'xy_coord'
         ).transpose()  # transpose to get direction as first dimension
 
-    def process_layout(self, initial_layout):
+    def process_layout(self, initial_layout, downwind):
         # turbines affected by the wake
         self._ds['layout'] = xr.DataArray(initial_layout,
                                           dims=['target', 'xy_coord'])
@@ -254,12 +255,22 @@ class Owflop():
         # NOTE: currently, these are the same as the ones affected
         self._ds['context'] = xr.DataArray(initial_layout,
                                            dims=['source', 'xy_coord'])
+        # geometric information (in a general sense)
+        # standard coordinates for vectors
+        # between all source and target turbines
+        self._ds['vector'] = layout_geometry.generate_vector(
+                                       self._ds['context'], self._ds['layout'])
+        # distances between source and target turbines
+        self._ds['distance'] = layout_geometry.generate_distance(
+                                                            self._ds['vector'])
+        # downwind/crosswind coordinates for vectors
+        # between all source and target turbines, for all directions
+        self._ds['downstream'] = layout_geometry.generate_downstream(
+                                                  self._ds['vector'], downwind)
 
 
 # variables
 #
-#     'distance': ['source', 'turbine'],  # distances between source and target turbines
-#     'vector': ['source', 'target', 'direction', 'dc_coord'],  # downwind/crosswind coordinates for vectors between all source and target turbines, for all directions
 #     'deficit': ['source', 'target', 'direction', 'wind_speed'],  # speed deficit
 #     'combined_deficit': ['target', 'direction', 'wind_speed'],
 #     'relative_deficit': ['source', 'target', 'direction', 'wind_speed'],
@@ -268,4 +279,3 @@ class Owflop():
 #     'blamed_loss': ['source', 'target', 'direction', 'wind_speed'],
 #     'blamed_loss_vector': ['source', 'target', 'direction', 'wind_speed', 'xy_coord'],
 #     'expected_power': ['target']
-# }
