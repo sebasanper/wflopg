@@ -256,15 +256,10 @@ class Owflop():
         self._ds['context'] = xr.DataArray(initial_layout,
                                            dims=['source', 'xy_coord'])
 
-# dimensions = {'source', 'target',  # source and target turbine dummy dimensions
-#               'xy_coord', 'dc_coord',
-#               'direction', 'wind_speed'} # we assume a rectangular grid
+
+# variables
 #
-# variables = {
-#     'context': ['source', 'xy_coord'],  # turbines causing wakes (includes 'target')
-#     'layout': ['target', 'xy_coord'],  # turbines whose positions we can affect
 #     'distance': ['source', 'turbine'],  # distances between source and target turbines
-#     'downwind': ['direction', 'xy_coord'],  # downwind unit vectors
 #     'vector': ['source', 'target', 'direction', 'dc_coord'],  # downwind/crosswind coordinates for vectors between all source and target turbines, for all directions
 #     'deficit': ['source', 'target', 'direction', 'wind_speed'],  # speed deficit
 #     'combined_deficit': ['target', 'direction', 'wind_speed'],
@@ -273,7 +268,5 @@ class Owflop():
 #     'loss': ['target', 'direction', 'wind_speed'],
 #     'blamed_loss': ['source', 'target', 'direction', 'wind_speed'],
 #     'blamed_loss_vector': ['source', 'target', 'direction', 'wind_speed', 'xy_coord'],
-#     'wind_speed_pmf': ['direction', 'wind_speed'],  # 'wind_speed' pmf conditional on 'direction'
-#     'direction_pmf': ['direction'],
 #     'expected_power': ['target']
 # }
