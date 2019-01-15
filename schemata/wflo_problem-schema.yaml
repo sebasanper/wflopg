@@ -127,7 +127,7 @@ properties:
     description: The textual description of a coded single wake model.
     type: string
     enum:  # TODO: add more
-      - "Jensen"
+      - "Jensen with analytical partial wake"
       - "BPA (IEA37)"
   #~
   wake_combination:
@@ -135,14 +135,5 @@ properties:
     description: >-
       The textual description of a coded single wake combination rule.
     type: string
-    enum:  # TODO: add more
+    enum:  # TODO: add more?
       - "RMS"
-  #~
-  partial_wake:
-    title: Partial wake approach
-    description: >-
-      The textual description of a coded partial wake approach.
-    type: string
-    enum:  # TODO: add more
-      - "hub center only"  # NOTE: no partial wake
-      - "analytical integration" # NOTE: available for Jensen

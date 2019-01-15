@@ -23,6 +23,5 @@ turbine_distance: 5
 turbines: [1, 100]
 layout: "layout-Mosetti_et_al.yaml"
 objective: "minimize cost of energy (Mosetti)"
-wake_model: "Jensen"
+wake_model: "Jensen with analytical partial wake"
 wake_combination: "RMS"
-partial_wake: "analytical integration"
