@@ -5,6 +5,7 @@ from ruamel.yaml import YAML as yaml
 from wflopg import create_turbine
 from wflopg import create_wind
 from wflopg import layout_geometry
+from wflopg import create_wake
 
 
 class Owflop():
@@ -47,12 +48,6 @@ class Owflop():
         # TODO: the following four parameters should be used to create the
         #       functions that calculate the powers and deficits
         self.objective = problem['objective']
-        self.wake_model = problem['wake_model']
-        self.wake_combination = problem['wake_combination']
-        self.partial_wake = problem['partial_wake']
-        # TODO: the following parameter should be used to, together with the
-        #       rotor diameter, to generate the functions that check and
-        #       correct the distance constraint
         self.turbine_distance = problem.get('turbine_distance', 0)
 
         # extract and process information and data from linked documents
@@ -77,6 +72,11 @@ class Owflop():
         else:
             initial_layout = [[0, 0]]
         self.process_layout(initial_layout, self._ds['downwind'])
+
+        # process information for string properties
+        self.process_wake_model(problem['wake_model'],
+                                problem['wake_combination'])
+
 
     def process_turbine(self, turbine):
         self.rotor_radius = turbine['rotor_radius']
@@ -142,9 +142,6 @@ class Owflop():
 
         # Create the conditional wind speed probability mass function
         #
-        # NOTE: All of this is at reference height; don't forget to apply wind
-        #       shear on use!
-        #
         # NOTE: Of the conditional wind speed probability mass function, only
         #       the values within the [cut_in, cut_out] interval are stored in
         #       self._ds['wind_speed_cpmf'] (defined below), as the others give
@@ -158,9 +155,10 @@ class Owflop():
                     "An array of wind speeds must be specified in case the "
                     "wind resource is formulated in terms of Weibull "
                     "distributions")
+            # take wind shear into account
+            speeds = self.wind_shear(self.hub_height, np.array(speeds))
             # prepare the data structures used to discretize the Weibull
             # distribution
-            speeds = np.array(speeds)
             speeds = speeds[(speeds >= cut_in) & (speeds <= cut_out)]
             speed_borders = np.concatenate(([cut_in],
                                             (speeds[:-1] + speeds[1:]) / 2,
@@ -179,13 +177,18 @@ class Owflop():
             speed_bins = speed_bins / cweibull.sel(param='scale')
             terms = np.exp(- speed_bins ** cweibull.sel(param='shape'))
             speed_cpmf = terms.sel(bound='start') - terms.sel(bound='end')
-            speed_weights = speed_cpmf.values.T
+            speed_probs = speed_cpmf.values.T
         elif 'speed_cpmf' in wind_rose and 'speeds' in wind_rose:
-            speeds = np.array(wind_rose['speeds'])
+            # take wind shear into account
+            speeds = self.wind_shear(self.hub_height,
+                                     np.array(wind_rose['speeds']))
+            # get wind speed distribution data in appropriate form for further
+            # processing
             speed_weights = np.array(wind_rose['speed_cpmf'])
+            speed_probs = speed_weights / speed_weights.sum(axis=1)
             wc = (speeds >= cut_in) & (speeds <= cut_out)  # within cut
             speeds = speeds[wc]
-            speed_weights = speed_weights[:, wc]
+            speed_probs = speed_probs[:, wc]
         else:
             raise ValueError(
                 "A conditional wind speed probability distribution "
@@ -268,6 +271,51 @@ class Owflop():
         self._ds['downstream'] = layout_geometry.generate_downstream(
                                                   self._ds['vector'], downwind)
 
+    def process_wake_model(model, combination_rule):
+        thrusts = self.thrust_curve(self._ds.coords['wind_speed'])
+        # define wake model
+        if model is "BPA (IEA37)":
+            self.wake_model = create_wake.bpa_iea37(
+                thrusts,
+                self.rotor_radius,
+                self.turbulence_intensity,
+                self.site_radius
+            )
+        elif model is "Jensen":
+            self.wake_model = create_wake.jensen(
+                thrusts,
+                self.rotor_radius,
+                self.hub_height,
+                self.surface_roughness
+            )
+        elif model is "Jensen according to Frandsen":
+            self.wake_model = create_wake.jensen_frandsen(
+                thrusts,
+                self.rotor_radius,
+                self.hub_height,
+                self.surface_roughness
+            )
+        elif model is "Jensen with partial wake":
+            self.wake_model = create_wake.jensen_averaged(
+                thrusts,
+                self.rotor_radius,
+                self.hub_height,
+                self.surface_roughness
+            )
+        elif model is "Jensen according to Frandsen with partial wake":
+            self.wake_model = create_wake.jensen_frandsen_averaged(
+                thrusts,
+                self.rotor_radius,
+                self.hub_height,
+                self.surface_roughness
+            )
+        else:
+            raise ValueError("Unkown wake model specified.")
+        # define combination rule
+        if combination_rule is "RSS":
+            self.combination_rule = create_wake.deficit_rms_combination()
+        else:
+            raise ValueError("Unknown wake combination rule specified.")
 
 # variables
 #

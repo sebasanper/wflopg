@@ -24,4 +24,4 @@ turbines: 80
 layout: "layout-Horns_Rev.yaml"
 objective: "maximize expected power"
 wake_model: "Jensen with analytical partial wake"
-wake_combination: "RMS"
+wake_combination: "RSS"
