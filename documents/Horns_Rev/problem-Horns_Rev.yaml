@@ -23,5 +23,5 @@ turbine_distance: 5
 turbines: 80
 layout: "layout-Horns_Rev.yaml"
 objective: "maximize expected power"
-wake_model: "Jensen with analytical partial wake"
+wake_model: "Jensen with partial wake"
 wake_combination: "RSS"

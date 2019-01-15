@@ -56,7 +56,7 @@ def _common(speeds, cut_in, cut_out):
         raise ValueError("Wind speeds may not be negative.")
     output = xr.DataArray(np.zeros(speeds.shape),
                           dims=['wind_speed'], coords={'wind_speed': speeds})
-    wc = speeds > cut_in & speeds < cut_out  # within cut
+    wc = (speeds > cut_in) & (speeds < cut_out)  # within cut
     return output, wc
 
 

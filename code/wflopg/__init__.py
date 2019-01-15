@@ -184,11 +184,14 @@ class Owflop():
                                      np.array(wind_rose['speeds']))
             # get wind speed distribution data in appropriate form for further
             # processing
-            speed_weights = np.array(wind_rose['speed_cpmf'])
-            speed_probs = speed_weights / speed_weights.sum(axis=1)
+            speed_weights = xr.DataArray(
+                wind_rose['speed_cpmf'],
+                coords=[('direction', dirs), ('wind_speed', speeds)]
+            )
+            speed_probs = speed_weights / speed_weights.sum(dim='wind_speed')
             wc = (speeds >= cut_in) & (speeds <= cut_out)  # within cut
             speeds = speeds[wc]
-            speed_probs = speed_probs[:, wc]
+            speed_probs = speed_probs.sel(wind_speed=wc).values
         else:
             raise ValueError(
                 "A conditional wind speed probability distribution "
@@ -202,8 +205,8 @@ class Owflop():
                 np.concatenate((dir_weights, dir_weights[:1])),
                 coords=[('direction', dirs_cyc)]
             )
-            speed_weights_cyc = xr.DataArray(
-                np.concatenate((speed_weights, speed_weights[:1])),
+            speed_probs_cyc = xr.DataArray(
+                np.concatenate((speed_probs, speed_probs[:1])),
                 coords=[('direction', dirs_cyc), ('wind_speed', speeds)]
             )
             dirs_cyc = xr.DataArray(
@@ -220,20 +223,19 @@ class Owflop():
             # careful handling of the cyclical nature of directions)
             dir_weights = dir_weights_cyc.interp(direction=dirs_interp,
                                                  method='linear')
-            speed_weights = speed_weights_cyc.interp(direction=dirs_interp,
-                                                     method='linear')
+            speed_probs = speed_probs_cyc.interp(direction=dirs_interp,
+                                                 method='linear')
         else:
             dir_weights = xr.DataArray(dir_weights,
                                        coords=[('direction', dirs)])
-            speed_weights = xr.DataArray(
-                speed_weights,
+            speed_probs = xr.DataArray(
+                speed_probs,
                 coords=[('direction', dirs), ('wind_speed', speeds)]
             )
 
         # Store pmfs; obtain them from the weight arrays by normalization
         self._ds['direction_pmf'] = dir_weights / dir_weights.sum()
-        self._ds['wind_speed_cpmf'] = (speed_weights /
-                                       speed_weights.sum(dim='wind_speed'))
+        self._ds['wind_speed_cpmf'] = speed_probs
 
         # Store downwind unit vectors
         # Convert inflow wind direction
@@ -271,49 +273,49 @@ class Owflop():
         self._ds['downstream'] = layout_geometry.generate_downstream(
                                                   self._ds['vector'], downwind)
 
-    def process_wake_model(model, combination_rule):
+    def process_wake_model(self, model, combination_rule):
         thrusts = self.thrust_curve(self._ds.coords['wind_speed'])
         # define wake model
-        if model is "BPA (IEA37)":
+        if model == "BPA (IEA37)":
             self.wake_model = create_wake.bpa_iea37(
                 thrusts,
                 self.rotor_radius,
                 self.turbulence_intensity,
                 self.site_radius
             )
-        elif model is "Jensen":
+        elif model == "Jensen":
             self.wake_model = create_wake.jensen(
                 thrusts,
                 self.rotor_radius,
                 self.hub_height,
-                self.surface_roughness
+                self.roughness_length
             )
-        elif model is "Jensen according to Frandsen":
+        elif model == "Jensen according to Frandsen":
             self.wake_model = create_wake.jensen_frandsen(
                 thrusts,
                 self.rotor_radius,
                 self.hub_height,
-                self.surface_roughness
+                self.roughness_length
             )
-        elif model is "Jensen with partial wake":
+        elif model == "Jensen with partial wake":
             self.wake_model = create_wake.jensen_averaged(
                 thrusts,
                 self.rotor_radius,
                 self.hub_height,
-                self.surface_roughness
+                self.roughness_length
             )
-        elif model is "Jensen according to Frandsen with partial wake":
+        elif model == "Jensen according to Frandsen with partial wake":
             self.wake_model = create_wake.jensen_frandsen_averaged(
                 thrusts,
                 self.rotor_radius,
                 self.hub_height,
-                self.surface_roughness
+                self.roughness_length
             )
         else:
             raise ValueError("Unkown wake model specified.")
         # define combination rule
-        if combination_rule is "RSS":
-            self.combination_rule = create_wake.deficit_rms_combination()
+        if combination_rule == "RSS":
+            self.combination_rule = create_wake.rss_combination()
         else:
             raise ValueError("Unknown wake combination rule specified.")
 

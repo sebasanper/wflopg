@@ -129,7 +129,7 @@ properties:
     enum:  # TODO: add more
       - "BPA (IEA37)"
       - "Jensen"
-      - "Jensen Jensen according to Frandsen"
+      - "Jensen according to Frandsen"
       - "Jensen with partial wake"
       - "Jensen according to Frandsen with partial wake"
   #~
