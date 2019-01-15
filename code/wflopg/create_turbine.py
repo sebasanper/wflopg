@@ -54,9 +54,10 @@ def _create_interpolator(coord_name, interpolation_data):
 def _common(speeds, cut_in, cut_out):
     if np.any(speeds < 0):
         raise ValueError("Wind speeds may not be negative.")
-    powers = np.zeros(speeds.shape)
+    output = xr.DataArray(np.zeros(speeds.shape),
+                          dims=['wind_speed'], coords={'wind_speed': speeds})
     wc = speeds > cut_in & speeds < cut_out  # within cut
-    return powers, wc
+    return output, wc
 
 
 def cubic_power_curve(rated_power, rated_speed, cut_in, cut_out):
@@ -70,8 +71,8 @@ def cubic_power_curve(rated_power, rated_speed, cut_in, cut_out):
         powers, wc = _common(speeds, cut_in, cut_out)
         br = speeds < rated_speed  # below rated
         powers[wc] = rated_power
-        powers[wc & br] = ((speeds[wc & br] - cut_in)
-                           / (rated_speed - cut_in)) ** 3
+        powers[wc & br] *= ((speeds[wc & br] - cut_in)
+                            / (rated_speed - cut_in)) ** 3
         return powers
 
     return power_curve
