@@ -1,8 +1,9 @@
 wflopg
 
-author: Erik Quaeghebeur
-affiliation: Wind Energy Section, Faculty of Aerospace Engineering, TU Delft, The Netherlands
-email: E.R.G.Quaeghebeur@tudelft.nl
+* author: Erik Quaeghebeur
+* affiliation: Wind Energy Section, Faculty of Aerospace Engineering, TU Delft,
+  The Netherlands
+* email: E.R.G.Quaeghebeur@tudelft.nl
 
 wflopg is code to do wind farm layout optimization using pseudo-gradients
 
