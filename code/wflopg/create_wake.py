@@ -2,6 +2,14 @@ import numpy as np
 import xarray as xr
 
 
+def _common(downstream, rotor_radius):
+    downstream /= rotor_radius # make adimensional
+    downwind = downstream.sel(dc_coord='d', drop=True)
+    crosswind = downstream.sel(dc_coord='c', drop=True)
+    is_downwind = downwind > 0
+    return downstream, downwind, crosswind, is_downwind
+
+
 def _half_lens_area(distance, own_radius, other_radius):
     """Return relative area of half-lens
 
@@ -52,22 +60,15 @@ def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
         downwind-crosswind coordinate pairs.
 
         """
-        downstream /= rotor_radius # make adimensional
-        downwind = downstream.sel(dc_coord='d') > 0
+        downstream, downwind, crosswind, is_downwind = _common(downstream,
+                                                               rotor_radius)
         sigma = xr.where(
-            downwind,
-            sigma_at_source + expansion_coeff * downstream.sel(dc_coord='d'),
-            np.nan
-        )
-        exponent = xr.where(
-            downwind,
-            -(downstream.sel(dc_coord='c') / sigma) ** 2 / 2,
-            np.inf
-        )
+            is_downwind, sigma_at_source + expansion_coeff * downwind, np.nan)
+        exponent = xr.where(is_downwind, -(crosswind / sigma) ** 2 / 2,np.inf)
         radical = xr.where(
-            downwind, 1 - thrust_curve / (2 * sigma ** 2), np.nan)
+            is_downwind, 1 - thrust_curve / (2 * sigma ** 2), np.nan)
         return xr.where(
-            downwind, (1. - np.sqrt(radical)) * np.exp(exponent), 0)
+            is_downwind, (1. - np.sqrt(radical)) * np.exp(exponent), 0)
 
     return wake_model
 
@@ -101,29 +102,21 @@ def _jensen_generic(thrust_curve, rotor_radius, hub_height, roughness_length,
         downwind-crosswind coordinate pairs.
 
         """
-        downstream /= rotor_radius # make adimensional
-        downwind = downstream.sel(dc_coord='d') > 0
+        downstream, downwind, crosswind, is_downwind = _common(downstream,
+                                                               rotor_radius)
         wake_radius = xr.where(
-            downwind,
-            (1 + expansion_coeff * downstream.sel(dc_coord='d')
-                                                         / stream_tube_radius),
+            is_downwind,
+            1 + expansion_coeff * downwind / stream_tube_radius,
             np.nan)
-        waked = xr.where(
-            downwind,
-            downstream.sel(dc_coord='c') < wake_radius,
-            False
-        )
+        waked = is_downwind & (crosswind < wake_radius)
         if averaging:
-            partially = xr.where(
-                waked, 1 + downstream.sel(dc_coord='c') < wake_radius, False)
+            partially = waked & (1 + crosswind < wake_radius)
             relative_area = xr.where(
                 waked,
                 xr.where(
                     partially,
-                    _half_lens_area(
-                        downstream.sel(dc_coord='c'), 1, wake_radius) +
-                    _half_lens_area(
-                        downstream.sel(dc_coord='c'), wake_radius, 1),
+                    _half_lens_area(crosswind, 1, wake_radius) +
+                    _half_lens_area(crosswind, wake_radius, 1),
                     1
                 ),
                 0
