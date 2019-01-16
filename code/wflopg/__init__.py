@@ -98,7 +98,7 @@ class Owflop():
         # define thrust curve
         if 'thrust_coefficient' in turbine:
             self.thrust_curve = create_turbine.constant_thrust_curve(
-                                self.cut_in, self.cut_out, turbine['thrust_coefficient'])
+                self.cut_in, self.cut_out, turbine['thrust_coefficient'])
         elif 'thrust_curve' in turbine:
             tc = np.array(turbine['thrust_curve'])
             self.thrust_curve = create_turbine.interpolated_thrust_curve(
