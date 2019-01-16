@@ -1,0 +1,18 @@
+uuid: 0ff85dd3-af19-48d5-8296-fbd5430df503
+name: IEA Wind Task 37 offshore reference optimization
+particulars:
+  - >-
+    We follow Sebastian Sanchez Perez-Moreno's as of yet unpublished report.
+
+site: "site-IEA37_reference.yaml"
+wind_resource: "wind_resource-IEA37_reference.yaml"
+wind_direction_subdivisions: 30  # results in 360 1° bins
+wind_speeds: [ 4.,  5.,  6.,  7.,  8.,  9., 10., 11., 12., 13., 14., # TODO
+              15., 16., 17., 18., 19., 20., 21., 22., 23., 24., 25.]
+turbine: "turbine-IEA37_reference.yaml"
+turbine_distance:  # TODO
+turbines:  # TODO
+layout: "layout-IEA37_reference.yaml"
+objective: "maximize expected power" # TODO
+wake_model: "Jensen with partial wake" # TODO
+wake_combination: "RSS"
