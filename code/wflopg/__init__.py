@@ -71,7 +71,7 @@ class Owflop():
                 initial_layout = yaml(typ='safe').load(f)['layout']
         else:
             initial_layout = [[0, 0]]
-        self.process_layout(initial_layout, self._ds['downwind'])
+        self.process_layout(initial_layout)
 
         # process information for string properties
         self.process_wake_model(problem['wake_model'],
@@ -249,7 +249,7 @@ class Owflop():
                   [np.cos(directions_rad), np.sin(directions_rad)], 'xy_coord'
         ).transpose()  # transpose to get direction as first dimension
 
-    def process_layout(self, initial_layout, downwind):
+    def process_layout(self, initial_layout):
         # turbines affected by the wake
         self._ds['layout'] = xr.DataArray(initial_layout,
                                           dims=['target', 'xy_coord'])
@@ -263,17 +263,7 @@ class Owflop():
         self._ds['context'] = xr.DataArray(initial_layout,
                                            dims=['source', 'xy_coord'])
         # geometric information (in a general sense)
-        # standard coordinates for vectors
-        # between all source and target turbines
-        self._ds['vector'] = layout_geometry.generate_vector(
-                                       self._ds['context'], self._ds['layout'])
-        # distances between source and target turbines
-        self._ds['distance'] = layout_geometry.generate_distance(
-                                                            self._ds['vector'])
-        # downwind/crosswind coordinates for vectors
-        # between all source and target turbines, for all directions
-        self._ds['downstream'] = layout_geometry.generate_downstream(
-                                                  self._ds['vector'], downwind)
+        self.calculate_geometry()
 
     def process_wake_model(self, model, combination_rule):
         thrusts = self.thrust_curve(self._ds.coords['wind_speed'])
@@ -319,6 +309,34 @@ class Owflop():
             self.combination_rule = create_wake.rss_combination()
         else:
             raise ValueError("Unknown wake combination rule specified.")
+
+    def calculate_geometry(self):
+        # standard coordinates for vectors
+        # between all source and target turbines
+        self._ds['vector'] = layout_geometry.generate_vector(
+                                       self._ds['context'], self._ds['layout'])
+        # distances between source and target turbines
+        self._ds['distance'] = layout_geometry.generate_distance(
+                                                            self._ds['vector'])
+        # downwind/crosswind coordinates for vectors
+        # between all source and target turbines, for all directions
+        self._ds['downstream'] = layout_geometry.generate_downstream(
+                                      self._ds['vector'], self._ds['downwind'])
+
+    def calculate_deficit(self):
+        self._ds['deficit'] = self.wake_model(self._ds['downstream']
+                                              * self.site_radius)
+        (self._ds['combined_deficit'],
+         self._ds['relative_deficit']) = self.combination_rule(
+                                                           self._ds['deficit'])
+
+    def calculate_power(self):
+        deficits = self._ds['combined_deficit']
+        speeds = deficits.coords['wind_speed']
+        self._ds['power'] = self.power_curve(
+            speeds * (1 - deficits)
+        ).transpose('direction', 'wind_speed', 'target')
+        # TODO: power relative to rated and wakeless
 
 # variables
 #

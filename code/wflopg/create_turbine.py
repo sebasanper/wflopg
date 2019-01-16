@@ -54,26 +54,28 @@ def _create_interpolator(coord_name, interpolation_data):
 def _common(speeds, cut_in, cut_out):
     if np.any(speeds < 0):
         raise ValueError("Wind speeds may not be negative.")
-    output = xr.DataArray(np.zeros(speeds.shape),
-                          dims=['wind_speed'], coords={'wind_speed': speeds})
-    wc = (speeds > cut_in) & (speeds < cut_out)  # within cut
-    return output, wc
+    return (speeds > cut_in) & (speeds < cut_out)  # within cut
 
 
 def cubic_power_curve(rated_power, rated_speed, cut_in, cut_out):
     """Return a cubic power curve function"""
     def power_curve(speeds):
-        """Return turbine output powers for the given (wind) speeds
+        """Return turbine power for the given (wind) speeds
 
-        speeds is assumed to be a numpy array.
+        speeds is assumed to be a xarray DataArray.
 
         """
-        powers, wc = _common(speeds, cut_in, cut_out)
+        wc = _common(speeds, cut_in, cut_out)  # within cut
         br = speeds < rated_speed  # below rated
-        powers[wc] = rated_power
-        powers[wc & br] *= ((speeds[wc & br] - cut_in)
-                            / (rated_speed - cut_in)) ** 3
-        return powers
+        return xr.where(
+            wc,
+            xr.where(
+                br,
+                ((speeds - cut_in) / (rated_speed - cut_in)) ** 3,
+                rated_power
+            ),
+            0
+        )
 
     return power_curve
 
@@ -92,17 +94,23 @@ def interpolated_power_curve(rated_power, rated_speed, cut_in, cut_out,
                                                rated_speed, rated_power)
     interpolation_data, cut_out = _check_end(interpolation_data,
                                              cut_out, rated_power)
-    interpolator = _create_interpolator('speeds', interpolation_data)
+    interpolator = _create_interpolator('wind_speed', interpolation_data)
 
     def power_curve(speeds):
-        """Return turbine output powers for the given (wind) speeds
+        """Return turbine power for the given (wind) speeds
 
-        speeds is assumed to be a numpy array.
+        speeds is assumed to be a xarray DataArray.
 
         """
-        powers, wc = _common(speeds, cut_in, cut_out)
-        powers[wc] = interpolator.interp(speeds=speeds[wc]).values
-        return powers
+        # only 1D-arrays can be interpolated
+        speeds_flat = speeds.values.flatten()
+        wc = _common(speeds_flat, cut_in, cut_out)  # within cut
+        return xr.DataArray(
+            xr.where(
+                wc, interpolator.interp(wind_speed=speeds_flat), 0
+            ).values.reshape(speeds.shape),
+            dims=speeds.dims, coords=speeds.coords
+        )
 
     return power_curve
 
@@ -110,14 +118,13 @@ def interpolated_power_curve(rated_power, rated_speed, cut_in, cut_out,
 def constant_thrust_curve(cut_in, cut_out, thrust_coefficient):
     """Return a constant thrust curve function"""
     def thrust_curve(speeds):
-        """Return turbine output thrust for the given (wind) speeds
+        """Return turbine thrust for the given (wind) speeds
 
-        speeds is assumed to be a numpy array.
+        speeds is assumed to be a xarray DataArray.
 
         """
-        thrusts, wc = _common(speeds, cut_in, cut_out)
-        thrusts[wc] = thrust_coefficient
-        return thrusts
+        wc = _common(speeds, cut_in, cut_out)  # within cut
+        return xr.where(wc, thrust_coefficient, 0)
 
     return thrust_curve
 
@@ -132,16 +139,22 @@ def interpolated_thrust_curve(cut_in, cut_out, interpolation_data):
     interpolation_data = interpolation_data[interpolation_data[:, 0].argsort()]
     interpolation_data, cut_in = _check_start(interpolation_data, cut_in, 0.)
     interpolation_data, cut_out = _check_end(interpolation_data, cut_out, 0.)
-    interpolator = _create_interpolator('speeds', interpolation_data)
+    interpolator = _create_interpolator('wind_speed', interpolation_data)
 
     def thrust_curve(speeds):
-        """Return turbine output thrust for the given (wind) speeds
+        """Return turbine thrust for the given (wind) speeds
 
-        speeds is assumed to be a numpy array.
+        speeds is assumed to be a xarray DataArray.
 
         """
-        thrusts, wc = _common(speeds, cut_in, cut_out)
-        thrusts[wc] = interpolator.interp(speeds=speeds[wc]).values
-        return thrusts
+        # only 1D-arrays can be interpolated
+        speeds_flat = speeds.values.flatten()
+        wc = _common(speeds_flat, cut_in, cut_out)  # within cut
+        return xr.DataArray(
+            xr.where(
+                wc, interpolator.interp(wind_speed=speeds_flat), 0
+            ).values.reshape(speeds.shape),
+            dims=speeds.dims, coords=speeds.coords
+        )
 
     return thrust_curve
