@@ -110,7 +110,7 @@ class Owflop():
 
     def process_site(self, site, rotor_radius):
         self.rotor_constraints = site['rotor_constraints']
-        self.site_radius = site['radius']
+        self.site_radius = site['radius'] * 1e3  # km to m
         # TODO: import site parcels and boundaries and together with the rotor
         #       radius create functions to visualize and check the boundary
         #       constraints
