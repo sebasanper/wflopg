@@ -33,7 +33,9 @@ def generate_downstream(vector, downwind):
 
     """
     crosswind = np.negative(downwind.roll(xy_coord=1), where=[True, False])
-    crosswind.coords['xy_coord'] = downwind.coords['xy_coord']  # workaround for bug in roll that also rolls coordinates; fixed in xarray 0.10.9
+    crosswind.coords['xy_coord'] = downwind.coords['xy_coord']
+        # workaround for bug in roll that also rolls coordinates;
+        # fixed in xarray 0.10.9
     return xr.concat(
         [vector.dot(downwind), vector.dot(crosswind)], 'dc_coord'
     ).transpose('direction', 'source', 'target', 'dc_coord')
