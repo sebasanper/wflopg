@@ -1,5 +1,5 @@
-uuid: 844e24f4-c8bd-4196-80a7-f524b9ae8ca3
-name: Horns Rev optimization following Feng & Shen (2015)
+uuid: a8045b96-d1d1-430f-a71b-57b133aa4e43
+name: Square site optimization following Mosetti et al (1994)
 particulars:
   - >-
     We follow
