@@ -174,9 +174,11 @@ class Owflop():
             # Weibull CDF: 1 - exp(-(x/scale)**shape), so the probability for
             # an interval is
             # exp(-(xstart/scale)**shape) - exp(-(xend/scale)**shape)
-            speed_bins = speed_bins / cweibull.sel(param='scale')
-            terms = np.exp(- speed_bins ** cweibull.sel(param='shape'))
-            speed_cpmf = terms.sel(bound='start') - terms.sel(bound='end')
+            speed_bins = speed_bins / cweibull.sel(param='scale', drop=True)
+            terms = np.exp(- speed_bins ** cweibull.sel(param='shape',
+                                                        drop=True))
+            speed_cpmf = (terms.sel(bound='start', drop=True) -
+                          terms.sel(bound='end', drop=True))
             speed_probs = speed_cpmf.values.T
         elif 'speed_cpmf' in wind_rose and 'speeds' in wind_rose:
             # take wind shear into account
