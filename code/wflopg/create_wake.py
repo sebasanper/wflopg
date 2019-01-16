@@ -16,7 +16,7 @@ def _half_lens_area(distance, own_radius, other_radius):
     https://christianhill.co.uk/blog/overlapping-circles/
 
     This function is used to calculate relative areas for analytical partial
-    wake calculations.
+    wake calculations. It is relevant for models with top-hat wake profiles.
 
     """
     angle = np.arccos((distance ** 2 + own_radius ** 2 - other_radius ** 2)
@@ -25,15 +25,21 @@ def _half_lens_area(distance, own_radius, other_radius):
 
 
 def rss_combination():
-    """Return the root-mean-square wake deficit combination rule"""
+    """Return the root-sum-square wake deficit combination rule"""
     def combination_rule(deficit):
-        """Return combined wake deficits
+        """Return combined and relative wake deficits
 
         deficit must be an xarray DataArray of individual deficits with
         'source' as one dimension.
 
         """
-        return np.sqrt(np.square(deficit).sum(dim='source'))
+        squared = np.square(deficit)
+        squared_combined = squared.sum(dim='source')
+        relative = xr.where(
+            squared_combined > 0, squared / squared_combined, 0)
+        squared_combined_saturated = xr.where(  # RSS does not guarantee <= 1
+            squared_combined <= 1, squared_combined, 1)
+        return np.sqrt(squared_combined_saturated), relative
 
     return combination_rule
 
