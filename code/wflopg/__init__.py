@@ -282,8 +282,7 @@ class Owflop():
             self.wake_model = create_wake.bpa_iea37(
                 thrusts,
                 self.rotor_radius,
-                self.turbulence_intensity,
-                self.site_radius
+                self.turbulence_intensity
             )
         elif model == "Jensen":
             self.wake_model = create_wake.jensen(

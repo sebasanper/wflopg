@@ -9,7 +9,10 @@ def logarithmic_wind_shear(reference_height, roughness_length):
         heights and speeds are assumed to be numpy arrays of compatible size.
 
         """
-        return (speeds * np.log(heights / roughness_length)
-                       / np.log(reference_height / roughness_length))
+        if np.all(heights == reference_height):
+            return speeds
+        else:
+            return (speeds * np.log(heights / roughness_length)
+                           / np.log(reference_height / roughness_length))
 
     return wind_shear
