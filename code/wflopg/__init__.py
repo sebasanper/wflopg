@@ -40,6 +40,9 @@ class Owflop():
         src/master/schemata/wflo_problem-schema.yaml#.
 
         """
+        # TODO: loading the problem again in the same Spyder session leads to a
+        #       different farm_wake_loss_factor! This must be investigated and
+        #       fixed to avoid nasty surprises…
         with open(filename) as f:
             problem = yaml(typ='safe').load(f)
         # extract required parameters directly contained in problem document
@@ -76,6 +79,9 @@ class Owflop():
         # process information for string properties
         self.process_wake_model(problem['wake_model'],
                                 problem['wake_combination'])
+
+        # calculate power information for which no wake calculations are needed
+        self.calculate_wakeless_power()
 
 
     def process_turbine(self, turbine):
@@ -330,21 +336,35 @@ class Owflop():
          self._ds['relative_deficit']) = self.combination_rule(
                                                            self._ds['deficit'])
 
+    def calculate_wakeless_power(self):
+        self._ds['wakeless_power'] = self.power_curve(
+            self._ds.coords['wind_speed'])
+        self._ds['expected_wakeless_power'] = (
+            self._ds['wakeless_power'] * self._ds['wind_speed_cpmf']
+        ).sum(dim='wind_speed').dot(self._ds['direction_pmf'])
+        self.farm_wakeless_capacity_factor = float(
+            self._ds['expected_wakeless_power'] / self.rated_power)
+
     def calculate_power(self):
-        deficits = self._ds['combined_deficit']
-        speeds = deficits.coords['wind_speed']
         self._ds['power'] = self.power_curve(
-            speeds * (1 - deficits)
+            self._ds.coords['wind_speed'] * (1 - self._ds['combined_deficit'])
         ).transpose('direction', 'wind_speed', 'target')
-        # TODO: power relative to rated and wakeless
+        self._ds['expected_power'] = (
+            self._ds['power'] * self._ds['wind_speed_cpmf']
+        ).sum(dim='wind_speed').dot(self._ds['direction_pmf'])
+        self._ds['wake_loss_factor'] = (
+            1 - self._ds['expected_power']
+                / self._ds['expected_wakeless_power'])
+        self.farm_capacity_factor = float(
+            self._ds['expected_power'].sum(dim='target')
+            / (self.rated_power * len(self._ds.coords['target']))
+        )
+        self.farm_wake_loss_factor = (
+            1 - self.farm_capacity_factor / self.farm_wakeless_capacity_factor)
+
 
 # variables
 #
-#     'deficit': ['source', 'target', 'direction', 'wind_speed'],  # speed deficit
-#     'combined_deficit': ['target', 'direction', 'wind_speed'],
-#     'relative_deficit': ['source', 'target', 'direction', 'wind_speed'],
-#     'power': ['target', 'direction', 'wind_speed'],
 #     'loss': ['target', 'direction', 'wind_speed'],
 #     'blamed_loss': ['source', 'target', 'direction', 'wind_speed'],
 #     'blamed_loss_vector': ['source', 'target', 'direction', 'wind_speed', 'xy_coord'],
-#     'expected_power': ['target']
