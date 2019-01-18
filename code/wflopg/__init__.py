@@ -40,9 +40,6 @@ class Owflop():
         src/master/schemata/wflo_problem-schema.yaml#.
 
         """
-        # TODO: loading the problem again in the same Spyder session leads to a
-        #       different farm_wake_loss_factor! This must be investigated and
-        #       fixed to avoid nasty surprises…
         with open(filename) as f:
             problem = yaml(typ='safe').load(f)
         # extract required parameters directly contained in problem document
@@ -245,16 +242,6 @@ class Owflop():
         self._ds['direction_pmf'] = dir_weights / dir_weights.sum()
         self._ds['wind_speed_cpmf'] = speed_probs
 
-        # Store downwind unit vectors
-        # Convert inflow wind direction
-        # - from windrose (N=0, CW) to standard (E=0, CCW): 90 - wind_dir
-        # - from upwind to downwind: +180
-        # - from degrees to radians
-        directions_rad = np.radians(90 - self._ds.coords['direction'] + 180)
-        self._ds['downwind'] = xr.concat(
-                  [np.cos(directions_rad), np.sin(directions_rad)], 'xy_coord'
-        ).transpose()  # transpose to get direction as first dimension
-
     def process_layout(self, initial_layout):
         # turbines affected by the wake
         self._ds['layout'] = xr.DataArray(initial_layout,
@@ -317,6 +304,12 @@ class Owflop():
             raise ValueError("Unknown wake combination rule specified.")
 
     def calculate_geometry(self):
+        # Store downwind and crosswind unit vectors
+        self._ds['downwind'] = layout_geometry.generate_downwind(
+            self._ds.coords['direction'])
+        self._ds['crosswind'] = layout_geometry.generate_crosswind(
+            self._ds['downwind'])
+
         # standard coordinates for vectors
         # between all source and target turbines
         self._ds['vector'] = layout_geometry.generate_vector(
@@ -327,7 +320,7 @@ class Owflop():
         # downwind/crosswind coordinates for vectors
         # between all source and target turbines, for all directions
         self._ds['downstream'] = layout_geometry.generate_downstream(
-                                      self._ds['vector'], self._ds['downwind'])
+            self._ds['vector'], self._ds['downwind'], self._ds['crosswind'])
 
     def calculate_deficit(self):
         self._ds['deficit'] = self.wake_model(self._ds['downstream']
