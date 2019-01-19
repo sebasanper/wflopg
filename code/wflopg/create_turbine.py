@@ -65,14 +65,12 @@ def cubic_power_curve(rated_power, rated_speed, cut_in, cut_out):
         speeds is assumed to be a xarray DataArray.
 
         """
-        wc = _common(speeds, cut_in, cut_out)  # within cut
-        br = speeds < rated_speed  # below rated
         return xr.where(
-            wc,
-            xr.where(
-                br,
+            _common(speeds, cut_in, cut_out),  # within cut
+            rated_power * xr.where(
+                speeds < rated_speed,  # below rated
                 ((speeds - cut_in) / (rated_speed - cut_in)) ** 3,
-                rated_power
+                1
             ),
             0
         )
