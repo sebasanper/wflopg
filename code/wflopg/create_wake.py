@@ -7,7 +7,7 @@ def _common(downstream, rotor_radius):
     downwind = downstream.sel(dc_coord='d', drop=True)
     crosswind = np.abs(downstream.sel(dc_coord='c', drop=True))
     is_downwind = downwind > 0
-    return downstream, downwind, crosswind, is_downwind
+    return downwind, crosswind, is_downwind
 
 
 def _half_lens_area(distance, own_radius, other_radius, mask):
@@ -75,11 +75,10 @@ def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
         downwind-crosswind coordinate pairs.
 
         """
-        downstream, downwind, crosswind, is_downwind = _common(downstream,
-                                                               rotor_radius)
+        downwind, crosswind, is_downwind = _common(downstream, rotor_radius)
         sigma = xr.where(
             is_downwind, sigma_at_source + expansion_coeff * downwind, np.nan)
-        exponent = xr.where(is_downwind, -(crosswind / sigma) ** 2 / 2,np.inf)
+        exponent = xr.where(is_downwind, -(crosswind / sigma) ** 2 / 2, np.nan)
         radical = xr.where(
             is_downwind, 1 - thrust_curve / (2 * sigma ** 2), np.nan)
         return xr.where(
@@ -118,8 +117,7 @@ def _jensen_generic(thrust_curve, rotor_radius, hub_height, roughness_length,
         downwind-crosswind coordinate pairs.
 
         """
-        downstream, downwind, crosswind, is_downwind = _common(downstream,
-                                                               rotor_radius)
+        downwind, crosswind, is_downwind = _common(downstream, rotor_radius)
         wake_radius = xr.where(
             is_downwind,
             1 + expansion_coeff * downwind / stream_tube_radius,
