@@ -335,8 +335,6 @@ class Owflop():
         self._ds['expected_wakeless_power'] = (
             self._ds['wakeless_power'] * self._ds['wind_speed_cpmf']
         ).sum(dim='wind_speed').dot(self._ds['direction_pmf'])
-        self.farm_wakeless_capacity_factor = float(
-            self._ds['expected_wakeless_power'] / self.rated_power)
 
     def calculate_power(self):
         self._ds['power'] = self.power_curve(
@@ -348,12 +346,7 @@ class Owflop():
         self._ds['wake_loss_factor'] = (
             1 - self._ds['expected_power']
                 / self._ds['expected_wakeless_power'])
-        self.farm_capacity_factor = float(
-            self._ds['expected_power'].sum(dim='target')
-            / (self.rated_power * len(self._ds.coords['target']))
-        )
-        self.farm_wake_loss_factor = (
-            1 - self.farm_capacity_factor / self.farm_wakeless_capacity_factor)
+        self.farm_wake_loss_factor = float(self._ds['wake_loss_factor'].mean())
 
 
 # variables
