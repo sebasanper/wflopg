@@ -2,10 +2,9 @@ import numpy as np
 import xarray as xr
 
 
-def _common(downstream, rotor_radius):
-    downstream /= rotor_radius # make adimensional
-    downwind = downstream.sel(dc_coord='d', drop=True)
-    crosswind = np.abs(downstream.sel(dc_coord='c', drop=True))
+def _common(dc_vector_adim):
+    downwind = dc_vector_adim.sel(dc_coord='d', drop=True)
+    crosswind = np.abs(dc_vector_adim.sel(dc_coord='c', drop=True))
     is_downwind = downwind > 0
     return downwind, crosswind, is_downwind
 
@@ -68,14 +67,14 @@ def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
     expansion_coeff = 0.3837 * turbulence_intensity + 0.003678
     sigma_at_source = 1 / np.sqrt(2)
 
-    def wake_model(downstream):
+    def wake_model(dc_vector):
         """Return wind speed deficit due to wake
 
         The argument must be an xarray DataArray of dimensional
         downwind-crosswind coordinate pairs.
 
         """
-        downwind, crosswind, is_downwind = _common(downstream, rotor_radius)
+        downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
         sigma = xr.where(
             is_downwind, sigma_at_source + expansion_coeff * downwind, np.nan)
         exponent = xr.where(is_downwind, -(crosswind / sigma) ** 2 / 2, np.nan)
@@ -110,14 +109,14 @@ def _jensen_generic(thrust_curve, rotor_radius, hub_height, roughness_length,
     else:
         stream_tube_radius = 1
 
-    def wake_model(downstream):
+    def wake_model(dc_vector):
         """Return wind speed deficit due to wake
 
         The argument must be an xarray DataArray of dimensional
         downwind-crosswind coordinate pairs.
 
         """
-        downwind, crosswind, is_downwind = _common(downstream, rotor_radius)
+        downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
         wake_radius = xr.where(
             is_downwind,
             1 + expansion_coeff * downwind / stream_tube_radius,

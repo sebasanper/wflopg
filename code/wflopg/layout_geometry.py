@@ -56,7 +56,7 @@ def generate_distance(vector):
     return np.sqrt(np.square(vector).sum(dim='xy_coord'))
 
 
-def generate_downstream(vector, downwind, crosswind):
+def generate_dc_vector(vector, downwind, crosswind):
     """Return inter-turbine vectors in downwind-crosswind coordinates
 
     The first argument must be an xarray DataArray that has an xy_coord
