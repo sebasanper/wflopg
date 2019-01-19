@@ -80,7 +80,6 @@ class Owflop():
         # calculate power information for which no wake calculations are needed
         self.calculate_wakeless_power()
 
-
     def process_turbine(self, turbine):
         self.rotor_radius = turbine['rotor_radius']
         self.hub_height = turbine['hub_height']
@@ -134,23 +133,16 @@ class Owflop():
 
         wind_rose = wind_resource['wind_rose']
 
-        # Create wind direction probability mass function
-        dirs = np.array(wind_rose['directions'])
-        dir_weights = np.array(wind_rose['direction_pmf'])
-        # we do not assume the wind directions are sorted in the data file and
-        # therefore sort them here
-        dir_sort_index = dirs.argsort()
-        dirs = dirs[dir_sort_index]
-        dir_weights = dir_weights[dir_sort_index]
+        # Sort wind direction and mass function
+        dirs, dir_weights = create_wind.sort_directions(
+            wind_rose['directions'], wind_rose['direction_pmf'])
 
         # Create the conditional wind speed probability mass function
         #
         # NOTE: Of the conditional wind speed probability mass function, only
         #       the values within the [cut_in, cut_out] interval are stored in
         #       self._ds['wind_speed_cpmf'] (defined below), as the others give
-        #       no contribution to the power production. (This part may need to
-        #       be revised if, e.g., we want to take into account loads, where
-        #       wind speeds above cut_out are certainly relevant.)
+        #       no contribution to the power production.
         #
         if 'speed_cweibull' in wind_rose:
             if not speeds:
@@ -160,43 +152,14 @@ class Owflop():
                     "distributions")
             # take wind shear into account
             speeds = self.wind_shear(self.hub_height, np.array(speeds))
-            # prepare the data structures used to discretize the Weibull
-            # distribution
-            speeds = speeds[(speeds >= cut_in) & (speeds <= cut_out)]
-            speed_borders = np.concatenate(([cut_in],
-                                            (speeds[:-1] + speeds[1:]) / 2,
-                                            [cut_out]))
-            speed_bins = xr.DataArray(
-                np.vstack((speed_borders[:-1], speed_borders[1:])).T,
-                coords=[('wind_speed', speeds), ('bound', ['start', 'end'])]
-            )
-            cweibull = xr.DataArray(
-                wind_rose['speed_cweibull'],
-                coords=[('direction', dirs), ('param', ['scale', 'shape'])]
-            )
-            # Weibull CDF: 1 - exp(-(x/scale)**shape), so the probability for
-            # an interval is
-            # exp(-(xstart/scale)**shape) - exp(-(xend/scale)**shape)
-            speed_bins = speed_bins / cweibull.sel(param='scale', drop=True)
-            terms = np.exp(- speed_bins ** cweibull.sel(param='shape',
-                                                        drop=True))
-            speed_cpmf = (terms.sel(bound='start', drop=True) -
-                          terms.sel(bound='end', drop=True))
-            speed_probs = speed_cpmf.values.T
+            speeds, speed_probs = create_wind.discretize_weibull(
+                wind_rose['speed_cweibull'], speeds, cut_in, cut_out)
         elif 'speed_cpmf' in wind_rose and 'speeds' in wind_rose:
             # take wind shear into account
             speeds = self.wind_shear(self.hub_height,
                                      np.array(wind_rose['speeds']))
-            # get wind speed distribution data in appropriate form for further
-            # processing
-            speed_weights = xr.DataArray(
-                wind_rose['speed_cpmf'],
-                coords=[('direction', dirs), ('wind_speed', speeds)]
-            )
-            speed_probs = speed_weights / speed_weights.sum(dim='wind_speed')
-            wc = (speeds >= cut_in) & (speeds <= cut_out)  # within cut
-            speeds = speeds[wc]
-            speed_probs = speed_probs.sel(wind_speed=wc).values
+            speeds, speed_probs = create_wind.conformize_cpmf(
+                wind_rose['speed_cpmf'], speeds, cut_in, cut_out)
         else:
             raise ValueError(
                 "A conditional wind speed probability distribution "
@@ -205,33 +168,8 @@ class Owflop():
 
         # Subdivide wind direction and speed pmfs if needed
         if dir_subs:
-            dirs_cyc = np.concatenate((dirs, 360 + dirs[:1]))
-            dir_weights_cyc = xr.DataArray(
-                np.concatenate((dir_weights, dir_weights[:1])),
-                coords=[('direction', dirs_cyc)]
-            )
-            speed_probs_cyc = xr.DataArray(
-                np.concatenate((speed_probs, speed_probs[:1])),
-                coords=[('direction', dirs_cyc), ('wind_speed', speeds)]
-            )
-            dirs_cyc = xr.DataArray(
-                dirs_cyc,
-                coords=[('rel', np.linspace(0., 1., len(dirs) + 1))]
-            )
-            dirs_interp = dirs_cyc.interp(
-                rel=np.linspace(0., 1., dir_subs * len(dirs) + 1)
-            ).values
-            dirs_interp = dirs_interp[:-1]  # drop the last, cyclical value
-
-            # the interpolation method can be 'nearest' or 'linear'
-            # (other options—such as 'cubic'—exist, but require even more
-            # careful handling of the cyclical nature of directions)
-            # the differences observed between the methods is small in our
-            # tests
-            dir_weights = dir_weights_cyc.interp(direction=dirs_interp,
-                                                 method='linear')
-            speed_probs = speed_probs_cyc.interp(direction=dirs_interp,
-                                                 method='linear')
+            dir_weights, speed_probs = create_wind.subdivide(
+                dirs, speeds, dir_weights, speed_probs, dir_subs)
         else:
             dir_weights = xr.DataArray(dir_weights,
                                        coords=[('direction', dirs)])
