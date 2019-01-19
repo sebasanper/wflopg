@@ -323,9 +323,3 @@ class Owflop():
             (self._ds['relative_wake_loss_vector'].dot(self._ds['crosswind'])
              * self._ds['crosswind']).sum(dim='source')
         )
-
-# variables
-#
-#     'loss': ['target', 'direction', 'wind_speed'],
-#     'blamed_loss': ['source', 'target', 'direction', 'wind_speed'],
-#     'blamed_loss_vector': ['source', 'target', 'direction', 'wind_speed', 'xy_coord'],
