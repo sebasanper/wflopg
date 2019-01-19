@@ -257,6 +257,12 @@ class Owflop():
         # distances between source and target turbines
         self._ds['distance'] = layout_geometry.generate_distance(
                                                             self._ds['vector'])
+        # standard coordinates for unit vectors
+        # between all source and target turbines
+        self._ds['unit_vector'] = xr.where(
+              self._ds['distance'] > 0,
+              self._ds['vector'] / self._ds['distance'],
+              [0, 0])
         # downwind/crosswind coordinates for vectors
         # between all source and target turbines, for all directions
         self._ds['downstream'] = layout_geometry.generate_downstream(
@@ -269,25 +275,52 @@ class Owflop():
          self._ds['relative_deficit']) = self.combination_rule(
                                                            self._ds['deficit'])
 
+    def expectation(self, array):
+        return (
+            array * self._ds['wind_speed_cpmf']
+        ).sum(dim='wind_speed').dot(self._ds['direction_pmf'])
+
     def calculate_wakeless_power(self):
         self._ds['wakeless_power'] = self.power_curve(
             self._ds.coords['wind_speed'])
-        self._ds['expected_wakeless_power'] = (
-            self._ds['wakeless_power'] * self._ds['wind_speed_cpmf']
-        ).sum(dim='wind_speed').dot(self._ds['direction_pmf'])
+        self._ds['expected_wakeless_power'] = self.expectation(
+            self._ds['wakeless_power'])
 
     def calculate_power(self):
-        self._ds['power'] = self.power_curve(
+        # raw values
+        power = self.power_curve(
             self._ds.coords['wind_speed'] * (1 - self._ds['combined_deficit'])
         ).transpose('direction', 'wind_speed', 'target')
-        self._ds['expected_power'] = (
-            self._ds['power'] * self._ds['wind_speed_cpmf']
-        ).sum(dim='wind_speed').dot(self._ds['direction_pmf'])
+        wake_loss = self._ds['wakeless_power'] - power
         self._ds['wake_loss_factor'] = (
-            1 - self._ds['expected_power']
-                / self._ds['expected_wakeless_power'])
-        self.farm_wake_loss_factor = float(self._ds['wake_loss_factor'].mean())
+            wake_loss / self._ds['expected_wakeless_power'])
+        # expectations
+        self._ds['expected_wake_loss_factor'] = self.expectation(
+            self._ds['wake_loss_factor'])
+        # turbine average
+        self.average_expected_wake_loss_factor = float(
+            self._ds['expected_wake_loss_factor'].mean())
 
+    def calculate_relative_wake_loss_vector(self):
+        self._ds['relative_wake_loss_vector'] = (
+            self._ds['relative_deficit']
+            * self._ds['wake_loss_factor']
+            * self._ds['unit_vector']
+        ).transpose('direction', 'wind_speed', 'source', 'target', 'xy_coord')
+
+    def calculate_push_down_vector(self):
+        self._ds['push_down_vector'] = self.expectation(
+            self._ds['relative_wake_loss_vector'].sum(dim='source'))
+
+    def calculate_push_back_vector(self):
+        self._ds['push_back_vector'] = self.expectation(
+            self._ds['relative_wake_loss_vector'].sum(dim='target'))
+
+    def calculate_push_cross_vector(self):
+        self._ds['push_cross_vector'] = self.expectation(
+            (self._ds['relative_wake_loss_vector'].dot(self._ds['crosswind'])
+             * self._ds['crosswind']).sum(dim='source')
+        )
 
 # variables
 #
