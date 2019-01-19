@@ -66,19 +66,27 @@ class Owflop():
                 problem.get('wind_speeds', None),
                 self.cut_in, self.cut_out
             )
+
+        # calculate power information for which no wake calculations are needed
+        self.calculate_wakeless_power()
+
+        # process information for string properties
+        self.process_wake_model(problem['wake_model'],
+                                problem['wake_combination'])
+
+        # Store downwind and crosswind unit vectors
+        self._ds['downwind'] = layout_geometry.generate_downwind(
+            self._ds.coords['direction'])
+        self._ds['crosswind'] = layout_geometry.generate_crosswind(
+            self._ds['downwind'])
+
+        # deal with initial layout
         if 'layout' in problem:
             with open(problem['layout']) as f:
                 initial_layout = yaml(typ='safe').load(f)['layout']
         else:
             initial_layout = [[0, 0]]
         self.process_layout(initial_layout)
-
-        # process information for string properties
-        self.process_wake_model(problem['wake_model'],
-                                problem['wake_combination'])
-
-        # calculate power information for which no wake calculations are needed
-        self.calculate_wakeless_power()
 
     def process_turbine(self, turbine):
         self.rotor_radius = turbine['rotor_radius']
@@ -244,12 +252,6 @@ class Owflop():
             raise ValueError("Unknown wake combination rule specified.")
 
     def calculate_geometry(self):
-        # Store downwind and crosswind unit vectors
-        self._ds['downwind'] = layout_geometry.generate_downwind(
-            self._ds.coords['direction'])
-        self._ds['crosswind'] = layout_geometry.generate_crosswind(
-            self._ds['downwind'])
-
         # standard coordinates for vectors
         # between all source and target turbines
         self._ds['vector'] = layout_geometry.generate_vector(
