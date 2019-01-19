@@ -45,9 +45,6 @@ class Owflop():
         # extract required parameters directly contained in problem document
         self.problem_uuid = problem['uuid']
         self.turbines = problem['turbines']
-        # TODO: the following four parameters should be used to create the
-        #       functions that calculate the powers and deficits
-        self.objective = problem['objective']
         self.turbine_distance = problem.get('turbine_distance', 0)
 
         # extract and process information and data from linked documents
@@ -73,6 +70,7 @@ class Owflop():
         # process information for string properties
         self.process_wake_model(problem['wake_model'],
                                 problem['wake_combination'])
+        self.process_objective(problem['objective'])
 
         # Store downwind and crosswind unit vectors
         self._ds['downwind'] = layout_geometry.generate_downwind(
@@ -250,6 +248,21 @@ class Owflop():
             self.combination_rule = create_wake.rss_combination()
         else:
             raise ValueError("Unknown wake combination rule specified.")
+
+    def process_objective(self, objective):
+        # we always minimize!
+        if objective == "maximize expected power":
+            # we minimize the average expected wake loss factor
+            self.objective = lambda: self.average_expected_wake_loss_factor
+        elif objective == "minimize cost of energy (Mosetti)":
+            # we minimize a proxy for the marginal expected cost of energy per
+            # turbine
+            self.objective = lambda: (
+                np.exp(-0.00174 * len(self._ds.coords['target']) ** 2)
+                / (1 - self.average_expected_wake_loss_factor)
+            )
+        else:
+            raise ValueError("Unknown objective specified.")
 
     def calculate_geometry(self):
         # standard coordinates for vectors
