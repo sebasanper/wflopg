@@ -4,8 +4,9 @@ from ruamel.yaml import YAML as yaml
 
 from wflopg import create_turbine
 from wflopg import create_wind
-from wflopg import layout_geometry
 from wflopg import create_wake
+from wflopg import layout_geometry
+from wflopg import create_constraint
 
 
 class Owflop():
@@ -45,16 +46,12 @@ class Owflop():
         # extract required parameters directly contained in problem document
         self.problem_uuid = problem['uuid']
         self.turbines = problem['turbines']
-        self.turbine_distance = problem.get('turbine_distance', 0)
 
         # extract and process information and data from linked documents
         with open(problem['turbine']) as f:
             self.process_turbine(yaml(typ='safe').load(f))
         with open(problem['site']) as f:
-            self.process_site(
-                yaml(typ='safe').load(f),
-                self.rotor_radius
-            )
+            self.process_site(yaml(typ='safe').load(f))
         with open(problem['wind_resource']) as f:
             self.process_wind_resource(
                 yaml(typ='safe').load(f),
@@ -77,6 +74,12 @@ class Owflop():
             self._ds.coords['direction'])
         self._ds['crosswind'] = layout_geometry.generate_crosswind(
             self._ds['downwind'])
+
+        # create function to generate turbine constraint violation fixup steps
+        self.proximity_repulsion = create_constraint.distance(
+            problem.get('turbine_distance', 0),
+            self.rotor_radius, self.site_radius
+        )
 
         # deal with initial layout
         if 'layout' in problem:
@@ -116,7 +119,7 @@ class Owflop():
                              "a 'thrust_curve' or "
                              "a constant 'thrust_coefficient'")
 
-    def process_site(self, site, rotor_radius):
+    def process_site(self, site):
         self.rotor_constraints = site['rotor_constraints']
         self.site_radius = site['radius'] * 1e3  # km to m
         # TODO: import site parcels and boundaries and together with the rotor
