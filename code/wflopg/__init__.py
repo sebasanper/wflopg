@@ -226,6 +226,8 @@ class Owflop():
             # the interpolation method can be 'nearest' or 'linear'
             # (other options—such as 'cubic'—exist, but require even more
             # careful handling of the cyclical nature of directions)
+            # the differences observed between the methods is small in our
+            # tests
             dir_weights = dir_weights_cyc.interp(direction=dirs_interp,
                                                  method='linear')
             speed_probs = speed_probs_cyc.interp(direction=dirs_interp,
