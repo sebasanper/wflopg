@@ -18,7 +18,9 @@ def distance(turbine_distance, rotor_radius, site_radius):
       respectively.
 
       """
-      violation = distance < threshold & # TODO: remove diagonal elements
+      violation = (0 < distance) & (distance < threshold)
+          # NOTE: 0 excluded for distance-to-self,
+          #       so try to avoid turbines at the same location
       if np.any(violation):
           repulsion_step = xr.where(
               violation,
