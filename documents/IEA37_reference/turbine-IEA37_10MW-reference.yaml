@@ -1,6 +1,6 @@
 uuid: f7161145-186f-449f-a4eb-4d84fb0c5fc3
 name: IEA Wind Task 37 10 MW offshore reference turbine
-rotor_radius: 95
+rotor_radius: 95.4
 hub_height:  119
 rated_power: 10 # power at rated wind speed, not maximal
 rated_wind_speed: 11.4

@@ -17,6 +17,6 @@ turbine_distance: 3
 turbines: 74
 layout: "layout-IEA37_reference.yaml"
 objective: "maximize expected power"
-wake_model: "Jensen"
+wake_model: "Jensen with partial wake"
 expansion_coefficient: 0.04
 wake_combination: "RSS"
