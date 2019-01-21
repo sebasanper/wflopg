@@ -65,9 +65,12 @@ class Owflop():
         # calculate power information for which no wake calculations are needed
         self.calculate_wakeless_power()
 
-        # process information for string properties
-        self.process_wake_model(problem['wake_model'],
-                                problem['wake_combination'])
+        # process information for wake model-related properties
+        self.process_wake_model(
+            problem['wake_model'],
+            problem.get('expansion_coefficient', None),
+            problem['wake_combination']
+        )
         self.process_objective(problem['objective'])
 
         # Store downwind and crosswind unit vectors
@@ -213,8 +216,14 @@ class Owflop():
         # geometric information (in a general sense)
         self.calculate_geometry()
 
-    def process_wake_model(self, model, combination_rule):
+    def process_wake_model(self,
+                           model, expansion_coefficient, combination_rule):
         thrusts = self.thrust_curve(self._ds.coords['wind_speed'])
+        # preliminaries for wake model definition
+        if model.startswith("Jensen"):
+            if not expansion_coefficient:
+                expansion_coefficient = (
+                    0.5 / np.log(self.hub_height / self.roughness_length))
         # define wake model
         if model == "BPA (IEA37)":
             self.wake_model = create_wake.bpa_iea37(
@@ -224,32 +233,16 @@ class Owflop():
             )
         elif model == "Jensen":
             self.wake_model = create_wake.jensen(
-                thrusts,
-                self.rotor_radius,
-                self.hub_height,
-                self.roughness_length
-            )
+                thrusts, self.rotor_radius, expansion_coefficient)
         elif model == "Jensen according to Frandsen":
             self.wake_model = create_wake.jensen_frandsen(
-                thrusts,
-                self.rotor_radius,
-                self.hub_height,
-                self.roughness_length
-            )
+                thrusts, self.rotor_radius, expansion_coefficient)
         elif model == "Jensen with partial wake":
             self.wake_model = create_wake.jensen_averaged(
-                thrusts,
-                self.rotor_radius,
-                self.hub_height,
-                self.roughness_length
-            )
+                thrusts, self.rotor_radius, expansion_coefficient)
         elif model == "Jensen according to Frandsen with partial wake":
             self.wake_model = create_wake.jensen_frandsen_averaged(
-                thrusts,
-                self.rotor_radius,
-                self.hub_height,
-                self.roughness_length
-            )
+                thrusts, self.rotor_radius, expansion_coefficient)
         else:
             raise ValueError("Unkown wake model specified.")
         # define combination rule

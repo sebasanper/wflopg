@@ -87,7 +87,7 @@ def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
     return wake_model
 
 
-def _jensen_generic(thrust_curve, rotor_radius, hub_height, roughness_length,
+def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
                    frandsen=False, averaging=False):
     """Return a Jensen wake model function
 
@@ -97,11 +97,6 @@ def _jensen_generic(thrust_curve, rotor_radius, hub_height, roughness_length,
     scalar values for the quantities described by their name.
 
     """
-    # NOTE: alternative, constant values for the expansion coefficient
-    #       available in the literature are 0.075 for onshore
-    #       and 0.0–4.05 for offshore
-    #
-    expansion_coeff = 0.5 / np.log(hub_height / roughness_length)
     induction_factor = 1 - np.sqrt(1 - thrust_curve)
     if frandsen:  # use (adim.) stream tube radius instead or rotor radius
         stream_tube_radius = np.sqrt((1 - induction_factor / 2)
@@ -145,7 +140,7 @@ def _jensen_generic(thrust_curve, rotor_radius, hub_height, roughness_length,
     return wake_model
 
 
-def jensen(thrust_curve, rotor_radius, hub_height, roughness_length):
+def jensen(thrust_curve, rotor_radius, expansion_coeff):
     """Return a Jensen wake model function
 
     The thrust_curve must be an xarray DataArray with as a single dimension the
@@ -157,11 +152,10 @@ def jensen(thrust_curve, rotor_radius, hub_height, roughness_length):
     plane averaging.
 
     """
-    return _jensen_generic(
-        thrust_curve, rotor_radius, hub_height, roughness_length)
+    return _jensen_generic(thrust_curve, rotor_radius, expansion_coeff)
 
 
-def jensen_frandsen(thrust_curve, rotor_radius, hub_height, roughness_length):
+def jensen_frandsen(thrust_curve, rotor_radius, expansion_coeff):
     """Return a Jensen wake model function as defined by Frandsen
 
     The thrust_curve must be an xarray DataArray with as a single dimension the
@@ -175,12 +169,10 @@ def jensen_frandsen(thrust_curve, rotor_radius, hub_height, roughness_length):
 
     """
     return _jensen_generic(
-        thrust_curve, rotor_radius, hub_height, roughness_length,
-        frandsen=True
-    )
+        thrust_curve, rotor_radius, expansion_coeff, frandsen=True)
 
 
-def jensen_averaged(thrust_curve, rotor_radius, hub_height, roughness_length):
+def jensen_averaged(thrust_curve, rotor_radius, expansion_coeff):
     """Return a Jensen partial wake model function
 
     The thrust_curve must be an xarray DataArray with as a single dimension the
@@ -193,13 +185,10 @@ def jensen_averaged(thrust_curve, rotor_radius, hub_height, roughness_length):
 
     """
     return _jensen_generic(
-        thrust_curve, rotor_radius, hub_height, roughness_length,
-        averaging=True
-    )
+        thrust_curve, rotor_radius, expansion_coeff, averaging=True)
 
 
-def jensen_frandsen_averaged(
-        thrust_curve, rotor_radius, hub_height, roughness_length):
+def jensen_frandsen_averaged(thrust_curve, rotor_radius, expansion_coeff):
     """Return a Jensen partial wake model function as defined by Frandsen
 
     The thrust_curve must be an xarray DataArray with as a single dimension the
@@ -212,8 +201,6 @@ def jensen_frandsen_averaged(
     of the rotor instead of the rotor radius itself.
 
     """
-    return _jensen_generic(
-        thrust_curve, rotor_radius, hub_height, roughness_length,
-        frandsen=True, averaging=True
-    )
+    return _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
+                           frandsen=True, averaging=True)
 

@@ -133,6 +133,14 @@ properties:
       - "Jensen with partial wake"
       - "Jensen according to Frandsen with partial wake"
   #~
+  expansion_coefficient:
+    title: Jensen expansion coefficient
+    description: >-
+      In case a Jensen model is used, the expansion coefficient can either be
+      calculated based on roughness length or given here directly.
+    type: number
+    exclusiveMinimum: 0
+  #~
   wake_combination:
     title: Single wake combination rule
     description: >-
