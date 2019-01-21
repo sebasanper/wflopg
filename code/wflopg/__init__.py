@@ -77,8 +77,8 @@ class Owflop():
 
         # create function to generate turbine constraint violation fixup steps
         self.proximity_repulsion = create_constraint.distance(
-            problem.get('turbine_distance', 0),
-            self.rotor_radius, self.site_radius
+            problem.get('turbine_distance', 0)
+            * (2 * self.rotor_radius) / self.site_radius
         )
 
         # deal with initial layout
