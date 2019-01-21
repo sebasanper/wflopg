@@ -3,6 +3,7 @@ import xarray as xr
 from ruamel.yaml import YAML as yaml
 
 from wflopg import create_turbine
+from wflopg import create_site
 from wflopg import create_wind
 from wflopg import create_wake
 from wflopg import layout_geometry
@@ -122,9 +123,14 @@ class Owflop():
     def process_site(self, site):
         self.rotor_constraints = site['rotor_constraints']
         self.site_radius = site['radius'] * 1e3  # km to m
-        # TODO: import site parcels and boundaries and together with the rotor
-        #       radius create functions to visualize and check the boundary
-        #       constraints
+        if 'boundaries' in site:
+            self.boundaries = create_site.boundaries(site['boundaries'])
+        if 'parcels' in site:
+            self.parcels = create_site.parcels(site['parcels'])
+        # TODO: * use parcels together with the rotor radius to create a
+        #         function to check the boundary constraints
+        #       * use boundaries to create a function to visualize the
+        #         boundaries
         self.roughness_length = site.get('roughness', None)
 
     def process_wind_resource(self, wind_resource, roughness_length,
