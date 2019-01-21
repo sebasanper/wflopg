@@ -5,6 +5,6 @@ particulars:
   - meant for a 36-turbine farm
 rotor_constraints: false
 radius: 2.0
-subsites:
+parcels:
   - constraints:
       - {"xx": 1.0, "yy": 1.0, "1": -1.0}
