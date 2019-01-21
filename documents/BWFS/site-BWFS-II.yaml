@@ -1,0 +1,35 @@
+uuid:
+name: Borssele Wind Farm Site II
+particulars:
+  - Point data obtained from tender material at
+    https://offshorewind.rvo.nl/generalborssele. Namely, Section 6.1 of
+    https://offshorewind.rvo.nl/file/view/43061512/\
+    Project+and+Site+Description+BWFS+I+%26amp%3B+II+Version+3+%28April+2016%29
+
+rotor_constraints: true
+radius: 7.1195
+location:
+  - reference_system: ETRS89
+  - utm_zone: 31
+  - utm: [503695.85, 5720357.25]
+parcels:  # TODO
+  - constraints:
+      - {"x": , "y": , "1": }
+boundaries:
+  - boundary:
+      - [-0.272851, -0.687799]
+      - [-0.277528, -0.631881]
+      - [-0.284004, -0.550414]
+      - [-0.286124, -0.452935]
+      - [-0.282430, -0.320846]
+      - [-0.264606, -0.158418]
+      - [-0.048283,  0.998834]
+      - [-0.029462,  0.984788]
+      - [-0.018941,  0.972568]
+      - [-0.006019,  0.962918]
+      - [ 0.008702,  0.956316]
+      - [ 0.051598,  0.924320]
+      - [ 0.581161,  0.675312]
+      - [ 0.671505,  0.584757]
+      - [ 0.476336, -0.498009]
+      - [ 0.048283, -0.998834]
