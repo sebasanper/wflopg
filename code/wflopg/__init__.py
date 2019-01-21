@@ -328,14 +328,21 @@ class Owflop():
 
     def calculate_push_down_vector(self):
         self._ds['push_down_vector'] = self.expectation(
-            self._ds['relative_wake_loss_vector'].sum(dim='source'))
+            self._ds['relative_wake_loss_vector'].sum(dim='source')
+        ) * 10 * (self.rotor_radius / self.site_radius)
+            # a fully waked turbine (deficit = 1) is moved 5 rotor diameters
 
     def calculate_push_back_vector(self):
         self._ds['push_back_vector'] = self.expectation(
-            self._ds['relative_wake_loss_vector'].sum(dim='target'))
+            self._ds['relative_wake_loss_vector'].sum(dim='target')
+        ).rename(source='target') * 10 * (self.rotor_radius / self.site_radius)
+            # a fully waking turbine (deficit = 1) is moved 5 rotor diameters
 
     def calculate_push_cross_vector(self):
         self._ds['push_cross_vector'] = self.expectation(
             (self._ds['relative_wake_loss_vector'].dot(self._ds['crosswind'])
              * self._ds['crosswind']).sum(dim='source')
-        )
+        ) * 100 * (self.rotor_radius / self.site_radius)
+            # as cross steps are determined by projection onto the crosswind
+            # vectors, these are very small relative to down steps, so we add
+            # a heuristic factor 10 to compensate)
