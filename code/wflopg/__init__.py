@@ -10,6 +10,19 @@ from wflopg import layout_geometry
 from wflopg import create_constraint
 
 
+COORDS = {
+    # Cartesian coordinates, where ‘x’ corresponds to the South-North direction
+    # and ‘y’ to the West-East direction."""
+    'xy_coord': ['x', 'y'],
+    # Cartesian coordinates determined by a given wind direction, where ‘d’
+    # corresponds to the downwind direction and ‘c’ to the crosswind direction.
+    'dc_coord': ['d', 'c'],
+    # Labels for the coefficients of the monomials in quadratic expressions, or
+    # for the values of these monomials.
+    'coefficient': ['1', 'x', 'y', 'xy', 'xx', 'yy']
+}
+
+
 class Owflop():
     """The main wind farm layout optimization problem object
 
@@ -23,14 +36,8 @@ class Owflop():
             'dc_coord': ['d', 'c']   # downwind/crosswind
         }
         # _ds is the main working Dataset
-        self._ds = xr.Dataset(coords=coords)
-        self._ds.xy_coord.attrs['description'] = (
-            "Cartesian coordinates, where ‘x’ corresponds to the "
-            "South-North direction and ‘y’ to the West-East direction.")
-        self._ds.dc_coord.attrs['description'] = (
-            "Cartesian coordinates determined by a given wind direction, "
-            "where ‘d’ corresponds to the downwind direction "
-            "and ‘c’ to the crosswind direction.")
+        self._ds = xr.Dataset(coords={dim: COORDS(dim)
+                                      for dim in {'xy_coord', 'dc_coord'}})
         # history of layouts as a dict with identifier, layout pairs
         self.layouts = {}
 

@@ -2,7 +2,7 @@ import numpy as np
 import xarray as xr
 
 
-coefficients = ['1', 'x', 'y', 'xy', 'xx', 'yy']
+from wflopg import COORDS
 
 
 def boundaries(boundaries_list):
@@ -32,7 +32,7 @@ def parcels(parcels_list):
                   for coefficient in coefficients]
                  for constraint in area['constraints']],
                 dims=['constraint', 'coefficient'],
-                coords={'coefficient': coefficients}
+                coords={'coefficient': COORDS['coefficient']}
             )
         if 'exclusions' in area:
             processed_area['exclusions'] = parcels(area['exclusions'])
