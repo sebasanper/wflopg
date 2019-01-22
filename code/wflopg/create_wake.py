@@ -3,8 +3,8 @@ import xarray as xr
 
 
 def _common(dc_vector_adim):
-    downwind = dc_vector_adim.sel(dc_coord='d', drop=True)
-    crosswind = np.abs(dc_vector_adim.sel(dc_coord='c', drop=True))
+    downwind = dc_vector_adim.sel(dc='d', drop=True)
+    crosswind = np.abs(dc_vector_adim.sel(dc='c', drop=True))
     is_downwind = downwind > 0
     return downwind, crosswind, is_downwind
 
@@ -82,7 +82,7 @@ def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
             is_downwind, 1 - thrust_curve / (2 * sigma ** 2), np.nan)
         return xr.where(
             is_downwind, (1. - np.sqrt(radical)) * np.exp(exponent), 0
-        ).transpose('direction', 'wind_speed', 'source', 'target')
+        ).transpose('direction', 'speed', 'source', 'target')
 
     return wake_model
 
@@ -135,7 +135,7 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
             waked,
             relative_area * induction_factor / np.square(wake_radius),
             0
-        ).transpose('direction', 'wind_speed', 'source', 'target')
+        ).transpose('direction', 'speed', 'source', 'target')
 
     return wake_model
 

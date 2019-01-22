@@ -1,6 +1,8 @@
 import numpy as np
 import xarray as xr
 
+from wflopg import COORDS
+
 
 def _check_start(interpolation_data, start_speed, start_value):
     """Adapt interpolation_data or start_speed as needed
@@ -92,7 +94,7 @@ def interpolated_power_curve(rated_power, rated_speed, cut_in, cut_out,
                                                rated_speed, rated_power)
     interpolation_data, cut_out = _check_end(interpolation_data,
                                              cut_out, rated_power)
-    interpolator = _create_interpolator('wind_speed', interpolation_data)
+    interpolator = _create_interpolator('speed', interpolation_data)
 
     def power_curve(speeds):
         """Return turbine power for the given (wind) speeds
@@ -105,7 +107,7 @@ def interpolated_power_curve(rated_power, rated_speed, cut_in, cut_out,
         wc = _common(speeds_flat, cut_in, cut_out)  # within cut
         return xr.DataArray(
             xr.where(
-                wc, interpolator.interp(wind_speed=speeds_flat), 0
+                wc, interpolator.interp(speed=speeds_flat), 0
             ).values.reshape(speeds.shape),
             dims=speeds.dims, coords=speeds.coords
         )
@@ -137,7 +139,7 @@ def interpolated_thrust_curve(cut_in, cut_out, interpolation_data):
     interpolation_data = interpolation_data[interpolation_data[:, 0].argsort()]
     interpolation_data, cut_in = _check_start(interpolation_data, cut_in, 0.)
     interpolation_data, cut_out = _check_end(interpolation_data, cut_out, 0.)
-    interpolator = _create_interpolator('wind_speed', interpolation_data)
+    interpolator = _create_interpolator('speed', interpolation_data)
 
     def thrust_curve(speeds):
         """Return turbine thrust for the given (wind) speeds
@@ -150,7 +152,7 @@ def interpolated_thrust_curve(cut_in, cut_out, interpolation_data):
         wc = _common(speeds_flat, cut_in, cut_out)  # within cut
         return xr.DataArray(
             xr.where(
-                wc, interpolator.interp(wind_speed=speeds_flat), 0
+                wc, interpolator.interp(speed=speeds_flat), 0
             ).values.reshape(speeds.shape),
             dims=speeds.dims, coords=speeds.coords
         )

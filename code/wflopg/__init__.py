@@ -10,16 +10,44 @@ from wflopg import layout_geometry
 from wflopg import create_constraint
 
 
-COORDS = {
+# Dimensions for xarray DataSet and DataArrays
+# Coordinates that are universal over all problems are defined in COORDS below
+# Problem-specific coordinates are defined in the code
+DIMS = {
     # Cartesian coordinates, where ‘x’ corresponds to the South-North direction
     # and ‘y’ to the West-East direction."""
-    'xy_coord': ['x', 'y'],
+    'xy',
     # Cartesian coordinates determined by a given wind direction, where ‘d’
     # corresponds to the downwind direction and ‘c’ to the crosswind direction.
-    'dc_coord': ['d', 'c'],
+    'dc',
     # Labels for the coefficients of the monomials in quadratic expressions, or
     # for the values of these monomials.
-    'coefficient': ['1', 'x', 'y', 'xy', 'xx', 'yy']
+    'quad',
+    # Lower and upper bounds of an interval
+    'interval',
+    # Weibull parameters
+    'weibull_param',
+    # Wind direction
+    'direction',
+    # Wind speed
+    'speed',
+    # Turbines that are a source of wakes (for now the same as 'target')
+    'source',
+    # Turbines that are a target of wakes (for now the same as 'source')
+    'target',
+    # Vertices of boundaries (differs from boundary to boundary)
+    'vertex',
+    # Constraints of parcels (differs from parcel to parcel)
+    'constraint'
+}
+
+# Universal coordinates for xarray DataSet and DataArrays
+COORDS = {
+    'xy': ['x', 'y'],
+    'dc': ['d', 'c'],
+    'quad': ['1', 'x', 'y', 'xy', 'xx', 'yy'],
+    'interval': ['lower', 'upper'],
+    'weibull_param': ['scale', 'shape']
 }
 
 
@@ -31,13 +59,9 @@ class Owflop():
 
     """
     def __init__(self):
-        coords = {
-            'xy_coord': ['x', 'y'],  # x ~ S→N, y ~ W→E
-            'dc_coord': ['d', 'c']   # downwind/crosswind
-        }
         # _ds is the main working Dataset
-        self._ds = xr.Dataset(coords={dim: COORDS(dim)
-                                      for dim in {'xy_coord', 'dc_coord'}})
+        self._ds = xr.Dataset(coords={dim: COORDS[dim]
+                                      for dim in {'xy', 'dc'}})
         # history of layouts as a dict with identifier, layout pairs
         self.layouts = {}
 
@@ -200,7 +224,7 @@ class Owflop():
                                        coords=[('direction', dirs)])
             speed_probs = xr.DataArray(
                 speed_probs,
-                coords=[('direction', dirs), ('wind_speed', speeds)]
+                coords=[('direction', dirs), ('speed', speeds)]
             )
 
         # Store pmfs; obtain them from the weight arrays by normalization
@@ -210,22 +234,22 @@ class Owflop():
     def process_layout(self, initial_layout):
         # turbines affected by the wake
         self._ds['layout'] = xr.DataArray(initial_layout,
-                                          dims=['target', 'xy_coord'])
+                                          dims=['target', 'xy'])
         self.layouts['initial'] = xr.DataArray(
             initial_layout,
-            dims=['target', 'xy_coord'],
-            coords={'xy_coord': self._ds.coords['xy_coord']}
+            dims=['target', 'xy'],
+            coords={'xy': self._ds.coords['xy']}
         )
         # turbines causing the wakes
         # NOTE: currently, these are the same as the ones affected
         self._ds['context'] = xr.DataArray(initial_layout,
-                                           dims=['source', 'xy_coord'])
+                                           dims=['source', 'xy'])
         # geometric information (in a general sense)
         self.calculate_geometry()
 
     def process_wake_model(self,
                            model, expansion_coefficient, combination_rule):
-        thrusts = self.thrust_curve(self._ds.coords['wind_speed'])
+        thrusts = self.thrust_curve(self._ds.coords['speed'])
         # preliminaries for wake model definition
         if model.startswith("Jensen"):
             if not expansion_coefficient:
@@ -302,19 +326,19 @@ class Owflop():
     def expectation(self, array):
         return (
             array * self._ds['wind_speed_cpmf']
-        ).sum(dim='wind_speed').dot(self._ds['direction_pmf'])
+        ).sum(dim='speed').dot(self._ds['direction_pmf'])
 
     def calculate_wakeless_power(self):
         self._ds['wakeless_power'] = self.power_curve(
-            self._ds.coords['wind_speed'])
+            self._ds.coords['speed'])
         self._ds['expected_wakeless_power'] = self.expectation(
             self._ds['wakeless_power'])
 
     def calculate_power(self):
         # raw values
         power = self.power_curve(
-            self._ds.coords['wind_speed'] * (1 - self._ds['combined_deficit'])
-        ).transpose('direction', 'wind_speed', 'target')
+            self._ds.coords['speed'] * (1 - self._ds['combined_deficit'])
+        ).transpose('direction', 'speed', 'target')
         wake_loss = self._ds['wakeless_power'] - power
         self._ds['wake_loss_factor'] = (
             wake_loss / self._ds['expected_wakeless_power'])
@@ -330,7 +354,7 @@ class Owflop():
             self._ds['relative_deficit']
             * self._ds['wake_loss_factor']
             * self._ds['unit_vector']
-        ).transpose('direction', 'wind_speed', 'source', 'target', 'xy_coord')
+        ).transpose('direction', 'speed', 'source', 'target', 'xy')
 
     def calculate_push_down_vector(self):
         self._ds['push_down_vector'] = self.expectation(

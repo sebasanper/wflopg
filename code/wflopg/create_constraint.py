@@ -42,14 +42,14 @@ def xy_to_quad(xy):
 
       1, x, y, x⋅y, x² (xx), and y² (yy).
 
-    This function works for any xarray DataArray with xy_coord as a dimension.
+    This function works for any xarray DataArray with xy as a dimension.
 
     """
-    x = xy.sel(xy_coord='x', drop=True)
-    y = xy.sel(xy_coord='y', drop=True)
+    x = xy.sel(xy='x', drop=True)
+    y = xy.sel(xy='y', drop=True)
     one = x.copy()
     one.values = np.ones(one.shape)
-    quad = xr.concat([one, x, y, x*y, np.square(x), np.square(y)],
-                      'coefficient').transpose()
-    quad.coords['coefficient'] = COORDS['coefficient']
+    quad = xr.concat(
+        [one, x, y, x*y, np.square(x), np.square(y)], 'quad').transpose()
+    quad.coords['quad'] = COORDS['quad']
     return quad

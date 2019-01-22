@@ -1,6 +1,8 @@
 import numpy as np
 import xarray as xr
 
+from wflopg import COORDS
+
 
 def logarithmic_wind_shear(reference_height, roughness_length):
     """Return a logarithmic wind shear function"""
@@ -41,30 +43,32 @@ def discretize_weibull(weibull, speeds, cut_in, cut_out):
                                     [cut_out]))
     speed_bins = xr.DataArray(
         np.vstack((speed_borders[:-1], speed_borders[1:])).T,
-        coords=[('wind_speed', speeds), ('bound', ['start', 'end'])]
+        coords=[('speed', speeds), ('interval', COORDS['interval'])]
     )
     cweibull = xr.DataArray(
         weibull,
-        dims=['direction', 'param'], coords={'param': ['scale', 'shape']}
+        dims=['direction', 'weibull_param'],
+        coords={'weibull_param': COORDS['weibull_param']}
     )
     # Weibull CDF: 1 - exp(-(x/scale)**shape), so the probability for
     # an interval is
     # exp(-(xstart/scale)**shape) - exp(-(xend/scale)**shape)
-    speed_bins = speed_bins / cweibull.sel(param='scale', drop=True)
-    terms = np.exp(- speed_bins ** cweibull.sel(param='shape', drop=True))
-    speed_cpmf = (terms.sel(bound='start', drop=True) -
-                  terms.sel(bound='end', drop=True))
+    speed_bins = speed_bins / cweibull.sel(weibull_param='scale', drop=True)
+    terms = np.exp(
+        - speed_bins ** cweibull.sel(weibull_param='shape', drop=True))
+    speed_cpmf = (terms.sel(interval='lower', drop=True) -
+                  terms.sel(interval='upper', drop=True))
     return speeds, speed_cpmf.values.T
 
 
 def conformize_cpmf(speed_weights, speeds, cut_in, cut_out):
     """Return relevant speeds and wind speed probabilities"""
     speed_weights = xr.DataArray(
-        speed_weights, dims=['direction', 'wind_speed'])
-    speed_probs = speed_weights / speed_weights.sum(dim='wind_speed')
+        speed_weights, dims=['direction', 'speed'])
+    speed_probs = speed_weights / speed_weights.sum(dim='speed')
     wc = (speeds >= cut_in) & (speeds <= cut_out)  # within cut
     speeds = speeds[wc]
-    return speeds, speed_probs.sel(wind_speed=wc).values
+    return speeds, speed_probs.sel(speed=wc).values
 
 
 def subdivide(dirs, speeds, dir_weights, speed_probs, dir_subs,
@@ -84,11 +88,12 @@ def subdivide(dirs, speeds, dir_weights, speed_probs, dir_subs,
     )
     speed_probs_cyc = xr.DataArray(
         np.concatenate((speed_probs, speed_probs[:1])),
-        coords=[('direction', dirs_cyc), ('wind_speed', speeds)]
+        coords=[('direction', dirs_cyc), ('speed', speeds)]
     )
     dirs_cyc = xr.DataArray(
         dirs_cyc,
         coords=[('rel', np.linspace(0., 1., len(dirs) + 1))]
+        # 'rel' is an ad-hoc dimension for ‘local’ relative direction
     )
     dirs_interp = dirs_cyc.interp(
         rel=np.linspace(0., 1., dir_subs * len(dirs) + 1)

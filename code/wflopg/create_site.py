@@ -12,7 +12,7 @@ def boundaries(boundaries_list):
         if 'boundary' in boundary_nesting:
             processed_boundary_nesting['boundary'] = xr.DataArray(
                 boundary_nesting['boundary'],
-                dims=['vertex', 'xy_coord'], coords={'xy_coord': ['x', 'y']}
+                dims=['vertex', 'xy'], coords={'xy': COORDS['xy']}
             )
         if 'exclusions' in boundary_nesting:
             processed_boundary_nesting['exclusions'] = boundaries(
@@ -29,10 +29,10 @@ def parcels(parcels_list):
         if 'constraints' in area:
             processed_area['constraints'] = xr.DataArray(
                 [[constraint.get(coefficient, 0)
-                  for coefficient in coefficients]
+                  for coefficient in COORDS['quad']]
                  for constraint in area['constraints']],
-                dims=['constraint', 'coefficient'],
-                coords={'coefficient': COORDS['coefficient']}
+                dims=['constraint', 'quad'],
+                coords={'quad': COORDS['quad']}
             )
         if 'exclusions' in area:
             processed_area['exclusions'] = parcels(area['exclusions'])
