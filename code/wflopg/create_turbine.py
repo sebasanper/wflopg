@@ -1,7 +1,7 @@
 import numpy as np
 import xarray as xr
 
-from wflopg import COORDS
+from wflopg.constants import COORDS
 
 
 def _check_start(interpolation_data, start_speed, start_value):

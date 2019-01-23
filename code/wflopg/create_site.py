@@ -1,8 +1,7 @@
 import numpy as np
 import xarray as xr
 
-
-from wflopg import COORDS
+from wflopg.constants import COORDS
 
 
 def boundaries(boundaries_list):

@@ -1,7 +1,7 @@
 import numpy as np
 import xarray as xr
 
-from wflopg import COORDS
+from wflopg.constants import COORDS
 
 
 def logarithmic_wind_shear(reference_height, roughness_length):
