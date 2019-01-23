@@ -2,12 +2,7 @@ uuid: 98dc6a04-a66c-43ad-bdda-2cff1c3850dc
 name: IEA Wind Task 37 offshore reference wind resource
 particulars:
   - >-
-    This is the data used by Sebastian Sanchez in his unpublished report. For
-    the optimization, each wind direction is divided into 30 equal (1°)
-    sub-bins and the wind speeds are sampled at 7 equally spaced locations
-    (unclear which). For the evaluation, each wind direction is divided into
-    30 equal (1°) sub-bins and the wind speeds are sampled at 25 equally spaced
-    locations (1–25 m/s, assumedly).
+    This is the data used by Sebastian Sanchez in his unpublished report.
 
 reference_height: 119 # same as hub height
 wind_rose:

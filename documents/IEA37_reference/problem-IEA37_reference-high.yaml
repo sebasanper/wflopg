@@ -7,11 +7,10 @@ particulars:
 site: "site-IEA37_reference.yaml"
 wind_resource: "wind_resource-IEA37_reference.yaml"
 wind_direction_subdivisions: 30  # results in 360 1° bins
-wind_speeds: [ 4.42,  5.26,  6.1 ,  6.94,  7.78,
-               8.62,  9.46, 10.3 , 11.14, 11.98,
-              12.82, 13.66, 14.5 , 15.34, 16.18,
-              17.02, 17.86, 18.7 , 19.54, 20.38,
-              21.22, 22.06, 22.9 , 23.74, 24.58]
+wind_speeds: [ 3.9 ,  4.0 ,  4.84,  5.68,  6.52,  7.36,  8.2 ,
+               9.04,  9.88, 10.72, 11.56, 12.4 , 13.24, 14.08,
+              14.92, 15.76, 16.6 , 17.44, 18.28, 19.12, 19.96,
+              20.8 , 21.64, 22.48, 23.32, 24.16,  25.0, 26.0 ]
 turbine: "turbine-IEA37_10MW-reference.yaml"
 turbine_distance: 3
 turbines: 74
