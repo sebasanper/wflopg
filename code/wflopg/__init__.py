@@ -178,7 +178,7 @@ class Owflop():
         # Subdivide wind direction and speed pmfs if needed
         if dir_subs:
             dir_weights, speed_probs = create_wind.subdivide(
-                dirs, speeds, dir_weights, speed_probs, dir_subs)
+                dirs, speeds, dir_weights, speed_probs, dir_subs, 'nearest')
         else:
             dir_weights = xr.DataArray(dir_weights,
                                        coords=[('direction', dirs)])
