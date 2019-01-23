@@ -56,7 +56,7 @@ def _create_interpolator(coord_name, interpolation_data):
 def _common(speeds, cut_in, cut_out):
     if np.any(speeds < 0):
         raise ValueError("Wind speeds may not be negative.")
-    return (speeds > cut_in) & (speeds < cut_out)  # within cut
+    return (speeds >= cut_in) & (speeds <= cut_out)  # within cut
 
 
 def cubic_power_curve(rated_power, rated_speed, cut_in, cut_out):
