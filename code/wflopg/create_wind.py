@@ -92,13 +92,15 @@ def subdivide(dirs, speeds, dir_weights, speed_probs, dir_subs,
     )
     dirs_cyc = xr.DataArray(
         dirs_cyc,
-        coords=[('rel', np.linspace(0., 1., len(dirs) + 1))]
+        coords=[('rel', np.linspace(0, 1, len(dirs) + 1))]
         # 'rel' is an ad-hoc dimension for ‘local’ relative direction
     )
     dirs_interp = dirs_cyc.interp(
-        rel=np.linspace(0., 1., dir_subs * len(dirs) + 1)
+        rel=np.linspace(0, 1, dir_subs * len(dirs) + 1)
     ).values
     dirs_interp = dirs_interp[:-1]  # drop the last, cyclical value
+    dirs_interp = np.round(dirs_interp)
+        # Interpolation introduces floating point errors! We fix those here.
 
     #
     dir_weights = dir_weights_cyc.interp(direction=dirs_interp,
