@@ -83,7 +83,10 @@ def outside_parcels(parcels, layout, safety_distance=0):
             if 'constraints' in parcel:
                 # turbines with a positive constraint evaluation value violate
                 # that constraint
-                violates = parcel['constraints'].dot(layout_quad) > 0  # TODO: we pretend for now that the LHS is the distance
+                violates = parcel['constraints'].dot(layout_quad) > 0
+                    # TODO: we pretend for now that the LHS is the distance
+                    #       the safety_distance needs to be added/subtracted
+                    #       depending on the exclusion state
                 if exclusion:
                     # in an exclusion, only if all constraints are violated is
                     # the turbine actually outside the area defined by the
