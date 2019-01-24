@@ -20,7 +20,6 @@ particulars:
     A new approach for power prediction. Energies 9(9):741.
   - roughness length obtained via personal communication on 2019-01-09
 
-rotor_constraints: false
 radius: 3.3548
 location:
   geo: [55.486, 7.840] # https://www.4coffshore.com/windfarms/horns-rev-1-denmark-dk03.html
@@ -35,7 +34,7 @@ parcels:
       - {"x": -1.0, "y": -0.105414, "1": -0.751966}
       - {"x": -1.0, "y": -0.105830, "1": -0.752069}
 boundaries:
-  - boundary:
+  - polygon:
       - [-0.690493, -0.581844]
       - [ 0.813300, -0.581844]
       - [ 0.777829, -0.249191]

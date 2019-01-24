@@ -4,24 +4,18 @@ import xarray as xr
 from wflopg.constants import COORDS
 
 
-def _xy_to_quad(xy):
-    """Return quadratic ‘coordinates’ for the given xy-coordinates
-
-    Quadratic coordinates are, in the following order,
-
-      1, x, y, x⋅y, x² (xx), and y² (yy).
+def _xy_to_monomial(xy):
+    """Return monomial ‘coordinates’ for the given xy-coordinates
 
     This function works for any xarray DataArray with xy as a dimension.
 
     """
     x = xy.sel(xy='x', drop=True)
     y = xy.sel(xy='y', drop=True)
-    one = x.copy()
-    one.values = np.ones(one.shape)
-    quad = xr.concat(
-        [one, x, y, x*y, np.square(x), np.square(y)], 'quad').transpose()
-    quad.coords['quad'] = COORDS['quad']
-    return quad
+    one = xr.ones_like(x)
+    mon = xr.concat([one, x, y], 'monomial').transpose()
+    mon.coords['monomial'] = COORDS['monomial']
+    return mon
 
 
 def distance(turbine_distance):
@@ -55,22 +49,22 @@ def distance(turbine_distance):
     return proximity_repulsion
 
 
-def outside_parcels(parcels, layout, safety_distance=0):
+def outside_parcels(parcels, layout, safety_distance):
     """Check which turbines in the layout are outside the parcels
 
     parcels is a list of nested dicts of constraints and exclusions, where the
-    constraints are formulated as quadratic expressions that evaluate to a
-    positive number on their ‘outside’ side.
+    constraints are formulated as linear expressions that evaluate to a
+    positive number on their ‘outside’ side or as circles where ‘outside’
+    corresponds to outside the delimited disc.
 
     layout is an xarray DataArray of xy-coordinates for the turbines.
 
-    safety distance is the minimum distance the turbines need to be placed
-    inside the parcels.
+    safety_distance should be the site-adimensional rotor radius
 
     """
-    layout_quad = _xy_to_quad(layout)
+    layout_mon = _xy_to_monomial(layout)
 
-    def outside_parcels_for_quad(parcels, outside, exclusion=False):
+    def outside_parcels_for_monomial(parcels, outside, exclusion=False):
         """Return which turbines are outside the given parcels
 
         This recursive function walks over all parcels and their exclusions.
@@ -79,14 +73,19 @@ def outside_parcels(parcels, layout, safety_distance=0):
         with the same shape of the layout, but removing the xy-dimension.
 
         """
+        # TODO: we should apply an xr.where based on already violating at
+        #       higher levels
         for parcel in parcels:
             if 'constraints' in parcel:
+                rotor_constraint = parcel['constraints'].rotor_constraint
                 # turbines with a positive constraint evaluation value violate
                 # that constraint
-                violates = parcel['constraints'].dot(layout_quad) > 0
-                    # TODO: we pretend for now that the LHS is the distance
-                    #       the safety_distance needs to be added/subtracted
-                    #       depending on the exclusion state
+                violates = parcel['constraints'].dot(layout_mon) > 0
+                    # TODO: * we pretend for now that the LHS is the distance
+                    #       * the safety distance needs to be added/subtracted
+                    #         depending on the exclusion state and rotor
+                    #         constraint requirement
+                    #       * pre-compute some variables
                 if exclusion:
                     # in an exclusion, only if all constraints are violated is
                     # the turbine actually outside the area defined by the
@@ -96,13 +95,24 @@ def outside_parcels(parcels, layout, safety_distance=0):
                     # otherwise, the turbine is outside the area if any of the
                     # constraints is violated
                     outside |= violates.any(dim='constraint')
+            elif 'circle' in parcel:
+                center = parcel['circle']
+                radius = parcel['circle'].radius
+                dist = radius
+                if parcel['circle'].rotor_constraint:
+                    dist += safety_distance if exclusion else -safety_distance
+                # TODO: pre-compute np.square(dist)!
+                in_disc = (np.square(layout - center).sum(dim='xy')
+                           <= np.square(dist))
+                outside |= in_disc if exclusion else ~in_disc
             if 'exclusions' in parcel:
                 # recurse to evaluate an exclusion (which may be an inclusion
                 # if its inside an exclusion, so we flip the exclusion
                 # variable's truth value)
-                outside |= outside_parcels_for_quad(
+                outside |= outside_parcels_for_monomial(
                     parcel['exclusions'], outside, not exclusion)
         return outside
 
-    outside = (layout > 1).any(dim='xy')  # start DataArray with trivial test
-    return outside_parcels_for_quad(parcels, outside)
+    # start DataArray defined by trivial test
+    outside = np.square(layout).sum(dim='xy') > 1
+    return outside_parcels_for_monomial(parcels, outside)

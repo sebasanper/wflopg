@@ -29,17 +29,17 @@ particulars:
     Offshore wind farm layout optimization using particle swarm optimization.
     Journal of Ocean Engineering and Marine Energy 4(1):73–88.
 
-rotor_constraints: true  # to approximate somewhat the discretized nature in
-                         # the original papers
 radius: 1.4142 # sqrt(2) * 10 * 40 m * 5 / 2 / 1000 m/km
 parcels:
-  - constraints:
+  - rotor_constraint: true
+      # to approximate somewhat the discretized nature in the original papers
+    constraints:
       - {"x":  1.0, "1": -0.707107}
       - {"x": -1.0, "1": -0.707107}
       - {"y":  1.0, "1": -0.707107}
       - {"y": -1.0, "1": -0.707107}
 boundaries:
-  - boundary:
+  - polygon:
       - [ 0.707107,  0.707107]
       - [-0.707107,  0.707107]
       - [-0.707107, -0.707107]

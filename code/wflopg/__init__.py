@@ -115,7 +115,6 @@ class Owflop():
                              "a constant 'thrust_coefficient'")
 
     def process_site(self, site):
-        self.rotor_constraints = site['rotor_constraints']
         self.site_radius = site['radius'] * 1e3  # km to m
         if 'boundaries' in site:
             self.boundaries = create_site.boundaries(site['boundaries'])

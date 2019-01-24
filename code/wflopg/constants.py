@@ -8,9 +8,9 @@ DIMS = {
     # Cartesian coordinates determined by a given wind direction, where ‘d’
     # corresponds to the downwind direction and ‘c’ to the crosswind direction.
     'dc',
-    # Labels for the coefficients of the monomials in quadratic expressions, or
+    # Labels for the coefficients of the monomials in linear expressions, or
     # for the values of these monomials.
-    'quad',
+    'monomial',
     # Lower and upper bounds of an interval
     'interval',
     # Weibull parameters
@@ -33,7 +33,7 @@ DIMS = {
 COORDS = {
     'xy': ['x', 'y'],
     'dc': ['d', 'c'],
-    'quad': ['1', 'x', 'y', 'xy', 'xx', 'yy'],
+    'monomial': ['1', 'x', 'y'],
     'interval': ['lower', 'upper'],
     'weibull_param': ['scale', 'shape']
 }

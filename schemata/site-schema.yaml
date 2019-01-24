@@ -60,14 +60,6 @@ properties:
     type: number
     exclusiveMinimum: 0
   #~
-  rotor_constraints:
-    description: >-
-      Whether the site description constrains the tower location or also the
-      rotor. If ‘false’, only the tower is constrained. If ‘true’ also the
-      rotor is constrained. In the last case, this means the tower must be
-      placed at least a rotor radius inside the site away from the boundary.
-    type: boolean
-  #~
   parcels:
     title: Parcels
     description: >-
@@ -101,46 +93,99 @@ definitions:
   area_nesting:
     type: object
     required:
-      - constraints
+      - oneOf:
+          - polytope
+          - circle
     additionalProperties: false
     properties:
-      constraints:
+      #~~
+      rotor_constraint:
         description: >-
-          A list of constraints describing a piecewise quadratically bounded
-          set.
-        type: array
-        uniqueItems: true
-        minItems: 1
-        items:
-          $ref: "#/definitions/constraint"
+          Whether the area description constrains the tower location or
+          also the rotor. If ‘false’, only the tower is constrained. If
+          ‘true’ also the rotor is constrained. In the last case, this
+          means the tower must be placed at least a rotor radius inside the
+          area away from the boundary.
+        type: boolean
+        default: false
+      #~~
+      oneOf:
+          #~~
+        - constraints:
+            description: >-
+              A list of linear constraints describing a convex polytogon
+            type: array
+            uniqueItems: true
+            minItems: 1
+            items:
+              $ref: "#/definitions/constraint"
+          #~~
+        - circle:
+            description: A circle delimiting a disc-shaped area
+            $ref: "#/definitions/circle"
+      #~~
       exclusions:
+        description: >-
+          An array of areas, possibly also nested, that are to be excluded from
+          the area defined at and above this level in the recursion
         type: array
         uniqueItems: true
         minItems: 1
         items:
           $ref: "#/definitions/area_nesting"
   #~
+  boundary_nesting:
+    type: object
+    required:
+      - oneOf:
+          - polygon
+          - circle
+    additionalProperties: false
+    properties:
+      #~~
+      oneOf:
+          #~~
+        - polygon:
+            description: >-
+              A list of vertices describing a (possibly degenerate) piecewise
+              linear—so polygonal—boundary.
+              It is described in counterclockwise fashion, so inside is on the
+              left and outside on the right.
+            type: array
+            uniqueItems: true
+            minItems: 1
+            items:
+              title: Vertex coordinates
+              $ref: "coordinate-schema.yaml#/definitions/coordinates"
+          #~~
+        - circle:
+            description: A circlular boundary
+          $ref: "#/definitions/circle"
+      #~~
+      exclusions:
+        type: array
+        uniqueItems: true
+        minItems: 1
+        items:
+          $ref: "#/definitions/boundary_nesting"
+  #~
   constraint:
-    title: Quadratic constraint
+    title: Linear constraint
     description: >-
-      A representation of a quadratic constraint in terms of coefficients
-      of a quadratic multinomial expression in the coordinate variables
-      x and y. These variables form a coordinate pair as described in
+      A representation of a linear constraint in terms of coefficients of an
+      affine expression in the coordinate variables x and y. These variables
+      form a coordinate pair as described in
       "coordinate-schema.yaml#/definitions/coordinates".
       The expression must be negative (positive) for points inside (outside)
       the site. Points on the border, for which the expression is zero, are
-      by default assumed to lie inside the site. (This means that it is assumed
-      turbines can be placed on the site border.)
+      by default assumed to lie inside the site.
     type: object
     required:
       - "1"
-      - oneOf: ["x", "y", "xy", "xx", "yy"]
+      - oneOf: ["x", "y"]
     additionalProperties: false
     properties:
       border_included:
-        description: Whether or not the border is included in the site.
-        type: boolean
-        default: true
       "1":
         description: The constant term in the expression
         $ref: "#/definitions/coefficient"
@@ -150,15 +195,6 @@ definitions:
       "y":
         description: The coefficient of y in the expression
         $ref: "#/definitions/coefficient"
-      "xy":
-        description: The coefficient of xy in the expression
-        $ref: "#/definitions/coefficient"
-      "xx":
-        description: The coefficient of x² in the expression
-        $ref: "#/definitions/coefficient"
-      "yy":
-        description: The coefficient of y² in the expression
-        $ref: "#/definitions/coefficient"
   #~
   coefficient:
     description: >-
@@ -167,28 +203,20 @@ definitions:
     type: number
     default: 0
   #~
-  boundary_nesting:
+  circle:
+    description: A circle delimiting a disc-shaped area
     type: object
     required:
-      - boundary
+      - center
+      - radius
     additionalProperties: false
     properties:
-      boundary:
-        description: >-
-          A list of vertices describing a (possibly degenerate) piecewise
-          linear—so polygonal—boundary.
-          It is described in counterclockwise fashion, so inside is on the left
-          and outside on the right.
-        type: array
-        uniqueItems: true
-        minItems: 1
-        items:
-          title: Vertex coordinates
-          $ref: "coordinate-schema.yaml#/definitions/coordinates"
-      exclusions:
-        type: array
-        uniqueItems: true
-        minItems: 1
-        items:
-          $ref: "#/definitions/boundary_nesting"
-
+      #~~
+      center:
+        $ref: "coordinate-schema.yaml#/definitions/coordinates"
+      #~~
+      radius:
+        description: The radius of the circle in adimensional coordinates
+        type: number
+        exclusiveMinimum: 0
+        maximum: 1

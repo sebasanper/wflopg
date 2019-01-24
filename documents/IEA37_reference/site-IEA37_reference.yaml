@@ -3,7 +3,6 @@ name: IEA Wind Task 37 offshore reference wind farm site
 particulars:
   - Adapted from Borssele III and IV
 
-rotor_constraints: false
 radius: 12.2680
 location:
   - reference_system: ETRS89
@@ -20,7 +19,7 @@ parcels:
           - {"x":  0.466179, "y":  1.0, "1": -0.535559}
           - {"x":  1.0, "y": -0.497298, "1":  0.019840}
 boundaries:
-  - boundary:
+  - polygon:
       - [ 0.521948, -0.852978]
       - [ 0.676567,  0.220158]
       - [ 0.200103,  0.442276]
