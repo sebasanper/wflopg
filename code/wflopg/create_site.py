@@ -31,32 +31,51 @@ def boundaries(boundaries_list):
     return processed_boundaries
 
 
-def parcels(parcels_list):
-    processed_parcels = []
-    for area in parcels_list:
-        processed_area = {}
-        if 'constraints' in area:
-            processed_area['constraints'] = xr.DataArray(
-                [[constraint.get(coefficient, 0)
-                  for coefficient in COORDS['monomial']]
-                 for constraint in area['constraints']],
-                dims=['constraint', 'monomial'],
-                coords={'monomial': COORDS['monomial']}
-            )
-            processed_area['constraints'].attrs['rotor_constraint'] = (
-                area.get('rotor_constraint', False))
-        elif 'circle' in area:
-            processed_area['circle'] = xr.DataArray(
-                area['circle']['center'], coords=[('xy', COORDS['xy'])])
-            processed_area['circle'].attrs['radius'] = (
-                area['circle']['radius'])
-            processed_area['circle'].attrs['rotor_constraint'] = (
-                area.get('rotor_constraint', False))
-        else:
-            raise ValueError(
-                "An area must be described by either constraints or a circle")
-        if 'exclusions' in area:
-            processed_area['exclusions'] = parcels(area['exclusions'])
-        processed_parcels.append(processed_area)
+def parcels(parcels_list, rotor_radius):
+    """Return a recursive list of processed parcels
 
-    return processed_parcels
+    The parcel list must be of the form described in the site schema.
+    The rotor radius must be the site-adimensional rotor radius.
+
+    """
+    def parcels_recursive(parcels_list, exclusion=False):
+        processed_parcels = []
+        for area in parcels_list:
+            processed_area = {}
+            if 'constraints' in area:
+                coeffs = xr.DataArray(
+                    [[constraint.get(coefficient, 0)
+                      for coefficient in COORDS['monomial']]
+                     for constraint in area['constraints']],
+                    dims=['constraint', 'monomial'],
+                    coords={'monomial': COORDS['monomial']}
+                )
+                norms = np.sqrt(
+                    np.square(coeffs.sel(monomial='x', drop=True))
+                    + np.square(coeffs.sel(monomial='y', drop=True))
+                )
+                coeffs = coeffs / norms  # normalize the coefficients
+                safety = (
+                    rotor_radius if area.get('rotor_constraint', False) else 0)
+                coeffs.loc[{'monomial': '1'}] = (  # include rotor constraint
+                    coeffs.sel(monomial='1') + safety)
+                processed_area['constraints'] = coeffs
+            elif 'circle' in area:
+                processed_area['circle'] = xr.DataArray(
+                    area['circle']['center'], coords=[('xy', COORDS['xy'])])
+                dist = area['circle']['radius']
+                if area.get('rotor_constraint', False):
+                    dist += rotor_radius if exclusion else -rotor_radius
+                processed_area['circle'].attrs['dist_sqr'] = np.square(dist)
+            else:
+                raise ValueError(
+                    "An area must be described by either constraints or a "
+                    "circle")
+            if 'exclusions' in area:
+                processed_area['exclusions'] = parcels_recursive(
+                    area['exclusions'], not exclusion)
+            processed_parcels.append(processed_area)
+
+        return processed_parcels
+
+    return parcels_recursive(parcels_list)

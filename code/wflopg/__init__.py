@@ -119,7 +119,8 @@ class Owflop():
         if 'boundaries' in site:
             self.boundaries = create_site.boundaries(site['boundaries'])
         if 'parcels' in site:
-            self.parcels = create_site.parcels(site['parcels'])
+            self.parcels = create_site.parcels(
+                site['parcels'], self.rotor_radius / self.site_radius)
         # TODO: * use parcels together with the rotor radius to create a
         #         function to check the boundary constraints
         #       * use boundaries to create a function to visualize the

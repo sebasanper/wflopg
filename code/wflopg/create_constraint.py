@@ -74,18 +74,12 @@ def outside_parcels(parcels, layout, safety_distance):
 
         """
         # TODO: we should apply an xr.where based on already violating at
-        #       higher levels
+        #       higher levels (but consider a turbine then being placed in an exclusion)
         for parcel in parcels:
             if 'constraints' in parcel:
-                rotor_constraint = parcel['constraints'].rotor_constraint
                 # turbines with a positive constraint evaluation value violate
                 # that constraint
-                violates = parcel['constraints'].dot(layout_mon) > 0
-                    # TODO: * we pretend for now that the LHS is the distance
-                    #       * the safety distance needs to be added/subtracted
-                    #         depending on the exclusion state and rotor
-                    #         constraint requirement
-                    #       * pre-compute some variables
+                violates =  parcel['constraints'].dot(layout_mon) > 0
                 if exclusion:
                     # in an exclusion, only if all constraints are violated is
                     # the turbine actually outside the area defined by the
@@ -96,14 +90,8 @@ def outside_parcels(parcels, layout, safety_distance):
                     # constraints is violated
                     outside |= violates.any(dim='constraint')
             elif 'circle' in parcel:
-                center = parcel['circle']
-                radius = parcel['circle'].radius
-                dist = radius
-                if parcel['circle'].rotor_constraint:
-                    dist += safety_distance if exclusion else -safety_distance
-                # TODO: pre-compute np.square(dist)!
-                in_disc = (np.square(layout - center).sum(dim='xy')
-                           <= np.square(dist))
+                in_disc = (np.square(layout - parcel['circle']).sum(dim='xy')
+                           <= parcel['circle'].dist_sqr)
                 outside |= in_disc if exclusion else ~in_disc
             if 'exclusions' in parcel:
                 # recurse to evaluate an exclusion (which may be an inclusion
