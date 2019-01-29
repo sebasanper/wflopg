@@ -43,6 +43,7 @@ def parcels(parcels_list, rotor_radius):
         for area in parcels_list:
             processed_area = {}
             if 'constraints' in area:
+                # https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_an_equation
                 coeffs = xr.DataArray(
                     [[constraint.get(coefficient, 0)
                       for coefficient in COORDS['monomial']]
@@ -60,6 +61,8 @@ def parcels(parcels_list, rotor_radius):
                 coeffs.loc[{'monomial': '1'}] = (  # include rotor constraint
                     coeffs.sel(monomial='1') + safety)
                 processed_area['constraints'] = coeffs
+                processed_area['border_seeker'] = -coeffs.sel(
+                    monomial=COORDS['xy']).rename(monomial='xy')
             elif 'circle' in area:
                 processed_area['circle'] = xr.DataArray(
                     area['circle']['center'], coords=[('xy', COORDS['xy'])])
