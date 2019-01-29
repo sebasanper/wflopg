@@ -49,7 +49,7 @@ def distance(turbine_distance):
     return proximity_repulsion
 
 
-def outside_parcels(parcels, layout, safety_distance):
+def inside_parcels(parcels, layout):
     """Check which turbines in the layout are outside the parcels
 
     parcels is a list of nested dicts of constraints and exclusions, where the
@@ -59,13 +59,11 @@ def outside_parcels(parcels, layout, safety_distance):
 
     layout is an xarray DataArray of xy-coordinates for the turbines.
 
-    safety_distance should be the site-adimensional rotor radius
-
     """
     layout_mon = _xy_to_monomial(layout)
 
-    def outside_parcels_for_monomial(parcels, outside, exclusion=False):
-        """Return which turbines are outside the given parcels
+    def inside_recursive(parcels, inside, exclusion=False):
+        """Return which turbines are inside the given parcels
 
         This recursive function walks over all parcels and their exclusions.
         Whether or not it is currently operating in an exclusion is tracked by
@@ -73,34 +71,44 @@ def outside_parcels(parcels, layout, safety_distance):
         with the same shape of the layout, but removing the xy-dimension.
 
         """
-        # TODO: we should apply an xr.where based on already violating at
-        #       higher levels (but consider a turbine then being placed in an exclusion)
+        # TODO: us a map instead of a for loop?
         for parcel in parcels:
             if 'constraints' in parcel:
                 # turbines with a positive constraint evaluation value violate
                 # that constraint
-                violates =  parcel['constraints'].dot(layout_mon) > 0
+                distance = xr.where(  # signed distance
+                    inside, parcel['constraints'].dot(layout_mon), np.nan)
+                satisfies = xr.where(inside, distance <= 0, False)
                 if exclusion:
-                    # in an exclusion, only if all constraints are violated is
-                    # the turbine actually outside the area defined by the
-                    # constraints
-                    outside |= violates.all(dim='constraint')
+                    # in an exclusion, if any constraint is satisfied, then the
+                    # turbine is inside the parcel (at this recursion level)
+                    inside = xr.where(
+                        inside, satisfies.any(dim='constraint'), False)
                 else:
-                    # otherwise, the turbine is outside the area if any of the
-                    # constraints is violated
-                    outside |= violates.any(dim='constraint')
+                    # otherwise, the turbine is inside the area if all of the
+                    # constraints are satisfied
+                    inside = xr.where(
+                        inside, satisfies.all(dim='constraint'), False)
             elif 'circle' in parcel:
-                in_disc = (np.square(layout - parcel['circle']).sum(dim='xy')
-                           <= parcel['circle'].dist_sqr)
-                outside |= in_disc if exclusion else ~in_disc
+                in_disc = xr.where(
+                    inside,
+                    np.square(layout - parcel['circle']).sum(dim='xy')
+                    <= parcel['circle'].dist_sqr,
+                    False
+                )
+                inside = xr.where(inside, in_disc ^ exclusion, False)
             if 'exclusions' in parcel:
                 # recurse to evaluate an exclusion (which may be an inclusion
                 # if its inside an exclusion, so we flip the exclusion
                 # variable's truth value)
-                outside |= outside_parcels_for_monomial(
-                    parcel['exclusions'], outside, not exclusion)
-        return outside
+                inside = xr.where(
+                    inside,
+                    inside_recursive(
+                        parcel['exclusions'], inside, not exclusion),
+                    False
+                )
+        return inside
 
     # start DataArray defined by trivial test
-    outside = np.square(layout).sum(dim='xy') > 1
-    return outside_parcels_for_monomial(parcels, outside)
+    inside = np.square(layout).sum(dim='xy') <= 1
+    return inside_recursive(parcels, inside)
