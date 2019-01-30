@@ -62,53 +62,74 @@ def inside_parcels(parcels, layout):
     """
     layout_mon = _xy_to_monomial(layout)
 
-    def inside_recursive(parcels, inside, exclusion=False):
-        """Return which turbines are inside the given parcels
+    def inside_recursive(parcel, undecided, exclusion=False):
+        """Return which turbines are inside the given parcel
 
-        This recursive function walks over all parcels and their exclusions.
+        This recursive function walks over the parcel and its exclusions.
         Whether or not it is currently operating in an exclusion is tracked by
-        the exclusion variable. The xarray DataArray outside is a boolean array
-        with the same shape of the layout, but removing the xy-dimension.
+        the exclusion variable. The xarray DataArray undecided is a boolean
+        array with the same shape of the layout, but removing the xy-dimension.
+        It contains the turbines to consider.
 
         """
-        # TODO: us a map instead of a for loop?
-        for parcel in parcels:
-            if 'constraints' in parcel:
-                # turbines with a positive constraint evaluation value violate
-                # that constraint
-                distance = xr.where(  # signed distance
-                    inside, parcel['constraints'].dot(layout_mon), np.nan)
-                satisfies = xr.where(inside, distance <= 0, False)
-                if exclusion:
-                    # in an exclusion, if any constraint is satisfied, then the
-                    # turbine is inside the parcel (at this recursion level)
-                    inside = xr.where(
-                        inside, satisfies.any(dim='constraint'), False)
-                else:
-                    # otherwise, the turbine is inside the area if all of the
-                    # constraints are satisfied
-                    inside = xr.where(
-                        inside, satisfies.all(dim='constraint'), False)
-            elif 'circle' in parcel:
-                in_disc = xr.where(
-                    inside,
-                    np.square(layout - parcel['circle']).sum(dim='xy')
-                    <= parcel['circle'].dist_sqr,
-                    False
-                )
-                inside = xr.where(inside, in_disc ^ exclusion, False)
-            if 'exclusions' in parcel:
-                # recurse to evaluate an exclusion (which may be an inclusion
-                # if its inside an exclusion, so we flip the exclusion
-                # variable's truth value)
-                inside = xr.where(
-                    inside,
-                    inside_recursive(
-                        parcel['exclusions'], inside, not exclusion),
-                    False
-                )
+        ##
+        if 'constraints' in parcel:
+            distance = xr.where(  # signed distance
+                undecided, parcel['constraints'].dot(layout_mon), np.nan)
+            # turbines with a nonpositive constraint evaluation value
+            # satisfy that constraint
+            satisfies = xr.where(undecided, distance <= 0, False)
+            if exclusion:
+                # if no (not any) constraint is satisfied, then the
+                # turbine is excluded (at this recursion level)
+                outside = ~satisfies.any(dim='constraint')
+            else:
+                # excluded turbines are inside the parcel if all of the
+                # constraints at this deeper recursion level are satisfied
+                included = satisfies.all(dim='constraint')
+        elif 'circle' in parcel:
+            in_disc = xr.where(
+                undecided,
+                np.square(layout - parcel['circle']).sum(dim='xy')
+                <= parcel['circle'].dist_sqr,
+                False
+            )
+            if exclusion:
+                outside = ~in_area
+            else:
+                included = in_area
+        ##
+        if exclusion:
+            inside = undecided.copy()
+            undecided &= outside
+        else:
+            inside = undecided & included
+            undecided = inside
+
+        if 'exclusions' in parcel:
+            # recurse to evaluate an exclusion (which may be an inclusion
+            # if its inside an exclusion, so we flip the exclusion
+            # variable's truth value)
+            inside = xr.where(
+                undecided,
+                parcel_walker(parcel['exclusions'], undecided, not exclusion),
+                inside
+            )
+        else:  # end of recursion
+            if exclusion:
+                inside = xr.where(undecided, ~undecided, inside)
+
         return inside
+
+
+    def parcel_walker(parcels, undecided, exclusion=False):
+        return xr.concat(
+            [inside_recursive(parcel, undecided, exclusion)
+             for parcel in parcels],
+            'parcels'
+        ).all(dim='parcels')
+
 
     # start DataArray defined by trivial test
     inside = np.square(layout).sum(dim='xy') <= 1
-    return inside_recursive(parcels, inside)
+    return parcel_walker(parcels, inside)
