@@ -38,47 +38,49 @@ def parcels(parcels_list, rotor_radius):
     The rotor radius must be the site-adimensional rotor radius.
 
     """
-    def parcels_recursive(parcels_list, exclusion=False):
-        processed_parcels = []
-        for area in parcels_list:
-            processed_area = {}
-            if 'constraints' in area:
-                # https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_an_equation
-                coeffs = xr.DataArray(
-                    [[constraint.get(coefficient, 0)
-                      for coefficient in COORDS['monomial']]
-                     for constraint in area['constraints']],
-                    dims=['constraint', 'monomial'],
-                    coords={'monomial': COORDS['monomial']}
-                )
-                norms = np.sqrt(
-                    np.square(coeffs.sel(monomial='x', drop=True))
-                    + np.square(coeffs.sel(monomial='y', drop=True))
-                )
-                coeffs = coeffs / norms  # normalize the coefficients
-                safety = (
-                    rotor_radius if area.get('rotor_constraint', False) else 0)
-                coeffs.loc[{'monomial': '1'}] = (  # include rotor constraint
-                    coeffs.sel(monomial='1') + safety)
-                processed_area['constraints'] = coeffs
-                processed_area['border_seeker'] = -coeffs.sel(
-                    monomial=COORDS['xy']).rename(monomial='xy')
-            elif 'circle' in area:
-                processed_area['circle'] = xr.DataArray(
-                    area['circle']['center'], coords=[('xy', COORDS['xy'])])
-                dist = area['circle']['radius']
-                if area.get('rotor_constraint', False):
-                    dist += rotor_radius if exclusion else -rotor_radius
-                processed_area['circle'].attrs['dist_sqr'] = np.square(dist)
-            else:
-                raise ValueError(
-                    "An area must be described by either constraints or a "
-                    "circle")
-            if 'exclusions' in area:
-                processed_area['exclusions'] = parcels_recursive(
-                    area['exclusions'], not exclusion)
-            processed_parcels.append(processed_area)
+    def parcels_recursive(area, exclusion=True):
+        processed_area = {}
+        if 'constraints' in area:
+            # https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_an_equation
+            coeffs = xr.DataArray(
+                [[constraint.get(coefficient, 0)
+                  for coefficient in COORDS['monomial']]
+                 for constraint in area['constraints']],
+                dims=['constraint', 'monomial'],
+                coords={'monomial': COORDS['monomial']}
+            )
+            norms = np.sqrt(
+                np.square(coeffs.sel(monomial='x', drop=True))
+                + np.square(coeffs.sel(monomial='y', drop=True))
+            )
+            coeffs = coeffs / norms  # normalize the coefficients
+            safety = (
+                rotor_radius if area.get('rotor_constraint', False) else 0)
+            coeffs.loc[{'monomial': '1'}] = (  # include rotor constraint
+                coeffs.sel(monomial='1') + safety)
+            processed_area['constraints'] = coeffs
+            processed_area['border_seeker'] = -coeffs.sel(
+                monomial=COORDS['xy']).rename(monomial='xy')
+        elif 'circle' in area:
+            processed_area['circle'] = xr.DataArray(
+                area['circle']['center'], coords=[('xy', COORDS['xy'])])
+            dist = area['circle']['radius']
+            if area.get('rotor_constraint', False):
+                dist += rotor_radius if exclusion else -rotor_radius
+            processed_area['circle'].attrs['dist_sqr'] = np.square(dist)
+        else:
+            raise ValueError(
+                "An area must be described by either constraints or a circle")
+        if 'exclusions' in area:
+            processed_area['exclusions'] = [
+                parcels_recursive(area, not exclusion)
+                for area in area['exclusions']
+            ]
 
-        return processed_parcels
+        return processed_area
 
-    return parcels_recursive(parcels_list)
+    parcels_dict = {
+        'circle': {'center': [0, 0], 'radius': 1},
+        'exclusions': parcels_list
+    }
+    return parcels_recursive(parcels_dict)

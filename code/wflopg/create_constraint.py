@@ -52,7 +52,7 @@ def distance(turbine_distance):
 def inside_parcels(parcels, layout):
     """Check which turbines in the layout are outside the parcels
 
-    parcels is a list of nested dicts of constraints and exclusions, where the
+    parcels is a nested dict of constraints and exclusions, where the
     constraints are formulated as linear expressions that evaluate to a
     positive number on their ‘outside’ side or as circles where ‘outside’
     corresponds to outside the delimited disc.
@@ -62,7 +62,7 @@ def inside_parcels(parcels, layout):
     """
     layout_mon = _xy_to_monomial(layout)
 
-    def inside_recursive(parcel, undecided, exclusion=False):
+    def inside_recursive(parcel, undecided, exclusion=True):
         """Return which turbines are inside the given parcel
 
         This recursive function walks over the parcel and its exclusions.
@@ -73,6 +73,7 @@ def inside_parcels(parcels, layout):
 
         """
         ##
+        undecided = undecided.copy()
         if 'constraints' in parcel:
             distance = xr.where(  # signed distance
                 undecided, parcel['constraints'].dot(layout_mon), np.nan)
@@ -95,9 +96,9 @@ def inside_parcels(parcels, layout):
                 False
             )
             if exclusion:
-                outside = ~in_area
+                outside = in_disc
             else:
-                included = in_area
+                included = in_disc
         ##
         if exclusion:
             inside = undecided.copy()
@@ -118,18 +119,13 @@ def inside_parcels(parcels, layout):
         else:  # end of recursion
             if exclusion:
                 inside = xr.where(undecided, ~undecided, inside)
-
         return inside
 
 
-    def parcel_walker(parcels, undecided, exclusion=False):
-        return xr.concat(
-            [inside_recursive(parcel, undecided, exclusion)
-             for parcel in parcels],
-            'parcels'
-        ).all(dim='parcels')
+    def parcel_walker(parcels, undecided, exclusion):
+        insides = [inside_recursive(parcel, undecided, exclusion)
+                   for parcel in parcels]
+        return xr.concat(insides, 'parcel').any(dim='parcel')
 
-
-    # start DataArray defined by trivial test
-    inside = np.square(layout).sum(dim='xy') <= 1
-    return parcel_walker(parcels, inside)
+    undecided = np.square(layout).sum(dim='xy') <= 1
+    return inside_recursive(parcels, undecided)
