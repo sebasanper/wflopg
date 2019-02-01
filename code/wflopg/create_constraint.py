@@ -127,5 +127,6 @@ def inside_parcels(parcels, layout):
                    for parcel in parcels]
         return xr.concat(insides, 'parcel').any(dim='parcel')
 
-    undecided = np.square(layout).sum(dim='xy') <= 1
+    undecided = xr.DataArray(np.full(len(layout), True),
+                             dims=['target'])
     return inside_recursive(parcels, undecided)

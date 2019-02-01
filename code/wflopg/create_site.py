@@ -80,7 +80,7 @@ def parcels(parcels_list, rotor_radius):
         return processed_area
 
     parcels_dict = {
-        'circle': {'center': [0, 0], 'radius': 1},
+        'circle': {'center': [0, 0], 'radius': np.inf},
         'exclusions': parcels_list
     }
     return parcels_recursive(parcels_dict)
