@@ -1,5 +1,6 @@
 import numpy as np
 import xarray as xr
+import collections as cl
 
 from wflopg.constants import COORDS
 
@@ -122,3 +123,130 @@ def inside_parcels(parcels, layout):
     undecided = xr.DataArray(np.full(len(layout), True),
                              dims=['target'])
     return inside_recursive(parcels, undecided)
+
+
+def to_border(parcels, layout):
+    """Move turbines outside the parcels onto their border
+
+    parcels is a nested dict of constraints and exclusions, where the
+    constraints are formulated as linear expressions that evaluate to a
+    positive number on their ‘outside’ side or as circles.
+
+    layout is an xarray DataArray of xy-coordinates for the turbines.
+
+    """
+    def _constraint_common(e_clave, layout, scrutinize):
+        layout_mon = _xy_to_monomial(layout)
+        distance = xr.where(  # signed distance
+            scrutinize, e_clave['constraints'].dot(layout_mon), np.nan)
+        # turbines with a nonpositive constraint evaluation value
+        # satisfy that constraint
+        satisfies = xr.where(scrutinize, distance <= 0, False)
+        return distance, satisfies
+
+    def _circle_common(e_clave, layout, scrutinize):
+        layout_centered = layout - e_clave['circle']
+        dist_sqr = np.square(layout_centered).sum(dim='xy')
+        dist_sqr = xr.where(dist_sqr, dist_sqr, np.nan)
+            # dist_sqr is used as a divisor, NaN instead of zero gives warnings
+        radius_sqr = e_clave['circle'].radius_sqr
+        inside = xr.where(scrutinize, dist_sqr <= radius_sqr, False)
+        return layout_centered, dist_sqr, radius_sqr, inside
+
+    def process_enclave(enclave, layout, scrutinize):
+        # determine step to enclave border
+        if 'constraints' in enclave:
+            distance, satisfies = _constraint_common(
+                enclave, layout, scrutinize)
+            # turbines are inside the enclave if all of the constraints are
+            # satisfied
+            inside = satisfies.all(dim='constraint')
+            step = xr.where(
+                satisfies, [0, 0], distance * enclave['border_seeker']
+            ).sum(dim='constraint')
+        elif 'circle' in enclave:
+            layout_centered, dist_sqr, radius_sqr, inside = _circle_common(
+                enclave, layout, scrutinize)
+            step = xr.where(
+                inside,
+                [0, 0],
+                layout_centered * (np.sqrt(radius_sqr / dist_sqr) - 1)
+            )
+        else:
+            ValueError("An enclave should consist of at least constraints or "
+                       "a circle.")
+        # determine exclaves to be treated
+        exclaves = enclave.get('exclusions', [])
+        # return step to update layout and exclaves to be treated
+        return step, exclaves, inside
+
+    def process_exclave(exclave, layout, scrutinize):
+        # determine step to exclave border
+        if 'constraints' in exclave:
+            distance, satisfies = _constraint_common(
+                exclave, layout, scrutinize)
+            # turbines are inside the exclave if none of the constraints are
+            # satisfied
+            inside = ~satisfies.any(dim='constraint')
+            closest = distance.argmin(dim='constraint')
+                    # NOTE: argmin decides ties by picking first of minima
+            step = xr.where(
+                inside,
+                distance.isel(constraint=closest)
+                * exclave['border_seeker'].isel(constraint=closest),
+                [0, 0]
+            )
+        elif 'circle' in exclave:
+            layout_centered, dist_sqr, radius_sqr, inside = _circle_common(
+                exclave, layout, scrutinize)
+            step = xr.where(
+                inside,
+                xr.where(
+                    dist_sqr > 0,
+                    layout_centered * (np.sqrt(radius_sqr / dist_sqr) - 1),
+                    [np.sqrt(radius_sqr), 0]  # arbitrarily break symmetry
+                ),
+                [0, 0]
+            )
+        else:
+            ValueError("An exclave should consist of at least constraints or "
+                       "a circle.")
+        if 'exclusions' in exclave:
+            # determine step to exclave border or some enclave border
+            steps, exclaves, insides = list(
+                zip(*(process_enclave(enclave, layout, scrutinize)
+                      for enclave in exclave['exclusions']))
+            )
+            steps = xr.concat([step] + list(steps), 'border')
+            dists_sqr = np.square(steps).sum(dim='xy')
+            borders = dists_sqr.argmin(dim='border')
+                # NOTE: argmin decides ties by picking first of minima
+            step = xr.where(scrutinize, steps[borders], step)
+            # update scrutinize in exclaves depending on chosen border
+            borders -= 1  # we want indices for enclaves only
+            insides = xr.concat(insides, 'enclave')
+            outside = ~insides.any(dim='enclave')
+            # TODO: I suspect that the rest of this if-branch is inefficient
+            for target, border in enumerate(borders.values):
+                if border < 0 or not outside[target]:
+                    continue
+                insides[border][target] = True
+            exclaves = [(exclave, inside)
+                        for i, inside in enumerate(insides)
+                        for exclave in exclaves[i]]
+        else:  # end of recursion
+            exclaves = []
+        # return step to update layout and exclaves to be treated
+        return step, exclaves
+
+    old_layout = layout
+    layout = old_layout.copy()
+    scrutinize = xr.DataArray(np.full(len(layout), True), dims=['target'])
+    todo = cl.deque([(parcels, scrutinize)])
+    while todo:
+        exclave, scrutinize = todo.popleft()
+        step, deeper_todo = process_exclave(exclave, layout, scrutinize)
+        layout = xr.where(scrutinize, layout + step, layout)
+        todo.extend(deeper_todo)
+
+    return layout - old_layout
