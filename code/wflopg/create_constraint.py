@@ -47,8 +47,7 @@ def inside_parcels(parcels, layout):
 
     parcels is a nested dict of constraints and exclusions, where the
     constraints are formulated as linear expressions that evaluate to a
-    positive number on their ‘outside’ side or as circles where ‘outside’
-    corresponds to outside the delimited disc.
+    positive number on their ‘outside’ side or as circles.
 
     layout is an xarray DataArray of xy-coordinates for the turbines.
 
