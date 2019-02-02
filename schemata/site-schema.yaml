@@ -11,7 +11,6 @@ title: Wind farm site description
 type: object
 required:
   - uuid
-  - rotor_constraints
   - radius
   - parcels
 additionalProperties: false
@@ -101,6 +100,10 @@ definitions:
     properties:
       #~~
       rotor_constraint:
+        # TODO: * this should rather be a per-constraint property to provide
+        #         sufficient control in case of abutting parcels
+        #       * [implementation] for concave constraint angles,
+        #         circle wedges are needed, but that is quite complex
         description: >-
           Whether the area description constrains the tower location or
           also the rotor. If ‘false’, only the tower is constrained. If
