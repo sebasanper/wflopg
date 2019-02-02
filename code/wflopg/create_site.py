@@ -67,7 +67,7 @@ def parcels(parcels_list, rotor_radius):
             dist = area['circle']['radius']
             if area.get('rotor_constraint', False):
                 dist += rotor_radius if exclusion else -rotor_radius
-            processed_area['circle'].attrs['dist_sqr'] = np.square(dist)
+            processed_area['circle'].attrs['radius_sqr'] = np.square(dist)
         else:
             raise ValueError(
                 "An area must be described by either constraints or a circle")

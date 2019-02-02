@@ -85,7 +85,7 @@ def inside_parcels(parcels, layout):
             in_disc = xr.where(
                 undecided,
                 np.square(layout - parcel['circle']).sum(dim='xy')
-                <= parcel['circle'].dist_sqr,
+                <= parcel['circle'].radius_sqr,
                 False
             )
             if exclusion:
