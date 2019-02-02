@@ -35,7 +35,7 @@ def distance(turbine_distance):
         violation = (0 < distance) & (distance < turbine_distance)
             # NOTE: 0 excluded for distance-to-self,
             #       so try to avoid turbines at the same location
-        return = xr.where( # just enough to fix the issue
+        return xr.where( # just enough to fix the issue
             violation, (turbine_distance - distance) / 2 * vector, [0, 0]
         ).sum(dim='source')
 
