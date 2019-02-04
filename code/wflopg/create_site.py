@@ -54,8 +54,12 @@ def parcels(parcels_list, rotor_radius):
                 + np.square(coeffs.sel(monomial='y', drop=True))
             )
             coeffs = coeffs / norms  # normalize the coefficients
-            safety = (
-                rotor_radius if area.get('rotor_constraint', False) else 0)
+            rotor_constraint = xr.DataArray(
+                [constraint.get('rotor_constraint', False)
+                 for constraint in area['constraints']],
+                dims=['constraint']
+            )
+            safety = xr.where(rotor_constraint, rotor_radius, 0)
             coeffs.loc[{'monomial': '1'}] = (  # include rotor constraint
                 coeffs.sel(monomial='1') + safety)
             processed_area['constraints'] = coeffs
@@ -65,7 +69,7 @@ def parcels(parcels_list, rotor_radius):
             processed_area['circle'] = xr.DataArray(
                 area['circle']['center'], coords=[('xy', COORDS['xy'])])
             dist = area['circle']['radius']
-            if area.get('rotor_constraint', False):
+            if area['circle'].get('rotor_constraint', False):
                 dist += rotor_radius if exclusion else -rotor_radius
             processed_area['circle'].attrs['radius_sqr'] = np.square(dist)
         else:

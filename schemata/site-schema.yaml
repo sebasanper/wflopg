@@ -99,19 +99,6 @@ definitions:
     additionalProperties: false
     properties:
       #~~
-      rotor_constraint:
-        # TODO: * this should rather be a per-constraint property to provide
-        #         sufficient control in case of abutting parcels
-        #       * [implementation] for concave constraint angles,
-        #         circle wedges are needed, but that is quite complex
-        description: >-
-          Whether the area description constrains the tower location or
-          also the rotor. If ‘false’, only the tower is constrained. If
-          ‘true’ also the rotor is constrained. In the last case, this
-          means the tower must be placed at least a rotor radius inside the
-          area away from the boundary.
-        type: boolean
-        default: false
       #~~
       oneOf:
           #~~
@@ -192,13 +179,19 @@ definitions:
       - oneOf: ["x", "y"]
     additionalProperties: false
     properties:
-      border_included:
+      #~~
+      "rotor_constraint":
+        description: Whether or not the rotor must be taken into account
+        $ref: "#/definitions/rotor_constraint"
+      #~~
       "1":
         description: The constant term in the expression
         $ref: "#/definitions/coefficient"
+      #~~
       "x":
         description: The coefficient of x in the expression
         $ref: "#/definitions/coefficient"
+      #~~
       "y":
         description: The coefficient of y in the expression
         $ref: "#/definitions/coefficient"
@@ -219,6 +212,10 @@ definitions:
     additionalProperties: false
     properties:
       #~~
+      "rotor_constraint":
+        description: Whether or not the rotor must be taken into account
+        $ref: "#/definitions/rotor_constraint"
+      #~~
       center:
         $ref: "coordinate-schema.yaml#/definitions/coordinates"
       #~~
@@ -227,3 +224,14 @@ definitions:
         type: number
         exclusiveMinimum: 0
         maximum: 1
+  #~
+  rotor_constraint:
+    # NOTE: for pairs of adjacent constraints at angles < 180°, circle wedges
+    #       are needed, but that is quite complex
+    description: >-
+      Whether the area description constrains the tower location or also the
+      rotor. If ‘false’, only the tower is constrained. If ‘true’ also the
+      rotor is constrained. In the last case, this means the tower must be
+      placed at least a rotor radius inside the area away from the boundary.
+    type: boolean
+      default: false
