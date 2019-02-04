@@ -115,17 +115,20 @@ class Owflop():
                              "a constant 'thrust_coefficient'")
 
     def process_site(self, site):
+        self.roughness_length = site.get('roughness', None)
         self.site_radius = site['radius'] * 1e3  # km to m
-        if 'boundaries' in site:
-            self.boundaries = create_site.boundaries(site['boundaries'])
+        # Process parcels
         if 'parcels' in site:
             self.parcels = create_site.parcels(
                 site['parcels'], self.rotor_radius / self.site_radius)
-        # TODO: * use parcels together with the rotor radius to create a
-        #         function to check the boundary constraints
-        #       * use boundaries to create a function to visualize the
-        #         boundaries
-        self.roughness_length = site.get('roughness', None)
+        # create function that reports whether a turbine is inside the site
+        self.inside = create_constraint.inside_site(self.parcels)
+        # create function to generate site constraint violation fixup steps
+        self.to_border = create_constraint.site(self.parcels)
+        # Process boundaries
+        if 'boundaries' in site:
+            self.boundaries = create_site.boundaries(site['boundaries'])
+        # TODO: * use this to create a function to visualize the boundaries
 
     def process_wind_resource(self, wind_resource, roughness_length,
                               dir_subs, speeds, cut_in, cut_out):

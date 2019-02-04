@@ -43,7 +43,7 @@ def distance(turbine_distance):
     return proximity_repulsion
 
 
-def inside_parcels(parcels, layout):
+def inside_site(parcels):
     """Check which turbines in the layout are outside the parcels
 
     parcels is a nested dict of constraints and exclusions, where the
@@ -53,86 +53,85 @@ def inside_parcels(parcels, layout):
     layout is an xarray DataArray of xy-coordinates for the turbines.
 
     """
-    layout_mon = _xy_to_monomial(layout)
+    def inside(layout):
+        def parcel_walker(parcels, undecided, exclusion):
+            insides = [inside_recursive(parcel, undecided, exclusion)
+                      for parcel in parcels]
+            return xr.concat(insides, 'parcel').any(dim='parcel')
 
-    def inside_recursive(parcel, undecided, exclusion=True):
-        """Return which turbines are inside the given parcel
+        def inside_recursive(parcel, undecided, exclusion=True):
+            """Return which turbines are inside the given parcel
 
-        This recursive function walks over the parcel and its exclusions.
-        Whether or not it is currently operating in an exclusion is tracked by
-        the exclusion variable. The xarray DataArray undecided is a boolean
-        array with the same shape of the layout, but removing the xy-dimension.
-        It contains the turbines to consider.
+            This recursive function walks over the parcel and its exclusions.
+            Whether or not it is currently operating in an exclusion is tracked
+            by the exclusion variable. The xarray DataArray undecided is a
+            boolean array with the same shape of the layout, but removing the
+            xy-dimension. It contains the turbines to consider.
 
-        """
-        ##
-        undecided = undecided.copy()
-        if 'constraints' in parcel:
-            distance = xr.where(  # signed distance
-                undecided, parcel['constraints'].dot(layout_mon), np.nan)
-            # turbines with a nonpositive constraint evaluation value
-            # satisfy that constraint
-            satisfies = xr.where(undecided, distance <= 0, False)
+            """
+            ##
+            undecided = undecided.copy()
+            if 'constraints' in parcel:
+                distance = xr.where(  # signed distance
+                    undecided, parcel['constraints'].dot(layout_mon), np.nan)
+                # turbines with a nonpositive constraint evaluation value
+                # satisfy that constraint
+                satisfies = xr.where(undecided, distance <= 0, False)
+                if exclusion:
+                    # if no (not any) constraint is satisfied, then the
+                    # turbine is excluded (at this recursion level)
+                    outside = ~satisfies.any(dim='constraint')
+                else:
+                    # excluded turbines are inside the parcel if all of the
+                    # constraints at this deeper recursion level are satisfied
+                    included = satisfies.all(dim='constraint')
+            elif 'circle' in parcel:
+                in_disc = xr.where(
+                    undecided,
+                    np.square(layout - parcel['circle']).sum(dim='xy')
+                    <= parcel['circle'].radius_sqr,
+                    False
+                )
+                if exclusion:
+                    outside = in_disc
+                else:
+                    included = in_disc
+            ##
             if exclusion:
-                # if no (not any) constraint is satisfied, then the
-                # turbine is excluded (at this recursion level)
-                outside = ~satisfies.any(dim='constraint')
+                inside = undecided.copy()
+                undecided &= outside
             else:
-                # excluded turbines are inside the parcel if all of the
-                # constraints at this deeper recursion level are satisfied
-                included = satisfies.all(dim='constraint')
-        elif 'circle' in parcel:
-            in_disc = xr.where(
-                undecided,
-                np.square(layout - parcel['circle']).sum(dim='xy')
-                <= parcel['circle'].radius_sqr,
-                False
-            )
-            if exclusion:
-                outside = in_disc
-            else:
-                included = in_disc
-        ##
-        if exclusion:
-            inside = undecided.copy()
-            undecided &= outside
-        else:
-            inside = undecided & included
-            undecided = inside
+                inside = undecided & included
+                undecided = inside
 
-        if 'exclusions' in parcel:
-            # recurse to evaluate an exclusion (which may be an inclusion
-            # if its inside an exclusion, so we flip the exclusion
-            # variable's truth value)
-            inside = xr.where(
-                undecided,
-                parcel_walker(parcel['exclusions'], undecided, not exclusion),
-                inside
-            )
-        else:  # end of recursion
-            if exclusion:
-                inside = xr.where(undecided, ~undecided, inside)
-        return inside
+            if 'exclusions' in parcel:
+                # recurse to evaluate an exclusion (which may be an inclusion
+                # if its inside an exclusion, so we flip the exclusion
+                # variable's truth value)
+                inside = xr.where(
+                    undecided,
+                    parcel_walker(
+                        parcel['exclusions'], undecided, not exclusion),
+                    inside
+                )
+            else:  # end of recursion
+                if exclusion:
+                    inside = xr.where(undecided, ~undecided, inside)
+            return inside
+
+        layout_mon = _xy_to_monomial(layout)
+        undecided = xr.DataArray(np.full(len(layout), True), dims=['target'])
+        return inside_recursive(parcels, undecided)
+
+    return inside
 
 
-    def parcel_walker(parcels, undecided, exclusion):
-        insides = [inside_recursive(parcel, undecided, exclusion)
-                   for parcel in parcels]
-        return xr.concat(insides, 'parcel').any(dim='parcel')
-
-    undecided = xr.DataArray(np.full(len(layout), True),
-                             dims=['target'])
-    return inside_recursive(parcels, undecided)
-
-
-def to_border(parcels, layout):
-    """Move turbines outside the parcels onto their border
+def site(parcels):
+    """Create function to move turbines outside the site onto the parcel border
 
     parcels is a nested dict of constraints and exclusions, where the
     constraints are formulated as linear expressions that evaluate to a
     positive number on their ‘outside’ side or as circles.
-
-    layout is an xarray DataArray of xy-coordinates for the turbines.
 
     """
     def _constraint_common(e_clave, layout, scrutinize):
@@ -239,14 +238,22 @@ def to_border(parcels, layout):
         # return step to update layout and exclaves to be treated
         return step, exclaves
 
-    old_layout = layout
-    layout = old_layout.copy()
-    scrutinize = xr.DataArray(np.full(len(layout), True), dims=['target'])
-    todo = cl.deque([(parcels, scrutinize)])
-    while todo:
-        exclave, scrutinize = todo.popleft()
-        step, deeper_todo = process_exclave(exclave, layout, scrutinize)
-        layout = xr.where(scrutinize, layout + step, layout)
-        todo.extend(deeper_todo)
+    def to_border(layout):
+        """Move turbines outside the site onto the closest parcel border
 
-    return layout - old_layout
+        layout is an xarray DataArray of xy-coordinates for the turbines.
+
+        """
+        old_layout = layout
+        layout = old_layout.copy()
+        scrutinize = xr.DataArray(np.full(len(layout), True), dims=['target'])
+        todo = cl.deque([(parcels, scrutinize)])
+        while todo:
+            exclave, scrutinize = todo.popleft()
+            step, deeper_todo = process_exclave(exclave, layout, scrutinize)
+            layout = xr.where(scrutinize, layout + step, layout)
+            todo.extend(deeper_todo)
+
+        return layout - old_layout
+
+    return to_border
