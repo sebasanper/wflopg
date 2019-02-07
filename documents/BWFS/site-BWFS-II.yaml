@@ -6,7 +6,6 @@ particulars:
     https://offshorewind.rvo.nl/file/view/43061512/\
     Project+and+Site+Description+BWFS+I+%26amp%3B+II+Version+3+%28April+2016%29
 
-rotor_constraints: true
 radius: 7.1195
 location:
   - reference_system: ETRS89
@@ -14,7 +13,7 @@ location:
   - utm: [503695.85, 5720357.25]
 parcels:  # TODO
   - constraints:
-      - {"x": , "y": , "1": }
+      - {"x": , "y": , "1": , rotor_constraint: true}
 boundaries:
   - boundary:
       - [-0.272851, -0.687799]
