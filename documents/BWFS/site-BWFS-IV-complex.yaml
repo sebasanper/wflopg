@@ -1,0 +1,63 @@
+uuid: 8345a138-97e0-4c72-89c0-6d5e7462e5b3
+name: Borssele Wind Farm Site IV
+particulars:
+  - >-
+    Point data obtained from tender material at
+    https://offshorewind.rvo.nl/generalborssele. Namely, from the document
+    “Borssele Wind Farm Zone; Wind Farm Sites III and IV;
+    Appendix C: Boundaries & Coordinates” obtained at
+    https://offshorewind.rvo.nl/file/download/44692902
+  - >-
+    Archeological data obtained from tender material at
+    https://offshorewind.rvo.nl/generalborssele. Namely, from the file at
+    https://offshorewind.rvo.nl/file/download/43986522
+
+radius: 8.4628
+location:
+  - reference_system: ETRS89
+  - utm_zone: 31
+  - utm: [492539.33, 5733792.49]
+parcels:
+  - constraints: # IVa + IVb
+      - {"x": -0.871282, "y": -0.899564, "1": -1., rotor_constraint: true}
+      - {"x":  1., "y": -0.798527, "1": -0.669320, rotor_constraint: true}
+      - {"x": -0.316693, "y":  1., "1": -0.158119, rotor_constraint: true}
+      - {"x":  0.416783, "y":  1., "1":  0.069992, rotor_constraint: true}
+      - {"x":  0.598875, "y":  1., "1":  0.020557, rotor_constraint: true}
+      - {"x":  0.470030, "y":  1., "1":  0.059057, rotor_constraint: true}
+    exclusions:
+      - constraints:
+          - {"x": -0.249945, "y":  1., "1":  0.395467, rotor_constraint: true}
+          - {"x":  0.249356, "y": -1., "1": -0.274018, rotor_constraint: true}
+      - constraints:
+          - {"x": 0.573028, "y": 1., "1": 0.118584, rotor_constraint: true}
+          - {"x": 0.326646, "y": 1., "1": 0.088503, rotor_constraint: true}
+      - circle: # 100 m buffer around archeological shipwreck
+          {center: [-0.058554, -0.658767], radius: 0.011816}
+  - constraints: # IVc
+      - {"x": -0.316691, "y":  1., "1": -0.158109, rotor_constraint: true}
+      - {"x":  1., "y": -0.803943, "1": -0.541463, rotor_constraint: true}
+      - {"x": -0.625480, "y": -1., "1":  0.082657, rotor_constraint: true}
+      - {"x": -0.379160, "y": -1., "1":  0.094044, rotor_constraint: true}
+    exclusions:
+      - constraints:
+          - {"x": -0.324121, "y": -1., "1": 0.096589, rotor_constraint: true}
+          - {"x": -0.468405, "y": -1., "1": 0.136250, rotor_constraint: true}
+boundaries:
+  - boundary: # IVa
+      - [-0.98795236, -0.15475832] # WFZ_4
+      - [-0.68775564, -0.4455137 ] # P_77 ← not in vertices of IVa+b
+      - [ 0.29881097, -0.19950719] # P_73
+      - [ 0.20536654, -0.15558547] # P_72
+      - [-0.12209072, -0.04862303] # P_71 ← not in vertices of IVa and IVa+b
+      - [-0.31100018,  0.0596274 ] # P_70
+  - boundary: # IVb
+      - [-0.58775308, -0.54237308] # P_76 ← not in vertices of IVa+b
+      - [-0.12313056, -0.99239048] # P_75
+      - [ 0.44168357, -0.28507005] # P_74
+  - boundary: # IVc
+      - [-0.08008326,  0.13274754] # P_82
+      - [-0.04622915,  0.11157248] # P_81
+      - [ 0.27488267,  0.00749325] # P_80 ← not in vertices of IVc
+      - [ 0.47291443, -0.08526582] # P_79
+      - [ 0.89693565,  0.44216109] # P_78
