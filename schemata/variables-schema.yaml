@@ -47,15 +47,9 @@ definitions:
     exclusiveMaximum: 360.
   #~
   wind_speed:
-    title: Wind speed
-    type: number
-    unit: m/s
-    minimum: 0.
-  #~
-  wind_speed:
     title: Wind speed [m/s]
     description: >-
       A wind speed value in m/s. The number of significant digits should
       reflect the actual information available.
     type: number
-    minimum: 0
+    minimum: 0.
