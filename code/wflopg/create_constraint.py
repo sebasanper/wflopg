@@ -55,9 +55,13 @@ def inside_site(parcels):
     """
     def inside(layout):
         def parcel_walker(parcels, undecided, exclusion):
-            insides = [inside_recursive(parcel, undecided, exclusion)
-                      for parcel in parcels]
-            return xr.concat(insides, 'parcel').any(dim='parcel')
+            insides = [inside_recursive(parcel, undecided, not exclusion)
+                       for parcel in parcels]
+            insides = xr.concat(insides, 'parcel')
+            if exclusion:
+                return insides.any(dim='parcel')
+            else:
+                return insides.all(dim='parcel')
 
         def inside_recursive(parcel, undecided, exclusion=True):
             """Return which turbines are inside the given parcel
@@ -107,16 +111,16 @@ def inside_site(parcels):
             if 'exclusions' in parcel:
                 # recurse to evaluate an exclusion (which may be an inclusion
                 # if its inside an exclusion, so we flip the exclusion
-                # variable's truth value)
+                # variable's truth value in the called parcel_walker function)
                 inside = xr.where(
                     undecided,
                     parcel_walker(
-                        parcel['exclusions'], undecided, not exclusion),
+                        parcel['exclusions'], undecided, exclusion),
                     inside
                 )
             else:  # end of recursion
                 if exclusion:
-                    inside = xr.where(undecided, ~undecided, inside)
+                    inside = xr.where(undecided, False, inside)
             return inside
 
         layout_mon = _xy_to_monomial(layout)
