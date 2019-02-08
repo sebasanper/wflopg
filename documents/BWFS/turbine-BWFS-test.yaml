@@ -1,0 +1,12 @@
+uuid: 99edfc5f-14c9-40d7-a545-e67400104656
+name: Test turbine for BWFS-IV
+particulars:
+  - cubic
+
+rotor_radius: 82
+hub_height: 110
+rated_power: 9.5
+rated_wind_speed: 10
+cut_in: 4
+cut_out: 25
+thrust_coefficient: 0.88

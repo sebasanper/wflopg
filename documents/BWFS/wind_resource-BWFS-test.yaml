@@ -1,0 +1,9 @@
+uuid: 42a34f0f-c18c-4f85-991b-dae349825cd8
+name: Test wind resource for BWFS-IV
+reference_height: 110.
+turbulence_intensity: 0.075
+wind_rose:
+  directions: [0.]
+  direction_pmf: [1]
+  speeds: [10.]
+  speed_cpmf: [[1]]

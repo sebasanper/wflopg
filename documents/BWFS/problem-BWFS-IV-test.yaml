@@ -1,0 +1,11 @@
+uuid: 97765f72-4c6a-48b0-b1c2-1a2d41a10bf8
+name: Test problem for BWFS-IV
+site: "site-BWFS-IV-complex.yaml"
+wind_resource: "wind_resource-BWFS-test.yaml"
+turbine: "turbine-BWFS-test.yaml"
+turbine_distance: 2
+turbines: 3660
+layout: "layout-BWFS-IV-site_constraint_test.yaml"
+objective: "maximize expected power"
+wake_model: "BPA (IEA37)"
+wake_combination: "RSS"
