@@ -44,18 +44,21 @@ parcels:
           - {"x": -0.324121, "y": -1., "1": 0.096589, rotor_constraint: true}
           - {"x": -0.468405, "y": -1., "1": 0.136250, rotor_constraint: true}
 boundaries:
-  - boundary: # IVa
+  - polygon: # IVa
       - [-0.98795236, -0.15475832] # WFZ_4
       - [-0.68775564, -0.4455137 ] # P_77 ← not in vertices of IVa+b
       - [ 0.29881097, -0.19950719] # P_73
       - [ 0.20536654, -0.15558547] # P_72
       - [-0.12209072, -0.04862303] # P_71 ← not in vertices of IVa and IVa+b
       - [-0.31100018,  0.0596274 ] # P_70
-  - boundary: # IVb
+  - polygon: # IVb
       - [-0.58775308, -0.54237308] # P_76 ← not in vertices of IVa+b
       - [-0.12313056, -0.99239048] # P_75
       - [ 0.44168357, -0.28507005] # P_74
-  - boundary: # IVc
+    exclusions:
+      - circle: # 100 m buffer around archeological shipwreck
+          {center: [-0.058554, -0.658767], radius: 0.011816}
+  - polygon: # IVc
       - [-0.08008326,  0.13274754] # P_82
       - [-0.04622915,  0.11157248] # P_81
       - [ 0.27488267,  0.00749325] # P_80 ← not in vertices of IVc
