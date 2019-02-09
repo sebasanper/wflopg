@@ -65,6 +65,12 @@ def parcels(parcels_list, rotor_radius):
             processed_area['constraints'] = coeffs
             processed_area['border_seeker'] = -coeffs.sel(
                 monomial=COORDS['xy']).rename(monomial='xy')
+            vertices_hom = np.cross(
+                coeffs.values, np.roll(coeffs.values, 1, axis=0))
+            processed_area['vertices'] = xr.DataArray(
+                vertices_hom[:,1:] / vertices_hom[:,:1],
+                dims=['constraint', 'xy'], coords={'xy': COORDS['xy']}
+            )
         elif 'circle' in area:
             processed_area['circle'] = xr.DataArray(
                 area['circle']['center'], coords=[('xy', COORDS['xy'])])
