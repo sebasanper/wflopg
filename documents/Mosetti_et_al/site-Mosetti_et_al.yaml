@@ -35,8 +35,8 @@ parcels:
       # to approximate somewhat the discretized nature in the original papers
     constraints:
       - {"x":  1.0, "1": -0.707107}
-      - {"x": -1.0, "1": -0.707107}
       - {"y":  1.0, "1": -0.707107}
+      - {"x": -1.0, "1": -0.707107}
       - {"y": -1.0, "1": -0.707107}
 boundaries:
   - polygon:

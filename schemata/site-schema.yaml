@@ -104,7 +104,9 @@ definitions:
           #~~
         - constraints:
             description: >-
-              A list of linear constraints describing a convex polytope
+              A list of linear constraints describing a convex polytope;
+              the constraints must be ordered so that every adjacent pair in
+              the list is also ‘adjacent’ for the polytope
             type: array
             uniqueItems: true
             minItems: 1

@@ -19,12 +19,12 @@ location:
   - utm: [492539.33, 5733792.49]
 parcels:
   - constraints: # IVa + IVb
-      - {"x": -0.871282, "y": -0.899564, "1": -1., rotor_constraint: true}
-      - {"x":  1., "y": -0.798527, "1": -0.669320, rotor_constraint: true}
-      - {"x": -0.316693, "y":  1., "1": -0.158119, rotor_constraint: true}
-      - {"x":  0.416783, "y":  1., "1":  0.069992, rotor_constraint: true}
-      - {"x":  0.598875, "y":  1., "1":  0.020557, rotor_constraint: true}
-      - {"x":  0.470030, "y":  1., "1":  0.059057, rotor_constraint: true}
+      - {"x": -0.871282, "y": -0.899564, "1": -1., rotor_constraint: true} # WFZ_4, P_75
+      - {"x":  1., "y": -0.798527, "1": -0.669320, rotor_constraint: true} # P_75, P_74
+      - {"x":  0.598875, "y":  1., "1":  0.020557, rotor_constraint: true} # P_74, P_73
+      - {"x":  0.470030, "y":  1., "1":  0.059057, rotor_constraint: true} # P_73, P_72
+      - {"x":  0.416783, "y":  1., "1":  0.069992, rotor_constraint: true} # P_72, P_70
+      - {"x": -0.316693, "y":  1., "1": -0.158119, rotor_constraint: true} # P_70, WFZ_4
     exclusions:
       - constraints:
           - {"x": -0.249945, "y":  1., "1":  0.395467, rotor_constraint: true}
@@ -35,10 +35,10 @@ parcels:
       - circle: # 100 m buffer around archeological shipwreck
           {center: [-0.058554, -0.658767], radius: 0.011816}
   - constraints: # IVc
-      - {"x": -0.316691, "y":  1., "1": -0.158109, rotor_constraint: true}
-      - {"x":  1., "y": -0.803943, "1": -0.541463, rotor_constraint: true}
-      - {"x": -0.625480, "y": -1., "1":  0.082657, rotor_constraint: true}
-      - {"x": -0.379160, "y": -1., "1":  0.094044, rotor_constraint: true}
+      - {"x": -0.316691, "y":  1., "1": -0.158109, rotor_constraint: true} # P_82, P_78
+      - {"x":  1., "y": -0.803943, "1": -0.541463, rotor_constraint: true} # P_78, P_79
+      - {"x": -0.379160, "y": -1., "1":  0.094044, rotor_constraint: true} # P_79, P_81
+      - {"x": -0.625480, "y": -1., "1":  0.082657, rotor_constraint: true} # P_81, P_82
     exclusions:
       - constraints:
           - {"x": -0.324121, "y": -1., "1": 0.096589, rotor_constraint: true}
