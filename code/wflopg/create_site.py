@@ -69,7 +69,7 @@ def parcels(parcels_list, rotor_radius):
                 coeffs.values, np.roll(coeffs.values, 1, axis=0))
             processed_area['vertices'] = xr.DataArray(
                 vertices_hom[:,1:] / vertices_hom[:,:1],
-                dims=['constraint', 'xy'], coords={'xy': COORDS['xy']}
+                dims=['vertex', 'xy'], coords={'xy': COORDS['xy']}
             )
         elif 'circle' in area:
             processed_area['circle'] = xr.DataArray(

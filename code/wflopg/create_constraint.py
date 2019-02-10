@@ -141,7 +141,8 @@ def site(parcels):
     def _constraint_common(e_clave, layout, scrutinize):
         layout_mon = _xy_to_monomial(layout)
         distance = xr.where(  # signed distance
-            scrutinize, e_clave['constraints'].dot(layout_mon), np.nan)
+            scrutinize, e_clave['constraints'].dot(layout_mon), 0)
+            # TODO: is a value of 0 for unscrutinized turbines safe here?
         # turbines with a nonpositive constraint evaluation value
         # satisfy that constraint
         satisfies = xr.where(scrutinize, distance <= 0, False)
@@ -164,9 +165,11 @@ def site(parcels):
             # turbines are inside the enclave if all of the constraints are
             # satisfied
             inside = satisfies.all(dim='constraint')
-            step = xr.where(
+            steps = xr.where(
                 satisfies, [0, 0], distance * enclave['border_seeker']
-            ).sum(dim='constraint')
+            )
+            step = steps.isel(constraint=distance.argmax(dim='constraint'))
+            # TODO: check if correction is valid, if not, go to closest vertex
         elif 'circle' in enclave:
             layout_centered, dist_sqr, radius_sqr, inside = _circle_common(
                 enclave, layout, scrutinize)
