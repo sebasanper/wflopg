@@ -166,10 +166,29 @@ def site(parcels):
             # satisfied
             inside = satisfies.all(dim='constraint')
             steps = xr.where(
-                satisfies, [0, 0], distance * enclave['border_seeker']
-            )
+                satisfies,
+                [0, 0],
+                distance * (1+1e-6) * enclave['border_seeker']
+            )  # 1+1e-6 to avoid round-off ‘outsides’ TODO: more elegantly
             step = steps.isel(constraint=distance.argmax(dim='constraint'))
-            # TODO: check if correction is valid, if not, go to closest vertex
+            # now check if correction lies on the border;
+            # if not, move to the closest vertex
+            distance, satisfies = _constraint_common(
+                enclave, layout + step, scrutinize)
+            still_outside = ~satisfies.all(dim='constraint')
+            # TODO: ideally, we only check the relevant vertices,
+            #       now we brute-force it by checking all
+            vertex_dist_sqr = xr.where(
+                still_outside,
+                np.square(layout - enclave['vertices']).sum(dim='xy'),
+                np.inf
+            )
+            step = xr.where(
+                still_outside,
+                enclave['vertices'].isel(
+                    vertex=vertex_dist_sqr.argmin(dim='vertex')) - layout,
+                step
+            )
         elif 'circle' in enclave:
             layout_centered, dist_sqr, radius_sqr, inside = _circle_common(
                 enclave, layout, scrutinize)
