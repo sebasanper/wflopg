@@ -151,10 +151,11 @@ def site(parcels):
     def _circle_common(e_clave, layout, scrutinize):
         layout_centered = layout - e_clave['circle']
         dist_sqr = np.square(layout_centered).sum(dim='xy')
-        dist_sqr = xr.where(dist_sqr, dist_sqr, np.nan)
-            # dist_sqr is used as a divisor, NaN instead of zero gives warnings
         radius_sqr = e_clave['circle'].radius_sqr
         inside = xr.where(scrutinize, dist_sqr <= radius_sqr, False)
+        dist_sqr = xr.where(dist_sqr > 0, dist_sqr, np.nan)
+            # dist_sqr is used as a divisor, NaN instead of zero gives warnings
+            # do not move this above definition of ‘inside’!
         return layout_centered, dist_sqr, radius_sqr, inside
 
     def process_enclave(enclave, layout, scrutinize):
@@ -262,6 +263,7 @@ def site(parcels):
         else:  # end of recursion
             exclaves = []
         # return step to update layout and exclaves to be treated
+        print(step.isel(target=0))
         return step, exclaves
 
     def to_border(layout):
