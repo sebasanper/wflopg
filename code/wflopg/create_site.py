@@ -1,5 +1,6 @@
 import numpy as np
 import xarray as xr
+import pypoman.duality as ppmd
 
 from wflopg.constants import COORDS
 
@@ -38,7 +39,7 @@ def parcels(parcels_list, rotor_radius):
     The rotor radius must be the site-adimensional rotor radius.
 
     """
-    def parcels_recursive(area, exclusion=True):
+    def parcels_recursive(area, exclusion=True, previous_coeffs=None):
         processed_area = {}
         if 'constraints' in area:
             # https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_an_equation
@@ -65,12 +66,19 @@ def parcels(parcels_list, rotor_radius):
             processed_area['constraints'] = coeffs
             processed_area['border_seeker'] = -coeffs.sel(
                 monomial=COORDS['xy']).rename(monomial='xy')
-            vertices_hom = np.cross(
-                coeffs.values, np.roll(coeffs.values, 1, axis=0))
-            processed_area['vertices'] = xr.DataArray(
-                vertices_hom[:,1:] / vertices_hom[:,:1],
-                dims=['vertex', 'xy'], coords={'xy': COORDS['xy']}
+            if exclusion and (previous_coeffs is not None):
+                # we must include coefficients of the encompassing constraints
+                # (if any) as well to get the vertices
+                coeffs = xr.concat([-coeffs, previous_coeffs], 'constraint')
+                previous_coeffs = None
+            else:
+                previous_coeffs = coeffs
+            vertices = ppmd.compute_polytope_vertices(
+                coeffs.sel(monomial=COORDS['xy']).values,
+                -coeffs.sel(monomial='1').values
             )
+            processed_area['vertices'] = xr.DataArray(
+                vertices, dims=['vertex', 'xy'], coords={'xy': COORDS['xy']})
         elif 'circle' in area:
             processed_area['circle'] = xr.DataArray(
                 area['circle']['center'], coords=[('xy', COORDS['xy'])])
@@ -78,12 +86,13 @@ def parcels(parcels_list, rotor_radius):
             if area['circle'].get('rotor_constraint', False):
                 dist += rotor_radius if exclusion else -rotor_radius
             processed_area['circle'].attrs['radius_sqr'] = np.square(dist)
+            previous_coeffs = None
         else:
             raise ValueError(
                 "An area must be described by either constraints or a circle")
         if 'exclusions' in area:
             processed_area['exclusions'] = [
-                parcels_recursive(area, not exclusion)
+                parcels_recursive(area, not exclusion, previous_coeffs)
                 for area in area['exclusions']
             ]
 
