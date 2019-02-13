@@ -5,6 +5,20 @@ import pypoman.polygon as ppmp
 from wflopg.constants import COORDS
 
 
+def xy_to_monomial(xy):
+    """Return monomial ‘coordinates’ for the given xy-coordinates
+
+    This function works for any xarray DataArray with xy as a dimension.
+
+    """
+    x = xy.sel(xy='x', drop=True)
+    y = xy.sel(xy='y', drop=True)
+    one = xr.ones_like(x)
+    mon = xr.concat([one, x, y], 'monomial').transpose()
+    mon.coords['monomial'] = COORDS['monomial']
+    return mon
+
+
 def boundaries(boundaries_list):
     processed_boundaries = []
     for boundary_nesting in boundaries_list:
@@ -79,6 +93,14 @@ def parcels(parcels_list, rotor_radius):
             )
             processed_area['vertices'] = xr.DataArray(
                 vertices, dims=['vertex', 'xy'], coords={'xy': COORDS['xy']})
+            if exclusion:
+                # create a mask for vertices that fall outside the site
+                vertices_mon = xy_to_monomial(processed_area['vertices'])
+                distance = processed_area['constraints'].dot(vertices_mon)
+                # turbines with a positive constraint evaluation value
+                # violate that constraint
+                processed_area['violates'] = (
+                    distance > 0).all(dim='constraint')
         elif 'circle' in area:
             processed_area['circle'] = xr.DataArray(
                 area['circle']['center'], coords=[('xy', COORDS['xy'])])

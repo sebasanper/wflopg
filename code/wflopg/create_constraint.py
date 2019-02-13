@@ -3,20 +3,7 @@ import xarray as xr
 import collections as cl
 
 from wflopg.constants import COORDS
-
-
-def _xy_to_monomial(xy):
-    """Return monomial ‘coordinates’ for the given xy-coordinates
-
-    This function works for any xarray DataArray with xy as a dimension.
-
-    """
-    x = xy.sel(xy='x', drop=True)
-    y = xy.sel(xy='y', drop=True)
-    one = xr.ones_like(x)
-    mon = xr.concat([one, x, y], 'monomial').transpose()
-    mon.coords['monomial'] = COORDS['monomial']
-    return mon
+from wflopg.create_site import xy_to_monomial
 
 
 def distance(turbine_distance):
@@ -123,7 +110,7 @@ def inside_site(parcels):
                     inside = xr.where(undecided, False, inside)
             return inside
 
-        layout_mon = _xy_to_monomial(layout)
+        layout_mon = xy_to_monomial(layout)
         undecided = xr.DataArray(np.full(len(layout), True), dims=['target'])
         return inside_recursive(parcels, undecided)
 
@@ -139,7 +126,7 @@ def site(parcels):
 
     """
     def _constraint_common(e_clave, layout, scrutinize):
-        layout_mon = _xy_to_monomial(layout)
+        layout_mon = xy_to_monomial(layout)
         distance = xr.where(  # signed distance
             scrutinize, e_clave['constraints'].dot(layout_mon), 0)
             # TODO: is a value of 0 for unscrutinized turbines safe here?
@@ -230,16 +217,17 @@ def site(parcels):
                     enclave, layout + step, inside)
                 still_outside = inside & ~satisfies.all(dim='constraint')
                 # TODO: ideally, we only check the relevant vertices,
-                #       now we brute-force it by checking all
+                #       now we brute-force it by checking all (non-violating)
+                vertices = exclave['vertices'][~exclave['violates']]
                 vertex_dist_sqr = xr.where(
                     still_outside,
-                    np.square(layout - exclave['vertices']).sum(dim='xy'),
+                    np.square(layout - vertices).sum(dim='xy'),
                     np.inf
                 )
                 step = xr.where(
                     still_outside,
-                    exclave['vertices'].isel(
-                        vertex=vertex_dist_sqr.argmin(dim='vertex')) - layout,
+                    vertices.isel(vertex=vertex_dist_sqr.argmin(dim='vertex'))
+                    - layout,
                     step
                 )
                 enclave = None
