@@ -1,6 +1,6 @@
 import numpy as np
 import xarray as xr
-import pypoman.duality as ppmd
+import pypoman.polygon as ppmp
 
 from wflopg.constants import COORDS
 
@@ -73,7 +73,7 @@ def parcels(parcels_list, rotor_radius):
                 previous_coeffs = None
             else:
                 previous_coeffs = coeffs
-            vertices = ppmd.compute_polytope_vertices(
+            vertices = ppmp.compute_polygon_hull(
                 coeffs.sel(monomial=COORDS['xy']).values,
                 -coeffs.sel(monomial='1').values
             )
