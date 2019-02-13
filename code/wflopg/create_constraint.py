@@ -165,7 +165,7 @@ def site(parcels):
                 enclave, layout, scrutinize)
             # turbines are inside the enclave if all of the constraints are
             # satisfied
-            inside = satisfies.all(dim='constraint')
+            inside = scrutinize & satisfies.all(dim='constraint')
             steps = xr.where(
                 satisfies,
                 [0, 0],
@@ -176,7 +176,7 @@ def site(parcels):
             # if not, move to the closest vertex
             distance, satisfies = _constraint_common(
                 enclave, layout + step, scrutinize)
-            still_outside = ~satisfies.all(dim='constraint')
+            still_outside = scrutinize & ~satisfies.all(dim='constraint')
             # TODO: ideally, we only check the relevant vertices,
             #       now we brute-force it by checking all
             vertex_dist_sqr = xr.where(
@@ -198,30 +198,51 @@ def site(parcels):
                 [0, 0],
                 layout_centered * (np.sqrt(radius_sqr / dist_sqr) - 1)
             )
+            enclave = None
         else:
             ValueError("An enclave should consist of at least constraints or "
                        "a circle.")
         # determine exclaves to be treated
         exclaves = enclave.get('exclusions', [])
         # return step to update layout and exclaves to be treated
-        return step, exclaves, inside
+        return step, exclaves, inside, enclave
 
-    def process_exclave(exclave, layout, scrutinize):
+    def process_exclave(exclave, layout, scrutinize, enclave):
         # determine step to exclave border
         if 'constraints' in exclave:
             distance, satisfies = _constraint_common(
                 exclave, layout, scrutinize)
             # turbines are inside the exclave if none of the constraints are
             # satisfied
-            inside = ~satisfies.any(dim='constraint')
+            inside = scrutinize & ~satisfies.any(dim='constraint')
             closest = distance.argmin(dim='constraint')
                     # NOTE: argmin decides ties by picking first of minima
             step = xr.where(
                 inside,
-                distance.isel(constraint=closest)
+                distance.isel(constraint=closest) * (1+1e-6)
                 * exclave['border_seeker'].isel(constraint=closest),
                 [0, 0]
-            )
+            )  # 1+1e-6 to avoid round-off ‘outsides’ TODO: more elegantly
+            if enclave is not None:
+                # now check if correction lies in the encompassing enclave;
+                # if not, move to the closest vertex of this exclave
+                distance, satisfies = _constraint_common(
+                    enclave, layout + step, inside)
+                still_outside = inside & ~satisfies.all(dim='constraint')
+                # TODO: ideally, we only check the relevant vertices,
+                #       now we brute-force it by checking all
+                vertex_dist_sqr = xr.where(
+                    still_outside,
+                    np.square(layout - exclave['vertices']).sum(dim='xy'),
+                    np.inf
+                )
+                step = xr.where(
+                    still_outside,
+                    exclave['vertices'].isel(
+                        vertex=vertex_dist_sqr.argmin(dim='vertex')) - layout,
+                    step
+                )
+                enclave = None
         elif 'circle' in exclave:
             layout_centered, dist_sqr, radius_sqr, inside = _circle_common(
                 exclave, layout, scrutinize)
@@ -239,7 +260,7 @@ def site(parcels):
                        "a circle.")
         if 'exclusions' in exclave:
             # determine step to exclave border or some enclave border
-            steps, exclaves, insides = list(
+            steps, exclaves, insides, enclaves = list(
                 zip(*(process_enclave(enclave, layout, scrutinize)
                       for enclave in exclave['exclusions']))
             )
@@ -247,23 +268,22 @@ def site(parcels):
             dists_sqr = np.square(steps).sum(dim='xy')
             borders = dists_sqr.argmin(dim='border')
                 # NOTE: argmin decides ties by picking first of minima
-            step = xr.where(scrutinize, steps[borders], step)
+            step = xr.where(scrutinize, steps.isel(border=borders), step)
             # update scrutinize in exclaves depending on chosen border
             borders -= 1  # we want indices for enclaves only
             insides = xr.concat(insides, 'enclave')
-            outside = ~insides.any(dim='enclave')
+            outside = scrutinize & ~insides.any(dim='enclave')
             # TODO: I suspect that the rest of this if-branch is inefficient
             for target, border in enumerate(borders.values):
                 if border < 0 or not outside[target]:
                     continue
                 insides[border][target] = True
-            exclaves = [(exclave, inside)
+            exclaves = [(exclave, inside, enclaves[i])
                         for i, inside in enumerate(insides)
                         for exclave in exclaves[i]]
         else:  # end of recursion
             exclaves = []
         # return step to update layout and exclaves to be treated
-        print(step.isel(target=0))
         return step, exclaves
 
     def to_border(layout):
@@ -275,10 +295,11 @@ def site(parcels):
         old_layout = layout
         layout = old_layout.copy()
         scrutinize = xr.DataArray(np.full(len(layout), True), dims=['target'])
-        todo = cl.deque([(parcels, scrutinize)])
+        todo = cl.deque([(parcels, scrutinize, None)])
         while todo:
-            exclave, scrutinize = todo.popleft()
-            step, deeper_todo = process_exclave(exclave, layout, scrutinize)
+            exclave, scrutinize, enclave = todo.popleft()
+            step, deeper_todo = process_exclave(
+                exclave, layout, scrutinize, enclave)
             layout = xr.where(scrutinize, layout + step, layout)
             todo.extend(deeper_todo)
 
