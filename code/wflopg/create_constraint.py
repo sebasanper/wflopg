@@ -156,8 +156,9 @@ def site(parcels):
             steps = xr.where(
                 satisfies,
                 [0, 0],
-                distance * (1+1e-6) * enclave['border_seeker']
-            )  # 1+1e-6 to avoid round-off ‘outsides’ TODO: more elegantly
+                distance * (1+1e-9)
+                * enclave['border_seeker']
+            )  # 1+1e-9 to avoid round-off ‘outsides’ TODO: more elegantly
             step = steps.isel(constraint=distance.argmax(dim='constraint'))
             # now check if correction lies on the border;
             # if not, move to the closest vertex
@@ -204,12 +205,15 @@ def site(parcels):
             inside = scrutinize & ~satisfies.any(dim='constraint')
             closest = distance.argmin(dim='constraint')
                     # NOTE: argmin decides ties by picking first of minima
+                    # TODO: we're choosing the closest too soon here;
+                    #       it must be done after discarding the ones that do
+                    #       not lie inside the enclosing enclave (if any)
             step = xr.where(
                 inside,
-                distance.isel(constraint=closest) * (1+1e-6)
+                distance.isel(constraint=closest) * (1+1e-9)
                 * exclave['border_seeker'].isel(constraint=closest),
                 [0, 0]
-            )  # 1+1e-6 to avoid round-off ‘outsides’ TODO: more elegantly
+            )  # 1+1e-9 to avoid round-off ‘outsides’ TODO: more elegantly
             if enclave is not None:
                 # now check if correction lies in the encompassing enclave;
                 # if not, move to the closest vertex of this exclave
