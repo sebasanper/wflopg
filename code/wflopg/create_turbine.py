@@ -106,9 +106,8 @@ def interpolated_power_curve(rated_power, rated_speed, cut_in, cut_out,
         speeds_flat = speeds.values.flatten()
         wc = _common(speeds_flat, cut_in, cut_out)  # within cut
         return xr.DataArray(
-            xr.where(
-                wc, interpolator.interp(speed=speeds_flat), 0
-            ).values.reshape(speeds.shape),
+            interpolator.interp(
+                speed=speeds_flat).where(wc, 0).values.reshape(speeds.shape),
             dims=speeds.dims, coords=speeds.coords
         )
 
@@ -124,7 +123,7 @@ def constant_thrust_curve(cut_in, cut_out, thrust_coefficient):
 
         """
         wc = _common(speeds, cut_in, cut_out)  # within cut
-        return xr.where(wc, thrust_coefficient, 0)
+        return thrust_coefficient.where(wc, 0)
 
     return thrust_curve
 
@@ -151,9 +150,8 @@ def interpolated_thrust_curve(cut_in, cut_out, interpolation_data):
         speeds_flat = speeds.values.flatten()
         wc = _common(speeds_flat, cut_in, cut_out)  # within cut
         return xr.DataArray(
-            xr.where(
-                wc, interpolator.interp(speed=speeds_flat), 0
-            ).values.reshape(speeds.shape),
+            interpolator.interp(
+                speed=speeds_flat).where(wc, 0).values.reshape(speeds.shape),
             dims=speeds.dims, coords=speeds.coords
         )
 

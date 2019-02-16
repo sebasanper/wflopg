@@ -45,8 +45,8 @@ def rss_combination():
         squared_combined = squared.sum(dim='source')
         relative = xr.where(
             squared_combined > 0, squared / squared_combined, 0)
-        squared_combined_saturated = xr.where(  # RSS does not guarantee <= 1
-            squared_combined <= 1, squared_combined, 1)
+        squared_combined_saturated = (  # RSS does not guarantee <= 1
+            squared_combined.where(squared_combined <= 1, 1))
         return np.sqrt(squared_combined_saturated), relative
 
     return combination_rule
