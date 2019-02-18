@@ -22,8 +22,8 @@ class Owflop():
         # _ds is the main working Dataset
         self._ds = xr.Dataset(coords={dim: COORDS[dim]
                                       for dim in {'xy', 'dc'}})
-        # history of layouts as a dict with identifier, layout pairs
-        self.layouts = {}
+        # history of layouts and friends as a list of xr.DataSets
+        self.history = []
 
     def load_problem(self, filename):
         """Load wind farm layout optimization problem file
@@ -71,9 +71,11 @@ class Owflop():
             self._ds['downwind'])
 
         # create function to generate turbine constraint violation fixup steps
-        self.proximity_repulsion = create_constraint.distance(
-            problem.get('turbine_distance', 0)
-            * (2 * self.rotor_radius) / self.site_radius
+        self.proximity_violation, self.proximity_repulsion = (
+            create_constraint.distance(
+                problem.get('turbine_distance', 0)
+                * (2 * self.rotor_radius) / self.site_radius
+            )
         )
 
         # deal with initial layout
@@ -83,6 +85,7 @@ class Owflop():
         else:
             initial_layout = [[0, 0]]
         self.process_layout(initial_layout)
+        self.calculate_geometry()
 
     def process_turbine(self, turbine):
         self.rotor_radius = turbine['rotor_radius']
@@ -198,17 +201,10 @@ class Owflop():
         # turbines affected by the wake
         self._ds['layout'] = xr.DataArray(initial_layout,
                                           dims=['target', 'xy'])
-        self.layouts['initial'] = xr.DataArray(
-            initial_layout,
-            dims=['target', 'xy'],
-            coords={'xy': self._ds.coords['xy']}
-        )
         # turbines causing the wakes
         # NOTE: currently, these are the same as the ones affected
         self._ds['context'] = xr.DataArray(initial_layout,
                                            dims=['source', 'xy'])
-        # geometric information (in a general sense)
-        self.calculate_geometry()
 
     def process_wake_model(self,
                            model, expansion_coefficient, combination_rule):
@@ -249,13 +245,14 @@ class Owflop():
         # we always minimize!
         if objective == "maximize expected power":
             # we minimize the average expected wake loss factor
-            self.objective = lambda: self.average_expected_wake_loss_factor
+            self.objective = (
+                lambda: self._ds['average_expected_wake_loss_factor'])
         elif objective == "minimize cost of energy (Mosetti)":
             # we minimize a proxy for the marginal expected cost of energy per
             # turbine
             self.objective = lambda: (
                 np.exp(-0.00174 * len(self._ds.coords['target']) ** 2)
-                / (1 - self.average_expected_wake_loss_factor)
+                / (1 - self._ds['average_expected_wake_loss_factor'])
             )
         else:
             raise ValueError("Unknown objective specified.")
@@ -274,12 +271,13 @@ class Owflop():
               self._ds['distance'] > 0,
               self._ds['vector'] / self._ds['distance'],
               [0, 0])
+
+    def calculate_deficit(self):
         # downwind/crosswind coordinates for vectors
         # between all source and target turbines, for all directions
         self._ds['dc_vector'] = layout_geometry.generate_dc_vector(
             self._ds['vector'], self._ds['downwind'], self._ds['crosswind'])
-
-    def calculate_deficit(self):
+        # deficit
         self._ds['deficit'] = self.wake_model(self._ds['dc_vector']
                                               * self.site_radius)
         (self._ds['combined_deficit'],
@@ -309,8 +307,8 @@ class Owflop():
         self._ds['expected_wake_loss_factor'] = self.expectation(
             self._ds['wake_loss_factor'])
         # turbine average
-        self.average_expected_wake_loss_factor = float(
-            self._ds['expected_wake_loss_factor'].mean())
+        self._ds['average_expected_wake_loss_factor'] = (
+            self._ds['expected_wake_loss_factor'].mean(dim='target'))
 
     def calculate_relative_wake_loss_vector(self):
         self._ds['relative_wake_loss_vector'] = (
@@ -320,19 +318,19 @@ class Owflop():
         ).transpose('direction', 'speed', 'source', 'target', 'xy')
 
     def calculate_push_down_vector(self):
-        self._ds['push_down_vector'] = self.expectation(
+        return self.expectation(
             self._ds['relative_wake_loss_vector'].sum(dim='source')
         ) * 10 * (self.rotor_radius / self.site_radius)
             # a fully waked turbine (deficit = 1) is moved 5 rotor diameters
 
     def calculate_push_back_vector(self):
-        self._ds['push_back_vector'] = self.expectation(
+        return self.expectation(
             self._ds['relative_wake_loss_vector'].sum(dim='target')
         ).rename(source='target') * 10 * (self.rotor_radius / self.site_radius)
             # a fully waking turbine (deficit = 1) is moved 5 rotor diameters
 
     def calculate_push_cross_vector(self):
-        self._ds['push_cross_vector'] = self.expectation(
+        return self.expectation(
             (self._ds['relative_wake_loss_vector'].dot(self._ds['crosswind'])
              * self._ds['crosswind']).sum(dim='source')
         ) * 100 * (self.rotor_radius / self.site_radius)

@@ -123,7 +123,7 @@ def constant_thrust_curve(cut_in, cut_out, thrust_coefficient):
 
         """
         wc = _common(speeds, cut_in, cut_out)  # within cut
-        return thrust_coefficient.where(wc, 0)
+        return xr.where(wc, thrust_coefficient, 0)
 
     return thrust_curve
 

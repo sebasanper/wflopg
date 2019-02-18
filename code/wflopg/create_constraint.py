@@ -6,13 +6,25 @@ from wflopg.constants import COORDS
 from wflopg.create_site import xy_to_monomial
 
 
+# NOTE: We work with double and need this to deal with round-off issues.
+#       The multiplier has been determined experimentally,
+#       i.e., by trial-and-error.
+ε = np.finfo(np.double).eps * 64
+
+
 def distance(turbine_distance):
     """Return a generator of steps that can fix turbine distance constraints
 
     The turbine_distance is assumed to be site-distance adimensional.
 
     """
-    def proximity_repulsion(vector, distance):
+    def proximity_violation(distance):
+        """Check whether a pair of turbines are too close"""
+        return (0 < distance) & (distance < turbine_distance)
+            # NOTE: 0 excluded for distance-to-self,
+            #       so try to avoid turbines at the same location
+
+    def proximity_repulsion(violation, unit_vector, distance):
         """Return steps that can fix turbine constraints
 
         Both vector and distance must be DataArrays with source and
@@ -20,14 +32,14 @@ def distance(turbine_distance):
         distances, respectively.
 
         """
-        violation = (0 < distance) & (distance < turbine_distance)
-            # NOTE: 0 excluded for distance-to-self,
-            #       so try to avoid turbines at the same location
-        return xr.where( # just enough to fix the issue
-            violation, (turbine_distance - distance) / 2 * vector, [0, 0]
+        # we take twice the minimally required step, as in case a turbine is
+        # pushed outside of the site, half the step can be undone by the site
+        # constraint correction procedure
+        return xr.where(
+            violation, (turbine_distance - distance) * unit_vector, [0, 0]
         ).sum(dim='source')
 
-    return proximity_repulsion
+    return proximity_violation, proximity_repulsion
 
 
 def inside_site(parcels):
@@ -156,9 +168,9 @@ def site(parcels):
             steps = xr.where(
                 satisfies,
                 [0, 0],
-                distance * (1+1e-9)
+                (distance * (1 + ε) + ε)  # …+ε to avoid round-off ‘outsides’
                 * enclave['border_seeker']
-            )  # 1+1e-9 to avoid round-off ‘outsides’ TODO: more elegantly
+            )
             step = steps.isel(constraint=distance.argmax(dim='constraint'))
             # now check if correction lies on the border;
             # if not, move to the closest vertex
@@ -185,13 +197,14 @@ def site(parcels):
                 inside,
                 [0, 0],
                 layout_centered * (np.sqrt(radius_sqr / dist_sqr) - 1)
+                * (1 + ε)  # …+ε to avoid round-off ‘outsides’
             )
             enclave = None
         else:
             ValueError("An enclave should consist of at least constraints or "
                        "a circle.")
         # determine exclaves to be treated
-        exclaves = enclave.get('exclusions', [])
+        exclaves = enclave.get('exclusions', []) if enclave else []
         # return step to update layout and exclaves to be treated
         return step, exclaves, inside, enclave
 
@@ -210,10 +223,11 @@ def site(parcels):
                     #       not lie inside the enclosing enclave (if any)
             step = xr.where(
                 inside,
-                distance.isel(constraint=closest) * (1+1e-9)
+                (distance.isel(constraint=closest) * (1 + ε) + ε)
+                    # …+ε to avoid round-off ‘outsides’
                 * exclave['border_seeker'].isel(constraint=closest),
                 [0, 0]
-            )  # 1+1e-9 to avoid round-off ‘outsides’ TODO: more elegantly
+            )
             if enclave is not None:
                 # now check if correction lies in the encompassing enclave;
                 # if not, move to the closest vertex of this exclave
@@ -242,7 +256,8 @@ def site(parcels):
                 inside,
                 xr.where(
                     dist_sqr > 0,
-                    layout_centered * (np.sqrt(radius_sqr / dist_sqr) - 1),
+                    layout_centered * (np.sqrt(radius_sqr / dist_sqr) - 1)
+                    * (1 + ε),  # …+ε to avoid round-off ‘outsides’
                     [np.sqrt(radius_sqr), 0]  # arbitrarily break symmetry
                 ),
                 [0, 0]
