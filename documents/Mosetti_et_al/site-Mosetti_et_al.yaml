@@ -31,13 +31,13 @@ particulars:
 
 radius: 1.4142 # sqrt(2) * 10 * 40 m * 5 / 2 / 1000 m/km
 parcels:
-  - rotor_constraint: true
-      # to approximate somewhat the discretized nature in the original papers
-    constraints:
-      - {"x":  1.0, "1": -0.707107}
-      - {"y":  1.0, "1": -0.707107}
-      - {"x": -1.0, "1": -0.707107}
-      - {"y": -1.0, "1": -0.707107}
+  - constraints:
+      # to approximate somewhat the discretized nature in the original
+      # papers, we add rotor constraints
+      - {"x":  1.0, "1": -0.707107, rotor_constraint: true}
+      - {"y":  1.0, "1": -0.707107, rotor_constraint: true}
+      - {"x": -1.0, "1": -0.707107, rotor_constraint: true}
+      - {"y": -1.0, "1": -0.707107, rotor_constraint: true}
 boundaries:
   - polygon:
       - [ 0.707107,  0.707107]
