@@ -325,7 +325,7 @@ class Owflop():
 
     def calculate_push_back_vector(self):
         return self.expectation(
-            self._ds['relative_wake_loss_vector'].sum(dim='target')
+            -self._ds['relative_wake_loss_vector'].sum(dim='target')
         ).rename(source='target') * 10 * (self.rotor_radius / self.site_radius)
             # a fully waking turbine (deficit = 1) is moved 5 rotor diameters
 
