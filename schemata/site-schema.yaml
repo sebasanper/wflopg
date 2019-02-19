@@ -94,19 +94,18 @@ definitions:
     type: object
     required:
       - oneOf:
-          - polytope
+          - polygon
           - circle
     additionalProperties: false
     properties:
-      #~~
       #~~
       oneOf:
           #~~
         - constraints:
             description: >-
-              A list of linear constraints describing a convex polytope;
+              A list of linear constraints describing a convex polygon;
               the constraints must be ordered so that every adjacent pair in
-              the list is also ‘adjacent’ for the polytope
+              the list is also ‘adjacent’ for the polygon
             type: array
             uniqueItems: true
             minItems: 1
@@ -117,6 +116,7 @@ definitions:
             description: >-
               A circle delimiting a disc-shaped area. If an exclusion, it must
               lie wholly in the enclosing area.
+            # TODO: lift whole enclosure requirement?
             $ref: "#/definitions/circle"
       #~~
       exclusions:
@@ -173,8 +173,7 @@ definitions:
       form a coordinate pair as described in
       "coordinate-schema.yaml#/definitions/coordinates".
       The expression must be negative (positive) for points inside (outside)
-      the site. Points on the border, for which the expression is zero, are
-      by default assumed to lie inside the site.
+      the convex polygon.
     type: object
     required:
       - "1"

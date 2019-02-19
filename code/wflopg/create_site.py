@@ -55,6 +55,7 @@ def parcels(parcels_list, rotor_radius):
     """
     def parcels_recursive(area, exclusion=True, previous_coeffs=None):
         processed_area = {}
+        sign = -1 if exclusion else 1
         if 'constraints' in area:
             # https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_an_equation
             coeffs = xr.DataArray(
@@ -74,16 +75,16 @@ def parcels(parcels_list, rotor_radius):
                  for constraint in area['constraints']],
                 dims=['constraint']
             )
-            safety = xr.where(rotor_constraint, rotor_radius, 0)
+            safety = xr.where(rotor_constraint, sign * rotor_radius, 0)
             coeffs.loc[{'monomial': '1'}] = (  # include rotor constraint
                 coeffs.sel(monomial='1') + safety)
             processed_area['constraints'] = coeffs
-            processed_area['border_seeker'] = -coeffs.sel(
+            processed_area['border_seeker'] = -sign * coeffs.sel(
                 monomial=COORDS['xy']).rename(monomial='xy')
             if exclusion and (previous_coeffs is not None):
                 # we must include coefficients of the encompassing constraints
                 # (if any) as well to get the vertices
-                coeffs = xr.concat([-coeffs, previous_coeffs], 'constraint')
+                coeffs = xr.concat([coeffs, previous_coeffs], 'constraint')
                 previous_coeffs = None
             else:
                 previous_coeffs = coeffs
@@ -106,7 +107,7 @@ def parcels(parcels_list, rotor_radius):
                 area['circle']['center'], coords=[('xy', COORDS['xy'])])
             dist = area['circle']['radius']
             if area['circle'].get('rotor_constraint', False):
-                dist += rotor_radius if exclusion else -rotor_radius
+                dist += -sign * rotor_radius
             processed_area['circle'].attrs['radius_sqr'] = np.square(dist)
             previous_coeffs = None
         else:

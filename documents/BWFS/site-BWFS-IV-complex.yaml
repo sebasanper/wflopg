@@ -27,11 +27,11 @@ parcels:
       - {"x": -0.316693, "y":  1., "1": -0.158119, rotor_constraint: true} # P_70, WFZ_4
     exclusions:
       - constraints:
-          - {"x": -0.249945, "y":  1., "1":  0.395467, rotor_constraint: true}
-          - {"x":  0.249356, "y": -1., "1": -0.274018, rotor_constraint: true}
+          - {"x":  0.249945, "y": -1., "1": -0.395467, rotor_constraint: true}
+          - {"x": -0.249356, "y":  1., "1":  0.274018, rotor_constraint: true}
       - constraints:
-          - {"x": 0.573028, "y": 1., "1": 0.118584, rotor_constraint: true}
-          - {"x": 0.326646, "y": 1., "1": 0.088503, rotor_constraint: true}
+          - {"x": -0.573028, "y": -1., "1": -0.118584, rotor_constraint: true}
+          - {"x": -0.326646, "y": -1., "1": -0.088503, rotor_constraint: true}
       - circle: # 100 m buffer around archeological shipwreck
           {center: [-0.058554, -0.658767], radius: 0.011816}
   - constraints: # IVc
@@ -41,8 +41,8 @@ parcels:
       - {"x": -0.625480, "y": -1., "1":  0.082657, rotor_constraint: true} # P_81, P_82
     exclusions:
       - constraints:
-          - {"x": -0.324121, "y": -1., "1": 0.096589, rotor_constraint: true}
-          - {"x": -0.468405, "y": -1., "1": 0.136250, rotor_constraint: true}
+          - {"x": 0.324121, "y": 1., "1": -0.096589, rotor_constraint: true}
+          - {"x": 0.468405, "y": 1., "1": -0.136250, rotor_constraint: true}
 boundaries:
   - polygon: # IVa
       - [-0.98795236, -0.15475832] # WFZ_4

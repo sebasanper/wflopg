@@ -42,10 +42,10 @@ def distance(turbine_distance):
     return proximity_violation, proximity_repulsion
 
 
-def inside_site(parcels):
-    """Check which turbines in the layout are outside the parcels
+def inside_site(site):
+    """Check which turbines in the layout are outside the site
 
-    parcels is a nested dict of constraints and exclusions, where the
+    site is a nested dict of constraints and exclusions, where the
     constraints are formulated as linear expressions that evaluate to a
     positive number on their ‘outside’ side or as circles.
 
@@ -53,78 +53,61 @@ def inside_site(parcels):
 
     """
     def inside(layout):
-        def parcel_walker(parcels, undecided, exclusion):
-            insides = [inside_recursive(parcel, undecided, not exclusion)
-                       for parcel in parcels]
-            insides = xr.concat(insides, 'parcel')
+
+        layout_mon = xy_to_monomial(layout)
+        def inside_polygon(constraints, undecided):
+            distance = xr.where(  # signed distance from constraint
+                undecided, constraints.dot(layout_mon), np.nan)
+            # turbines with a positive constraint evaluation value
+            # lie outside the polygon, so violate the constraint
+            return xr.where(
+                undecided, distance <= 0, False).all(dim='constraint')
+
+        def inside_disc(circle, undecided):
+            return xr.where(
+                undecided,
+                np.square(layout - circle).sum(dim='xy') <= circle.radius_sqr,
+                False
+            )
+
+        def site_merger(sites, undecided, exclusion):
+            in_sites = xr.concat(
+                [in_site(site, undecided, not exclusion) for site in sites],
+                'site'
+            )
             if exclusion:
-                return insides.any(dim='parcel')
+                return in_sites.any(dim='site')
             else:
-                return insides.all(dim='parcel')
+                return in_sites.all(dim='site')
 
-        def inside_recursive(parcel, undecided, exclusion=True):
-            """Return which turbines are inside the given parcel
+        def in_site(site, undecided, exclusion=True):
+            """Return which turbines are inside the given site
 
-            This recursive function walks over the parcel and its exclusions.
+            This recursive function walks over the site and its exclusions.
             Whether or not it is currently operating in an exclusion is tracked
             by the exclusion variable. The xarray DataArray undecided is a
             boolean array with the same shape of the layout, but removing the
             xy-dimension. It contains the turbines to consider.
 
             """
+            if 'constraints' in site:
+                inside = inside_polygon(site['constraints'], undecided)
+            elif 'circle' in site:
+                inside = inside_disc(site['circle'], undecided)
             ##
-            undecided = undecided.copy()
-            if 'constraints' in parcel:
-                distance = xr.where(  # signed distance
-                    undecided, parcel['constraints'].dot(layout_mon), np.nan)
-                # turbines with a nonpositive constraint evaluation value
-                # satisfy that constraint
-                satisfies = xr.where(undecided, distance <= 0, False)
-                if exclusion:
-                    # if no (not any) constraint is satisfied, then the
-                    # turbine is excluded (at this recursion level)
-                    outside = ~satisfies.any(dim='constraint')
-                else:
-                    # excluded turbines are inside the parcel if all of the
-                    # constraints at this deeper recursion level are satisfied
-                    included = satisfies.all(dim='constraint')
-            elif 'circle' in parcel:
-                in_disc = xr.where(
-                    undecided,
-                    np.square(layout - parcel['circle']).sum(dim='xy')
-                    <= parcel['circle'].radius_sqr,
-                    False
+            in_site = undecided & (~inside if exclusion else inside)
+            if 'exclusions' in site:
+                # recurse to evaluate the exclusions or inclusions (which, that
+                # depends on the status of the exclusion variable)
+                in_site = xr.where(
+                    inside,
+                    site_merger(site['exclusions'], inside, exclusion),
+                    in_site
                 )
-                if exclusion:
-                    outside = in_disc
-                else:
-                    included = in_disc
-            ##
-            if exclusion:
-                inside = undecided.copy()
-                undecided &= outside
-            else:
-                inside = undecided & included
-                undecided = inside
+            return in_site
 
-            if 'exclusions' in parcel:
-                # recurse to evaluate an exclusion (which may be an inclusion
-                # if its inside an exclusion, so we flip the exclusion
-                # variable's truth value in the called parcel_walker function)
-                inside = xr.where(
-                    undecided,
-                    parcel_walker(
-                        parcel['exclusions'], undecided, exclusion),
-                    inside
-                )
-            else:  # end of recursion
-                if exclusion:
-                    inside[undecided] = False
-            return inside
-
-        layout_mon = xy_to_monomial(layout)
         undecided = xr.DataArray(np.full(len(layout), True), dims=['target'])
-        return inside_recursive(parcels, undecided)
+        return in_site(site, undecided)
 
     return inside
 

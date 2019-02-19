@@ -26,8 +26,8 @@ parcels:
       - {"x":  0.416783, "y":  1., "1":  0.069992, rotor_constraint: true}
     exclusions:
       - constraints:
-          - {"x": 0.573028, "y": 1., "1": 0.118584, rotor_constraint: true}
-          - {"x": 0.326646, "y": 1., "1": 0.088503, rotor_constraint: true}
+          - {"x": -0.573028, "y": -1., "1": -0.118584, rotor_constraint: true}
+          - {"x": -0.326646, "y": -1., "1": -0.088503, rotor_constraint: true}
   - constraints: # IVb
       - {"x": -0.249945, "y":  1., "1":  0.395467, rotor_constraint: true}
       - {"x": -0.871286, "y": -0.899563, "1": -1., rotor_constraint: true}
@@ -42,8 +42,8 @@ parcels:
       - {"x": -0.379160, "y": -1., "1":  0.094044, rotor_constraint: true}
     exclusions:
       - constraints:
-          - {"x": -0.324121, "y": -1., "1": 0.096589, rotor_constraint: true}
-          - {"x": -0.468405, "y": -1., "1": 0.136250, rotor_constraint: true}
+          - {"x": 0.324121, "y": 1., "1": -0.096589, rotor_constraint: true}
+          - {"x": 0.468405, "y": 1., "1": -0.136250, rotor_constraint: true}
 boundaries:
   - polygon: # IVa
       - [-0.98795236, -0.15475832] # WFZ_4
