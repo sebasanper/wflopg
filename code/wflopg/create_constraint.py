@@ -56,29 +56,38 @@ def inside_site(site):
 
         layout_mon = xy_to_monomial(layout)
         def inside_polygon(constraints, undecided):
-            distance = xr.where(  # signed distance from constraint
-                undecided, constraints.dot(layout_mon), np.nan)
+            # calculate signed distance from constraint
+            distance = constraints.dot(layout_mon)
             # turbines with a positive constraint evaluation value
             # lie outside the polygon, so violate the constraint
-            return xr.where(
-                undecided, distance <= 0, False).all(dim='constraint')
+            return (
+                distance <= 0).all(dim='constraint').where(undecided, False)
 
         def inside_disc(circle, undecided):
-            return xr.where(
-                undecided,
-                np.square(layout - circle).sum(dim='xy') <= circle.radius_sqr,
-                False
-            )
+            return (
+                np.square(layout - circle).sum(dim='xy') <= circle.radius_sqr
+            ).where(undecided, False)
 
         def site_merger(sites, undecided, exclusion):
-            in_sites = xr.concat(
+            is_in_sites = xr.concat(
                 [in_site(site, undecided, not exclusion) for site in sites],
                 'site'
             )
             if exclusion:
-                return in_sites.any(dim='site')
+                return is_in_sites.any(dim='site')
             else:
-                return in_sites.all(dim='site')
+                return is_in_sites.all(dim='site')
+#           # TODO: the following version is slightly faster, but to really
+#           #       optimize, we need to get a better view of what is requiring
+#           #       the most time
+#            is_in_site = undecided.copy()
+#            if exclusion:
+#                for site in sites:
+#                    is_in_site |= in_site(site, undecided, not exclusion)
+#            else:
+#                for site in sites:
+#                    is_in_site &= in_site(site, undecided, not exclusion)
+#            return is_in_site
 
         def in_site(site, undecided, exclusion=True):
             """Return which turbines are inside the given site
@@ -95,16 +104,16 @@ def inside_site(site):
             elif 'circle' in site:
                 inside = inside_disc(site['circle'], undecided)
             ##
-            in_site = undecided & (~inside if exclusion else inside)
+            is_in_site = undecided & (~inside if exclusion else inside)
             if 'exclusions' in site:
                 # recurse to evaluate the exclusions or inclusions (which, that
                 # depends on the status of the exclusion variable)
-                in_site = xr.where(
+                is_in_site = xr.where(
                     inside,
                     site_merger(site['exclusions'], inside, exclusion),
-                    in_site
+                    is_in_site
                 )
-            return in_site
+            return is_in_site
 
         undecided = xr.DataArray(np.full(len(layout), True), dims=['target'])
         return in_site(site, undecided)
