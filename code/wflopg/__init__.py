@@ -267,10 +267,9 @@ class Owflop():
                                                             self._ds['vector'])
         # standard coordinates for unit vectors
         # between all source and target turbines
-        self._ds['unit_vector'] = xr.where(
-              self._ds['distance'] > 0,
-              self._ds['vector'] / self._ds['distance'],
-              [0, 0])
+        self._ds['unit_vector'] = (
+            self._ds['vector'] / self._ds['distance']
+        ).where(self._ds['distance'] > 0, 0)
 
     def calculate_deficit(self):
         # downwind/crosswind coordinates for vectors

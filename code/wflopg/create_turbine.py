@@ -53,7 +53,7 @@ def _create_interpolator(coord_name, interpolation_data):
                         [(coord_name, interpolation_data[:, 0])])
 
 
-def _common(speeds, cut_in, cut_out):
+def _within_cut(speeds, cut_in, cut_out):
     if np.any(speeds < 0):
         raise ValueError("Wind speeds may not be negative.")
     return (speeds >= cut_in) & (speeds <= cut_out)  # within cut
@@ -67,15 +67,10 @@ def cubic_power_curve(rated_power, rated_speed, cut_in, cut_out):
         speeds is assumed to be a xarray DataArray.
 
         """
-        return xr.where(
-            _common(speeds, cut_in, cut_out),  # within cut
-            rated_power * xr.where(
-                speeds < rated_speed,  # below rated
-                ((speeds - cut_in) / (rated_speed - cut_in)) ** 3,
-                1
-            ),
-            0
-        )
+        wc = _within_cut(speeds, cut_in, cut_out)
+        return rated_power * ((
+                speeds.where(speeds < rated_speed, rated_speed) - cut_in
+            ).where(wc, 0) / (rated_speed - cut_in)) ** 3
 
     return power_curve
 
@@ -104,7 +99,7 @@ def interpolated_power_curve(rated_power, rated_speed, cut_in, cut_out,
         """
         # only 1D-arrays can be interpolated
         speeds_flat = speeds.values.flatten()
-        wc = _common(speeds_flat, cut_in, cut_out)  # within cut
+        wc = _within_cut(speeds_flat, cut_in, cut_out)  # within cut
         return xr.DataArray(
             interpolator.interp(
                 speed=speeds_flat).where(wc, 0).values.reshape(speeds.shape),
@@ -122,8 +117,8 @@ def constant_thrust_curve(cut_in, cut_out, thrust_coefficient):
         speeds is assumed to be a xarray DataArray.
 
         """
-        wc = _common(speeds, cut_in, cut_out)  # within cut
-        return xr.where(wc, thrust_coefficient, 0)
+        wc = _within_cut(speeds, cut_in, cut_out)  # within cut
+        return thrust_coefficient.where(wc, 0)
 
     return thrust_curve
 
@@ -148,7 +143,7 @@ def interpolated_thrust_curve(cut_in, cut_out, interpolation_data):
         """
         # only 1D-arrays can be interpolated
         speeds_flat = speeds.values.flatten()
-        wc = _common(speeds_flat, cut_in, cut_out)  # within cut
+        wc = _within_cut(speeds_flat, cut_in, cut_out)  # within cut
         return xr.DataArray(
             interpolator.interp(
                 speed=speeds_flat).where(wc, 0).values.reshape(speeds.shape),

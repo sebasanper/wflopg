@@ -18,18 +18,12 @@ def _half_lens_area(distance, own_radius, other_radius, mask):
     wake calculations. It is relevant for models with top-hat wake profiles.
 
     """
-    cosine = xr.where(
-        mask,
+    cosine = (
         (distance ** 2 + own_radius ** 2 - other_radius ** 2)
-        / (2 * distance * own_radius),
-        np.nan
-    )
-    angle = xr.where(mask, np.arccos(cosine), np.nan)
-    return xr.where(
-        mask,
-        (angle - np.sin(2 * angle) / 2) * own_radius ** 2 / np.pi,
-        np.nan
-    )
+        / (2 * distance * own_radius)
+    ).where(mask)
+    angle = np.arccos(cosine)
+    return (angle - np.sin(2 * angle) / 2) * own_radius ** 2 / np.pi
 
 
 def rss_combination():
@@ -43,8 +37,7 @@ def rss_combination():
         """
         squared = np.square(deficit)
         squared_combined = squared.sum(dim='source')
-        relative = xr.where(
-            squared_combined > 0, squared / squared_combined, 0)
+        relative = (squared / squared_combined).where(squared_combined > 0, 0)
         squared_combined_saturated = (  # RSS does not guarantee <= 1
             squared_combined.where(squared_combined <= 1, 1))
         return np.sqrt(squared_combined_saturated), relative
@@ -75,13 +68,11 @@ def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
 
         """
         downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
-        sigma = xr.where(
-            is_downwind, sigma_at_source + expansion_coeff * downwind, np.nan)
-        exponent = xr.where(is_downwind, -(crosswind / sigma) ** 2 / 2, np.nan)
-        radical = xr.where(
-            is_downwind, 1 - thrust_curve / (2 * sigma ** 2), np.nan)
-        return xr.where(
-            is_downwind, (1. - np.sqrt(radical)) * np.exp(exponent), 0
+        sigma = sigma_at_source + expansion_coeff * downwind
+        exponent = -(crosswind / sigma) ** 2 / 2
+        radical = 1 - thrust_curve / (2 * sigma ** 2)
+        return (
+            (1. - np.sqrt(radical)) * np.exp(exponent).where(is_downwind, 0)
         ).transpose('direction', 'speed', 'source', 'target')
 
     return wake_model
@@ -112,30 +103,21 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
 
         """
         downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
-        wake_radius = xr.where(
-            is_downwind,
-            1 + expansion_coeff * downwind / stream_tube_radius,
-            np.nan)
+        wake_radius = (
+            1 + expansion_coeff * downwind / stream_tube_radius
+        ).where(is_downwind)
         waked = is_downwind & (crosswind < 1 + wake_radius)
         if averaging:
             partially = waked & (1 + crosswind > wake_radius)
-            relative_area = xr.where(
-                waked,
-                xr.where(
-                    partially,
-                    _half_lens_area(crosswind, 1, wake_radius, partially) +
-                    _half_lens_area(crosswind, wake_radius, 1, partially),
-                    1
-                ),
-                0
-            )
+            relative_area = (
+                _half_lens_area(crosswind, 1, wake_radius, partially)
+                + _half_lens_area(crosswind, wake_radius, 1, partially)
+            ).where(partially, 1).where(waked, 0)
         else:
             relative_area = 1
-        return xr.where(
-            waked,
-            relative_area * induction_factor / np.square(wake_radius),
-            0
-        ).transpose('direction', 'speed', 'source', 'target')
+        return (
+            relative_area * induction_factor / np.square(wake_radius)
+        ).where(waked, 0).transpose('direction', 'speed', 'source', 'target')
 
     return wake_model
 

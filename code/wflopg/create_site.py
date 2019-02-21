@@ -75,7 +75,7 @@ def parcels(parcels_list, rotor_radius):
                  for constraint in area['constraints']],
                 dims=['constraint']
             )
-            safety = xr.where(rotor_constraint, sign * rotor_radius, 0)
+            safety = sign * rotor_radius * rotor_constraint
             coeffs.loc[{'monomial': '1'}] = (  # include rotor constraint
                 coeffs.sel(monomial='1') + safety)
             processed_area['constraints'] = coeffs

@@ -35,8 +35,8 @@ def distance(turbine_distance):
         # we take twice the minimally required step, as in case a turbine is
         # pushed outside of the site, half the step can be undone by the site
         # constraint correction procedure
-        return xr.where(
-            violation, (turbine_distance - distance) * unit_vector, [0, 0]
+        return (
+            (turbine_distance - distance).where(violation, 0) * unit_vector
         ).sum(dim='source')
 
     return proximity_violation, proximity_repulsion
@@ -131,20 +131,20 @@ def site(parcels):
     """
     def _constraint_common(e_clave, layout, scrutinize):
         layout_mon = xy_to_monomial(layout)
-        distance = xr.where(  # signed distance
-            scrutinize, e_clave['constraints'].dot(layout_mon), 0)
+        distance = # signed distance
+            e_clave['constraints'].dot(layout_mon).where(scrutinize, 0)
             # TODO: is a value of 0 for unscrutinized turbines safe here?
         # turbines with a nonpositive constraint evaluation value
         # satisfy that constraint
-        satisfies = xr.where(scrutinize, distance <= 0, False)
+        satisfies = (distance <= 0).where(scrutinize, False)
         return distance, satisfies
 
     def _circle_common(e_clave, layout, scrutinize):
         layout_centered = layout - e_clave['circle']
         dist_sqr = np.square(layout_centered).sum(dim='xy')
         radius_sqr = e_clave['circle'].radius_sqr
-        inside = xr.where(scrutinize, dist_sqr <= radius_sqr, False)
-        dist_sqr = dist_sqr.where(dist_sqr > 0, np.nan)
+        inside = (dist_sqr <= radius_sqr).where(scrutinize, False)
+        dist_sqr = dist_sqr.where(dist_sqr > 0)
             # dist_sqr is used as a divisor, NaN instead of zero gives warnings
             # do not move this above definition of ‘inside’!
         return layout_centered, dist_sqr, radius_sqr, inside
@@ -157,11 +157,10 @@ def site(parcels):
             # turbines are inside the enclave if all of the constraints are
             # satisfied
             inside = scrutinize & satisfies.all(dim='constraint')
-            steps = xr.where(
-                satisfies,
-                [0, 0],
-                (distance * (1 + ε) + ε)  # …+ε to avoid round-off ‘outsides’
-                * enclave['border_seeker']
+            steps = (
+                enclave['border_seeker']
+                * (distance * (1 + ε) + ε).where(~satisfies, 0)
+                    # …+ε to avoid round-off ‘outsides’
             )
             step = steps.isel(constraint=distance.argmax(dim='constraint'))
             # now check if correction lies on the border;
@@ -171,11 +170,9 @@ def site(parcels):
             still_outside = scrutinize & ~satisfies.all(dim='constraint')
             # TODO: ideally, we only check the relevant vertices,
             #       now we brute-force it by checking all
-            vertex_dist_sqr = xr.where(
-                still_outside,
-                np.square(layout - enclave['vertices']).sum(dim='xy'),
-                np.inf
-            )
+            vertex_dist_sqr = np.square(
+                layout - enclave['vertices']
+            ).sum(dim='xy').where(still_outside, np.inf)
             step = xr.where(
                 still_outside,
                 enclave['vertices'].isel(
@@ -185,10 +182,9 @@ def site(parcels):
         elif 'circle' in enclave:
             layout_centered, dist_sqr, radius_sqr, inside = _circle_common(
                 enclave, layout, scrutinize)
-            step = xr.where(
-                inside,
-                [0, 0],
-                layout_centered * (np.sqrt(radius_sqr / dist_sqr) - 1)
+            step = (
+                layout_centered
+                * (np.sqrt(radius_sqr / dist_sqr) - 1).where(~inside, 0)
                 * (1 + ε)  # …+ε to avoid round-off ‘outsides’
             )
             enclave = None
@@ -213,12 +209,11 @@ def site(parcels):
                     # TODO: we're choosing the closest too soon here;
                     #       it must be done after discarding the ones that do
                     #       not lie inside the enclosing enclave (if any)
-            step = xr.where(
-                inside,
-                (distance.isel(constraint=closest) * (1 + ε) + ε)
-                    # …+ε to avoid round-off ‘outsides’
-                * exclave['border_seeker'].isel(constraint=closest),
-                [0, 0]
+            step = (
+                exclave['border_seeker'].isel(constraint=closest)
+                * (  # …+ε to avoid round-off ‘outsides’
+                    distance.isel(constraint=closest) * (1 + ε) + ε
+                ).where(inside, 0)
             )
             if enclave is not None:
                 # now check if correction lies in the encompassing enclave;
@@ -229,11 +224,9 @@ def site(parcels):
                 # TODO: ideally, we only check the relevant vertices,
                 #       now we brute-force it by checking all (non-violating)
                 vertices = exclave['vertices'][~exclave['violates']]
-                vertex_dist_sqr = xr.where(
-                    still_outside,
-                    np.square(layout - vertices).sum(dim='xy'),
-                    np.inf
-                )
+                vertex_dist_sqr = np.square(
+                    layout - vertices
+                ).sum(dim='xy').where(still_outside, np.inf)
                 step = xr.where(
                     still_outside,
                     vertices.isel(vertex=vertex_dist_sqr.argmin(dim='vertex'))
@@ -245,14 +238,11 @@ def site(parcels):
             layout_centered, dist_sqr, radius_sqr, inside = _circle_common(
                 exclave, layout, scrutinize)
             step = xr.where(
-                inside,
-                xr.where(
-                    dist_sqr > 0,
-                    layout_centered * (np.sqrt(radius_sqr / dist_sqr) - 1)
-                    * (1 + ε),  # …+ε to avoid round-off ‘outsides’
-                    [np.sqrt(radius_sqr), 0]  # arbitrarily break symmetry
-                ),
-                [0, 0]
+                dist_sqr > 0,
+                layout_centered
+                * (np.sqrt(radius_sqr / dist_sqr) - 1).where(inside, 0)
+                * (1 + ε),  # …+ε to avoid round-off ‘outsides’
+                [np.sqrt(radius_sqr), 0]  # arbitrarily break symmetry
             )
         else:
             ValueError("An exclave should consist of at least constraints or "
