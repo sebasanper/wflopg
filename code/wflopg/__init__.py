@@ -261,15 +261,16 @@ class Owflop():
         # standard coordinates for vectors
         # between all source and target turbines
         self._ds['vector'] = layout_geometry.generate_vector(
-                                       self._ds['context'], self._ds['layout'])
+            self._ds['context'], self._ds['layout'])
         # distances between source and target turbines
-        self._ds['distance'] = layout_geometry.generate_distance(
-                                                            self._ds['vector'])
+        self._ds['distance'] = (
+            layout_geometry.generate_distance(self._ds['vector']))
         # standard coordinates for unit vectors
         # between all source and target turbines
         self._ds['unit_vector'] = (
-            self._ds['vector'] / self._ds['distance']
-        ).where(self._ds['distance'] > 0, 0)
+            self._ds['vector']
+            / self._ds['distance'].where(self._ds['distance'] > 0, np.inf)
+        )
 
     def calculate_deficit(self):
         # downwind/crosswind coordinates for vectors

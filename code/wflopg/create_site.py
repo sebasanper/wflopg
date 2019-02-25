@@ -108,7 +108,7 @@ def parcels(parcels_list, rotor_radius):
             dist = area['circle']['radius']
             if area['circle'].get('rotor_constraint', False):
                 dist += -sign * rotor_radius
-            processed_area['circle'].attrs['radius_sqr'] = np.square(dist)
+            processed_area['circle'].attrs['radius'] = dist
             previous_coeffs = None
         else:
             raise ValueError(

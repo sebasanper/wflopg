@@ -36,7 +36,7 @@ def distance(turbine_distance):
         # pushed outside of the site, half the step can be undone by the site
         # constraint correction procedure
         return (
-            (turbine_distance - distance).where(violation, 0) * unit_vector
+            violation * (turbine_distance - distance) * unit_vector
         ).sum(dim='source')
 
     return proximity_violation, proximity_repulsion
@@ -55,19 +55,20 @@ def inside_site(site):
     def inside(layout):
 
         layout_mon = xy_to_monomial(layout)
-        def inside_polygon(constraints, undecided):
+        def inside_polygon(constraints):
             # calculate signed distance from constraint
             distance = constraints.dot(layout_mon)
             # turbines with a positive constraint evaluation value
             # lie outside the polygon, so violate the constraint
-            return (
-                distance <= 0).all(dim='constraint').where(undecided, False)
+            inside = (distance <= 0).all(dim='constraint')
+            return {'distance': distance, 'inside': inside}
 
-        def inside_disc(circle, undecided):
-            return (
-                np.square(layout - circle).sum(dim='xy') <= circle.radius_sqr
-            ).where(undecided, False)
+        def inside_disc(circle):
+            distance = np.sqrt(np.square(layout - circle).sum(dim='xy'))
+            inside = distance <= circle.radius
+            return {'distance': distance, 'inside': inside}
 
+        # TODO: this function is unused now; remove after testing
         def site_merger(sites, undecided, exclusion):
             is_in_sites = xr.concat(
                 [in_site(site, undecided, not exclusion) for site in sites],
@@ -99,21 +100,29 @@ def inside_site(site):
             xy-dimension. It contains the turbines to consider.
 
             """
+            info = {}
             if 'constraints' in site:
-                inside = inside_polygon(site['constraints'], undecided)
+                info['constraints'] = inside_polygon(site['constraints'])
+                inside = info['constraints']['inside']
             elif 'circle' in site:
-                inside = inside_disc(site['circle'], undecided)
+                info['circle'] = inside_disc(site['circle'])
+                inside = info['circle']['inside']
             ##
             is_in_site = undecided & (~inside if exclusion else inside)
             if 'exclusions' in site:
                 # recurse to evaluate the exclusions or inclusions (which, that
                 # depends on the status of the exclusion variable)
-                is_in_site = xr.where(
-                    inside,
-                    site_merger(site['exclusions'], inside, exclusion),
-                    is_in_site
-                )
-            return is_in_site
+                info['exclusions'] = []
+                for subsite in site['exclusions']:
+                    subinfo = in_site(subsite, inside, not exclusion)
+                    info['exclusions'].append(subinfo)
+                    if exclusion:
+                        is_in_site |= subinfo['in_site']
+                    else:
+                        is_in_site &= subinfo['in_site']
+            info['in_site'] = is_in_site
+
+            return info
 
         undecided = xr.DataArray(np.full(len(layout), True), dims=['target'])
         return in_site(site, undecided)
@@ -131,8 +140,8 @@ def site(parcels):
     """
     def _constraint_common(e_clave, layout, scrutinize):
         layout_mon = xy_to_monomial(layout)
-        distance = # signed distance
-            e_clave['constraints'].dot(layout_mon).where(scrutinize, 0)
+        # calculate signed distance
+        distance = scrutinize * e_clave['constraints'].dot(layout_mon)
             # TODO: is a value of 0 for unscrutinized turbines safe here?
         # turbines with a nonpositive constraint evaluation value
         # satisfy that constraint
@@ -158,9 +167,8 @@ def site(parcels):
             # satisfied
             inside = scrutinize & satisfies.all(dim='constraint')
             steps = (
-                enclave['border_seeker']
-                * (distance * (1 + ε) + ε).where(~satisfies, 0)
-                    # …+ε to avoid round-off ‘outsides’
+                ~satisfies * enclave['border_seeker']
+                * (distance * (1 + ε) + ε) # …+ε to avoid round-off ‘outsides’
             )
             step = steps.isel(constraint=distance.argmax(dim='constraint'))
             # now check if correction lies on the border;
@@ -183,8 +191,8 @@ def site(parcels):
             layout_centered, dist_sqr, radius_sqr, inside = _circle_common(
                 enclave, layout, scrutinize)
             step = (
-                layout_centered
-                * (np.sqrt(radius_sqr / dist_sqr) - 1).where(~inside, 0)
+                ~inside * layout_centered
+                * (np.sqrt(radius_sqr / dist_sqr) - 1)
                 * (1 + ε)  # …+ε to avoid round-off ‘outsides’
             )
             enclave = None
@@ -211,9 +219,9 @@ def site(parcels):
                     #       not lie inside the enclosing enclave (if any)
             step = (
                 exclave['border_seeker'].isel(constraint=closest)
-                * (  # …+ε to avoid round-off ‘outsides’
-                    distance.isel(constraint=closest) * (1 + ε) + ε
-                ).where(inside, 0)
+                * inside * (  # …+ε to avoid round-off ‘outsides’
+                   distance.isel(constraint=closest) * (1 + ε) + ε
+                )
             )
             if enclave is not None:
                 # now check if correction lies in the encompassing enclave;
@@ -239,8 +247,7 @@ def site(parcels):
                 exclave, layout, scrutinize)
             step = xr.where(
                 dist_sqr > 0,
-                layout_centered
-                * (np.sqrt(radius_sqr / dist_sqr) - 1).where(inside, 0)
+                layout_centered * inside * (np.sqrt(radius_sqr / dist_sqr) - 1)
                 * (1 + ε),  # …+ε to avoid round-off ‘outsides’
                 [np.sqrt(radius_sqr), 0]  # arbitrarily break symmetry
             )

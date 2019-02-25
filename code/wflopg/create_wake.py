@@ -37,7 +37,8 @@ def rss_combination():
         """
         squared = np.square(deficit)
         squared_combined = squared.sum(dim='source')
-        relative = (squared / squared_combined).where(squared_combined > 0, 0)
+        relative = (
+            squared / squared_combined.where(squared_combined > 0, np.inf))
         squared_combined_saturated = (  # RSS does not guarantee <= 1
             squared_combined.where(squared_combined <= 1, 1))
         return np.sqrt(squared_combined_saturated), relative
@@ -72,7 +73,7 @@ def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
         exponent = -(crosswind / sigma) ** 2 / 2
         radical = 1 - thrust_curve / (2 * sigma ** 2)
         return (
-            (1. - np.sqrt(radical)) * np.exp(exponent).where(is_downwind, 0)
+            is_downwind * (1. - np.sqrt(radical)) * np.exp(exponent)
         ).transpose('direction', 'speed', 'source', 'target')
 
     return wake_model
@@ -109,15 +110,15 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
         waked = is_downwind & (crosswind < 1 + wake_radius)
         if averaging:
             partially = waked & (1 + crosswind > wake_radius)
-            relative_area = (
+            relative_area = waked * (
                 _half_lens_area(crosswind, 1, wake_radius, partially)
                 + _half_lens_area(crosswind, wake_radius, 1, partially)
-            ).where(partially, 1).where(waked, 0)
+            ).where(partially, 1)
         else:
             relative_area = 1
         return (
-            relative_area * induction_factor / np.square(wake_radius)
-        ).where(waked, 0).transpose('direction', 'speed', 'source', 'target')
+            waked * relative_area * induction_factor / np.square(wake_radius)
+        ).transpose('direction', 'speed', 'source', 'target')
 
     return wake_model
 
