@@ -98,10 +98,10 @@ def parcels(parcels_list, rotor_radius):
                 # create a mask for vertices that fall outside the site
                 vertices_mon = xy_to_monomial(processed_area['vertices'])
                 distance = processed_area['constraints'].dot(vertices_mon)
-                # turbines with a positive constraint evaluation value
-                # violate that constraint
+                # for exclusions, turbines with a negative constraint
+                # evaluation value violate that constraint
                 processed_area['violates'] = (
-                    distance > 0).all(dim='constraint')
+                    distance < 0).all(dim='constraint')
         elif 'circle' in area:
             processed_area['circle'] = xr.DataArray(
                 area['circle']['center'], coords=[('xy', COORDS['xy'])])

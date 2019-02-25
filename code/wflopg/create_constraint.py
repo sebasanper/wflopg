@@ -129,7 +129,7 @@ def site(parcels):
     def _circle_common(e_clave, layout, scrutinize):
         layout_centered = layout - e_clave['circle']
         dist_sqr = np.square(layout_centered).sum(dim='xy')
-        radius_sqr = e_clave['circle'].radius_sqr
+        radius_sqr = np.square(e_clave['circle'].radius)
         inside = scrutinize & (dist_sqr <= radius_sqr)
         dist_sqr = dist_sqr.where(dist_sqr > 0)
             # dist_sqr is used as a divisor, NaN instead of zero gives warnings
@@ -187,10 +187,10 @@ def site(parcels):
         if 'constraints' in exclave:
             distance, satisfies = _constraint_common(
                 exclave, layout, scrutinize)
-            # turbines are inside the exclave if none of the constraints are
+            # turbines are inside the exclave if all of the constraints are
             # satisfied
-            inside = scrutinize & ~satisfies.any(dim='constraint')
-            closest = distance.argmin(dim='constraint')
+            inside = scrutinize & satisfies.all(dim='constraint')
+            closest = (-distance).argmin(dim='constraint')
                     # NOTE: argmin decides ties by picking first of minima
                     # TODO: we're choosing the closest too soon here;
                     #       it must be done after discarding the ones that do
@@ -198,7 +198,7 @@ def site(parcels):
             step = (
                 exclave['border_seeker'].isel(constraint=closest)
                 * inside * (  # …+ε to avoid round-off ‘outsides’
-                   distance.isel(constraint=closest) * (1 + ε) + ε
+                   -distance.isel(constraint=closest) * (1 + ε) + ε
                 )
             )
             if enclave is not None:
@@ -206,15 +206,15 @@ def site(parcels):
                 # if not, move to the closest vertex of this exclave
                 distance, satisfies = _constraint_common(
                     enclave, layout + step, inside)
-                still_outside = inside & ~satisfies.all(dim='constraint')
+                outside_enclave = inside & ~satisfies.all(dim='constraint')
                 # TODO: ideally, we only check the relevant vertices,
                 #       now we brute-force it by checking all (non-violating)
                 vertices = exclave['vertices'][~exclave['violates']]
                 vertex_dist_sqr = np.square(
                     layout - vertices
-                ).sum(dim='xy').where(still_outside, np.inf)
+                ).sum(dim='xy').where(outside_enclave, np.inf)
                 step = xr.where(
-                    still_outside,
+                    outside_enclave,
                     vertices.isel(vertex=vertex_dist_sqr.argmin(dim='vertex'))
                     - layout,
                     step
