@@ -34,7 +34,8 @@ def pure_down(owflop):
         corrections = ''
         some_outside, too_close_together = True, True
         while some_outside or too_close_together:
-            some_outside = not owflop.inside(owflop._ds['layout']).all()
+            some_outside = (
+                not owflop.inside(owflop._ds['layout'])['in_site'].all())
             if some_outside:
                 outside = np.square(owflop._ds['layout']).sum(dim='xy') > 1
                 owflop.process_layout(
@@ -91,7 +92,8 @@ def pure_back(owflop):
         corrections = ''
         some_outside, too_close_together = True, True
         while some_outside or too_close_together:
-            some_outside = not owflop.inside(owflop._ds['layout']).all()
+            some_outside = (
+                not owflop.inside(owflop._ds['layout'])['in_site'].all())
             if some_outside:
                 outside = np.square(owflop._ds['layout']).sum(dim='xy') > 1
                 owflop.process_layout(
@@ -150,7 +152,8 @@ def mixed_down_and_back(owflop):
         corrections = ''
         some_outside, too_close_together = True, True
         while some_outside or too_close_together:
-            some_outside = not owflop.inside(owflop._ds['layout']).all()
+            some_outside = (
+                not owflop.inside(owflop._ds['layout'])['in_site'].all())
             if some_outside:
                 outside = np.square(owflop._ds['layout']).sum(dim='xy') > 1
                 owflop.process_layout(
@@ -207,7 +210,8 @@ def pure_cross(owflop):
         corrections = ''
         some_outside, too_close_together = True, True
         while some_outside or too_close_together:
-            some_outside = not owflop.inside(owflop._ds['layout']).all()
+            some_outside = (
+                not owflop.inside(owflop._ds['layout'])['in_site'].all())
             if some_outside:
                 outside = np.square(owflop._ds['layout']).sum(dim='xy') > 1
                 owflop.process_layout(

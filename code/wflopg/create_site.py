@@ -66,8 +66,7 @@ def parcels(parcels_list, rotor_radius):
                 coords={'monomial': COORDS['monomial']}
             )
             norms = np.sqrt(
-                np.square(coeffs.sel(monomial='x', drop=True))
-                + np.square(coeffs.sel(monomial='y', drop=True))
+                np.square(coeffs.sel(monomial=['x', 'y'])).sum(dim='monomial')
             )
             coeffs = coeffs / norms  # normalize the coefficients
             rotor_constraint = xr.DataArray(

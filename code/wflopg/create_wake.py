@@ -67,7 +67,8 @@ def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
 
         """
         downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
-        sigma = sigma_at_source + expansion_coeff * downwind
+        sigma = sigma_at_source + expansion_coeff * downwind * is_downwind
+            # multiplication with is_downwind to avoid negative radical later
         exponent = -(crosswind / sigma) ** 2 / 2
         radical = 1 - thrust_curve / (2 * sigma ** 2)
         return (
@@ -91,6 +92,7 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
     if frandsen:  # use (adim.) stream tube radius instead or rotor radius
         stream_tube_radius = np.sqrt((1 - induction_factor / 2)
                                      / (1 - induction_factor))
+            # TODO: in case thrust_curve == 0, we get divide by zero!
     else:
         stream_tube_radius = 1
 

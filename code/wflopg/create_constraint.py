@@ -131,9 +131,6 @@ def site(parcels):
         dist_sqr = np.square(layout_centered).sum(dim='xy')
         radius_sqr = np.square(e_clave['circle'].radius)
         inside = scrutinize & (dist_sqr <= radius_sqr)
-        dist_sqr = dist_sqr.where(dist_sqr > 0)
-            # dist_sqr is used as a divisor, NaN instead of zero gives warnings
-            # do not move this above definition of ‘inside’!
         return layout_centered, dist_sqr, radius_sqr, inside
 
     def process_enclave(enclave, layout, scrutinize):
