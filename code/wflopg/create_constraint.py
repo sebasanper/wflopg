@@ -68,28 +68,6 @@ def inside_site(site):
             inside = distance <= circle.radius
             return {'distance': distance, 'inside': inside}
 
-        # TODO: this function is unused now; remove after testing
-        def site_merger(sites, undecided, exclusion):
-            is_in_sites = xr.concat(
-                [in_site(site, undecided, not exclusion) for site in sites],
-                'site'
-            )
-            if exclusion:
-                return is_in_sites.any(dim='site')
-            else:
-                return is_in_sites.all(dim='site')
-#           # TODO: the following version is slightly faster, but to really
-#           #       optimize, we need to get a better view of what is requiring
-#           #       the most time
-#            is_in_site = undecided.copy()
-#            if exclusion:
-#                for site in sites:
-#                    is_in_site |= in_site(site, undecided, not exclusion)
-#            else:
-#                for site in sites:
-#                    is_in_site &= in_site(site, undecided, not exclusion)
-#            return is_in_site
-
         def in_site(site, undecided, exclusion=True):
             """Return which turbines are inside the given site
 
