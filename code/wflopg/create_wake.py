@@ -9,7 +9,7 @@ def _common(dc_vector_adim):
     return downwind, crosswind, is_downwind
 
 
-def _half_lens_area(distance, own_radius, other_radius, mask):
+def _half_lens_area(distance, own_radius, other_radius):
     """Return relative area of half-lens
 
     https://christianhill.co.uk/blog/overlapping-circles/
@@ -18,10 +18,8 @@ def _half_lens_area(distance, own_radius, other_radius, mask):
     wake calculations. It is relevant for models with top-hat wake profiles.
 
     """
-    cosine = (
-        (distance ** 2 + own_radius ** 2 - other_radius ** 2)
-        / (2 * distance * own_radius)
-    ).where(mask)
+    cosine = ((distance ** 2 + own_radius ** 2 - other_radius ** 2)
+              / (2 * distance * own_radius))
     angle = np.arccos(cosine)
     return (angle - np.sin(2 * angle) / 2) * own_radius ** 2 / np.pi
 
@@ -111,8 +109,8 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
         if averaging:
             partially = waked & (1 + crosswind > wake_radius)
             relative_area = waked * (
-                _half_lens_area(crosswind, 1, wake_radius, partially)
-                + _half_lens_area(crosswind, wake_radius, 1, partially)
+                _half_lens_area(crosswind, 1, wake_radius)
+                + _half_lens_area(crosswind, wake_radius, 1)
             ).where(partially, 1)
         else:
             relative_area = 1
