@@ -269,8 +269,8 @@ class Owflop():
         # between all source and target turbines
         self._ds['unit_vector'] = (
             self._ds['vector']
-            / self._ds['distance'].where(self._ds['distance'] > 0, np.inf)
-        )
+            / (self._ds['distance'] + (self._ds['distance'] == 0))
+        )  # we change 0-distances in the denumerator to 1 to avoid divide by 0
 
     def calculate_deficit(self):
         # downwind/crosswind coordinates for vectors

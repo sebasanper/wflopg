@@ -37,10 +37,10 @@ def rss_combination():
         """
         squared = np.square(deficit)
         squared_combined = squared.sum(dim='source')
-        relative = (
-            squared / squared_combined.where(squared_combined > 0, np.inf))
-        squared_combined_saturated = (  # RSS does not guarantee <= 1
-            squared_combined.where(squared_combined <= 1, 1))
+        relative = squared / (squared_combined + (squared_combined == 0))
+            # we add 1 where the denominator (and numerator) would be 0
+        squared_combined_saturated = np.minimum(squared_combined, 1)
+            # RSS does not guarantee <= 1
         return np.sqrt(squared_combined_saturated), relative
 
     return combination_rule

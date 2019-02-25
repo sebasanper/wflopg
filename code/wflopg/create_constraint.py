@@ -123,14 +123,14 @@ def site(parcels):
             # TODO: is a value of 0 for unscrutinized turbines safe here?
         # turbines with a nonpositive constraint evaluation value
         # satisfy that constraint
-        satisfies = (distance <= 0).where(scrutinize, False)
+        satisfies = scrutinize & (distance <= 0)
         return distance, satisfies
 
     def _circle_common(e_clave, layout, scrutinize):
         layout_centered = layout - e_clave['circle']
         dist_sqr = np.square(layout_centered).sum(dim='xy')
         radius_sqr = e_clave['circle'].radius_sqr
-        inside = (dist_sqr <= radius_sqr).where(scrutinize, False)
+        inside = scrutinize & (dist_sqr <= radius_sqr)
         dist_sqr = dist_sqr.where(dist_sqr > 0)
             # dist_sqr is used as a divisor, NaN instead of zero gives warnings
             # do not move this above definition of ‘inside’!
