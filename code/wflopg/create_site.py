@@ -11,12 +11,12 @@ def xy_to_monomial(xy):
     This function works for any xarray DataArray with xy as a dimension.
 
     """
-    x = xy.sel(xy='x', drop=True)
-    y = xy.sel(xy='y', drop=True)
-    one = xr.ones_like(x)
-    mon = xr.concat([one, x, y], 'monomial').transpose()
-    mon.coords['monomial'] = COORDS['monomial']
-    return mon
+    monshape = list(xy.shape)
+    monshape[xy.dims.index('xy')] = 3
+    mon = xr.DataArray(np.ones(monshape),
+                       dims=xy.dims, coords={'xy': COORDS['monomial']})
+    mon.loc[{'xy': COORDS['xy']}] = xy
+    return mon.rename(xy='monomial')
 
 
 def boundaries(boundaries_list):
