@@ -32,11 +32,13 @@ def distance(turbine_distance):
         distances, respectively.
 
         """
-        # we take twice the minimally required step, as in case a turbine is
+        # we take thrice the minimally required step, as in case a turbine is
         # pushed outside of the site, half the step can be undone by the site
-        # constraint correction procedure
+        # constraint correction procedure; we take thrice and not twice because
+        # this leaves some extra room that might be squandered in the sum
+        # (from experience we know this is necessary)
         return (
-            violation * (turbine_distance - distance) * unit_vector
+            3 * violation * (turbine_distance - distance) / 2 * unit_vector
         ).sum(dim='source')
 
     return proximity_violation, proximity_repulsion
