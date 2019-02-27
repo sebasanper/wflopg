@@ -297,8 +297,7 @@ class Owflop():
     def calculate_power(self):
         # raw values
         power = self.power_curve(
-            self._ds.coords['speed'] * (1 - self._ds['combined_deficit'])
-        ).transpose('direction', 'speed', 'target')
+            self._ds.coords['speed'] * (1 - self._ds['combined_deficit']))
         wake_loss = self._ds['wakeless_power'] - power
         self._ds['wake_loss_factor'] = (
             wake_loss / self._ds['expected_wakeless_power'])
@@ -314,7 +313,7 @@ class Owflop():
             self._ds['relative_deficit']
             * self._ds['wake_loss_factor']
             * self._ds['unit_vector']
-        ).transpose('direction', 'speed', 'source', 'target', 'xy')
+        )
 
     def calculate_push_down_vector(self):
         return self.expectation(

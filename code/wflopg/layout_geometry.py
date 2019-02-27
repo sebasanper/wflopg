@@ -14,9 +14,7 @@ def generate_downwind(directions):
     # - from upwind to downwind: +180
     # - from degrees to radians
     directions_rad = np.radians(90 - directions + 180)
-    return xr.concat(
-        [np.cos(directions_rad), np.sin(directions_rad)], 'xy'
-    ).transpose()  # transpose to get direction as first dimension
+    return xr.concat([np.cos(directions_rad), np.sin(directions_rad)], 'xy')
 
 
 def generate_crosswind(downwind):
@@ -42,7 +40,7 @@ def generate_vector(context, layout):
     Such a DataArray is also returned.
 
     """
-    return (layout - context).transpose('source', 'target', 'xy')
+    return layout - context
 
 
 def generate_distance(vector):
@@ -65,6 +63,4 @@ def generate_dc_vector(vector, downwind, crosswind):
     DataArrays of downwind and crosswind vectors, respectively.
 
     """
-    return xr.concat(
-        [vector.dot(downwind), vector.dot(crosswind)], 'dc'
-    ).transpose('direction', 'source', 'target', 'dc')
+    return xr.concat([vector.dot(downwind), vector.dot(crosswind)], 'dc')

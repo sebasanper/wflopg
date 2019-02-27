@@ -71,9 +71,7 @@ def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
             # multiplication with is_downwind to avoid negative radical later
         exponent = -(crosswind / sigma) ** 2 / 2
         radical = 1 - thrust_curve / (2 * sigma ** 2)
-        return (
-            is_downwind * (1. - np.sqrt(radical)) * np.exp(exponent)
-        ).transpose('direction', 'speed', 'source', 'target')
+        return is_downwind * (1. - np.sqrt(radical)) * np.exp(exponent)
 
     return wake_model
 
@@ -118,8 +116,7 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
             waked = crosswind <= wake_radius
             relative_area = 1
         return (
-            waked * relative_area * induction_factor / np.square(wake_radius)
-        ).transpose('direction', 'speed', 'source', 'target')
+            waked * relative_area * induction_factor / np.square(wake_radius))
 
     return wake_model
 
