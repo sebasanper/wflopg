@@ -55,7 +55,7 @@ def draw_zones(axes, owflop):
 def draw_turbines(axes, owflop, layout=None):
     """Draw the turbines and their proximity exclusion zones"""
     if layout is None:
-        layout = owflop._ds['layout']
+        layout = owflop.history[-1]['layout']
     turbine_size = owflop.rotor_radius / owflop.site_radius
     for position in layout.values:
         axes.add_patch(
