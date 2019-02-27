@@ -71,12 +71,11 @@ class Owflop():
             self._ds['downwind'])
 
         # create function to generate turbine constraint violation fixup steps
+        self.minimal_proximity = (
+            problem.get('turbine_distance', 1)
+            * (2 * self.rotor_radius) / self.site_radius)
         self.proximity_violation, self.proximity_repulsion = (
-            create_constraint.distance(
-                problem.get('turbine_distance', 0)
-                * (2 * self.rotor_radius) / self.site_radius
-            )
-        )
+            create_constraint.distance(self.minimal_proximity))
 
         # deal with initial layout
         if 'layout' in problem:
