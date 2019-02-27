@@ -14,6 +14,7 @@ Example usage (given some problem object `o`):
 """
 
 import matplotlib.pyplot as plt
+import xarray as xr
 
 
 def draw_boundaries(axes, owflop):
@@ -52,13 +53,40 @@ def draw_zones(axes, owflop):
     draw_zone(owflop.parcels)
 
 
-def draw_turbines(axes, owflop, layout=None):
-    """Draw the turbines and their proximity exclusion zones"""
+def draw_turbines(axes, owflop, layout=None, proximity=False, in_or_out=False):
+    """Draw the turbines and their proximity exclusion zones
+
+    The layout is assumed to have only a single non-xy dimension.
+
+    """
     if layout is None:
         layout = owflop.history[-1]['layout']
     turbine_size = owflop.rotor_radius / owflop.site_radius
-    for position in layout.values:
-        axes.add_patch(
-            plt.Circle(position, owflop.minimal_proximity / 2,
-                       color='r', linestyle=':', fill=False))
-        axes.add_patch(plt.Circle(position, turbine_size, color='k'))
+    turbine_color = 'k'
+    if in_or_out:
+        inside = owflop.inside(layout)['in_site']
+    for (i, position) in enumerate(layout.values):
+        if in_or_out:
+            turbine_color = 'b' if inside.values[i] else 'r'
+        if proximity:
+            axes.add_patch(
+                plt.Circle(position, owflop.minimal_proximity / 2,
+                           color='r', linestyle=':', fill=False))
+        axes.add_patch(plt.Circle(position, turbine_size, color=turbine_color))
+
+
+def draw_step(axes, owflop, layout, step):
+    """Draw a layout change step using vectors"""
+    turbine_size = owflop.rotor_radius / owflop.site_radius
+    axes.quiver(layout.sel(xy='x'), layout.sel(xy='y'),
+                step.sel(xy='x'), step.sel(xy='y'),
+                angles='xy', scale_units='xy', scale=1, width=turbine_size/2)
+
+
+def connect_layouts(axes, layouts):
+    """Draw lines between corresponding turbines of an iterator of layouts"""
+    xs = xr.concat(
+        [layout.sel(xy='x', drop=True) for layout in layouts], dim='layout')
+    ys = xr.concat(
+        [layout.sel(xy='y', drop=True) for layout in layouts], dim='layout')
+    axes.plot(xs, ys, '-k')
