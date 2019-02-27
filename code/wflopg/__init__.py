@@ -83,7 +83,7 @@ class Owflop():
                 initial_layout = yaml(typ='safe').load(f)['layout']
         else:
             initial_layout = [[0, 0]]
-        self.process_layout(initial_layout)
+        self.process_initial_layout(initial_layout)
         self.calculate_geometry()
 
     def process_turbine(self, turbine):
@@ -196,7 +196,7 @@ class Owflop():
         self._ds['direction_pmf'] = dir_weights / dir_weights.sum()
         self._ds['wind_speed_cpmf'] = speed_probs
 
-    def process_layout(self, initial_layout):
+    def process_initial_layout(self, initial_layout):
         # turbines affected by the wake
         self._ds['layout'] = xr.DataArray(initial_layout,
                                           dims=['target', 'xy'])

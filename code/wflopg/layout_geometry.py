@@ -1,6 +1,8 @@
 import numpy as np
 import xarray as xr
 
+from wflopg.constants import COORDS
+
 
 def generate_downwind(directions):
     """Return downwind unit vectors for all given directions
@@ -29,8 +31,7 @@ def generate_crosswind(downwind):
     crosswind.coords['xy'] = downwind.coords['xy']
         # workaround for bug in roll that also rolls coordinates;
         # fixed in xarray 0.10.9
-    return np.negative(crosswind, out=crosswind.values, where=[True, False])
-        # out is needed because of https://stackoverflow.com/questions/54250461
+    return crosswind * xr.DataArray([-1, 1], coords=[('xy', COORDS['xy'])])
 
 
 def generate_vector(context, layout):
