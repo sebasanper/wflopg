@@ -198,12 +198,14 @@ class Owflop():
 
     def process_initial_layout(self, initial_layout):
         # turbines affected by the wake
-        self._ds['layout'] = xr.DataArray(initial_layout,
-                                          dims=['target', 'xy'])
+        self._ds['layout'] = xr.DataArray(
+            initial_layout,
+            dims=['target', 'xy'],
+            coords={'target': range(len(initial_layout))}
+        )
         # turbines causing the wakes
         # NOTE: currently, these are the same as the ones affected
-        self._ds['context'] = xr.DataArray(initial_layout,
-                                           dims=['source', 'xy'])
+        self._ds['context'] = self._ds['layout'].rename(target='source')
 
     def process_wake_model(self,
                            model, expansion_coefficient, combination_rule):
