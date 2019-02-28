@@ -20,9 +20,9 @@ def distance(turbine_distance):
     """
     def proximity_violation(distance):
         """Check whether a pair of turbines are too close"""
-        return (0 < distance) & (distance < turbine_distance)
-            # NOTE: 0 excluded for distance-to-self,
-            #       so try to avoid turbines at the same location
+        return ((distance < turbine_distance)  # too close
+                & (distance.coords['target'] != distance.coords['source']))
+                    # but turbines are never too close to themselves
 
     def proximity_repulsion(violation, unit_vector, distance):
         """Return steps that can fix turbine constraints
@@ -32,7 +32,24 @@ def distance(turbine_distance):
         distances, respectively.
 
         """
-        # we take thrice the minimally required step, as in case a turbine is
+        # before we can correct the proximity violations, we need to make sure
+        # that for any pair of nonidentical turbines there is a nonzero unit
+        # vector; this may happen, e.g., if site constraint correction places
+        # more than one turbine at the same parcel vertex
+        collision = violation & (distance == 0)
+        if collision.any():
+            # TODO: it may be more efficient to try and generate just enough
+            #       random unit vectors
+            random_angle = xr.DataArray(
+                np.random.uniform(0, 2 * np.pi, distance.shape),
+                coords=distance.coords
+            )
+            random_unit_vector = xr.concat(
+                [np.cos(random_angle), np.sin(random_angle)], 'xy')
+            random_unit_vector.coords['xy'] = COORDS['xy']
+            unit_vector = xr.where(collision, random_unit_vector, unit_vector)
+        # Now that we have appropriate unit vectors everywhere, we can correct.
+        # We take thrice the minimally required step, as in case a turbine is
         # pushed outside of the site, half the step can be undone by the site
         # constraint correction procedure; we take thrice and not twice because
         # this leaves some extra room that might be squandered in the sum
