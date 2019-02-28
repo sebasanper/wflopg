@@ -264,10 +264,11 @@ def site(parcels):
             insides = xr.concat(insides, 'enclave')
             outside = scrutinize & ~insides.any(dim='enclave')
             # TODO: I suspect that the rest of this if-branch is inefficient
+            # TODO: It is also very flakey in view of arbitrary dimensionality
             for target, border in enumerate(borders.values):
-                if border < 0 or not outside[target]:
+                if (border < 0).all() or not outside[target].any():
                     continue
-                insides[border][target] = True
+                insides[border][{'target': target}] = True
             exclaves = [(exclave, inside, enclaves[i])
                         for i, inside in enumerate(insides)
                         for exclave in exclaves[i]]
@@ -284,7 +285,7 @@ def site(parcels):
         """
         old_layout = layout
         layout = old_layout.copy()
-        scrutinize = xr.DataArray(np.full(len(layout), True), dims=['target'])
+        scrutinize = xr.full_like(layout, True).all(dim='xy')
         todo = cl.deque([(parcels, scrutinize, None)])
         while todo:
             exclave, scrutinize, enclave = todo.popleft()
