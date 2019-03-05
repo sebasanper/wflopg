@@ -211,10 +211,10 @@ def multi_adaptive(owflop, max_iterations=np.inf):
     iterations = 0
     corrections = ''
     owflop._ds['layout'] = (
-        owflop._ds['layout'] * xr.DataArray(
+        owflop._ds.layout * xr.DataArray(
             [[1, 1], [1, 1], [1, 1]], coords=[method_coord, scale_coord])
     )
-    owflop._ds['context'] = owflop._ds['layout'].rename(target='source')
+    owflop._ds['context'] = owflop._ds.layout.rename(target='source')
     owflop.calculate_geometry()
     scaler = xr.DataArray([2/3, 6/5], coords=[scale_coord])
     scaling = xr.DataArray([1, 1], coords=[scale_coord])
@@ -227,7 +227,7 @@ def multi_adaptive(owflop, max_iterations=np.inf):
         j = objectives.min(dim='scale').argmin('method').values.item()
         owflop.history.append(xr.Dataset())
         owflop.history[-1]['layout'] = (
-            owflop._ds['layout'].isel(scale=i, drop=True)
+            owflop._ds.layout.isel(scale=i, drop=True)
                                 .isel(method=j, drop=True))
         owflop.history[-1]['objective'] = (
             objectives.isel(scale=i, drop=True).isel(method=j, drop=True))
@@ -252,13 +252,13 @@ def multi_adaptive(owflop, max_iterations=np.inf):
         scaling = scaling.isel(scale=i, drop=True) * scaler
         # first calculate relative_wake_loss_vector just once
         owflop._ds['relative_deficit'] = (
-            owflop._ds['relative_deficit'].isel(scale=i, drop=True)
+            owflop._ds.relative_deficit.isel(scale=i, drop=True)
                                           .isel(method=j, drop=True))
         owflop._ds['wake_loss_factor'] = (
-            owflop._ds['wake_loss_factor'].isel(scale=i, drop=True)
+            owflop._ds.wake_loss_factor.isel(scale=i, drop=True)
                                           .isel(method=j, drop=True))
         owflop._ds['unit_vector'] = (
-            owflop._ds['unit_vector'].isel(scale=i, drop=True)
+            owflop._ds.unit_vector.isel(scale=i, drop=True)
                                      .isel(method=j, drop=True))
         owflop.calculate_relative_wake_loss_vector()
         down_step = owflop.calculate_push_down_vector()
@@ -272,14 +272,14 @@ def multi_adaptive(owflop, max_iterations=np.inf):
         corrections = ''
         maybe_violations = True
         while maybe_violations:
-            outside = ~owflop.inside(owflop._ds['layout'])['in_site']
+            outside = ~owflop.inside(owflop._ds.layout)['in_site']
             any_outside = outside.any()
             if any_outside:
                 print('s', outside.values.sum(), sep='', end='')
-                _take_step(owflop, owflop.to_border(owflop._ds['layout']))
+                _take_step(owflop, owflop.to_border(owflop._ds.layout))
                 corrections += 's'
             proximity_violated = (
-                owflop.proximity_violation(owflop._ds['distance']))
+                owflop.proximity_violation(owflop._ds.distance))
             too_close = proximity_violated.any()
             if too_close:
                 print('p', proximity_violated.values.sum(), sep='', end='')
@@ -287,8 +287,8 @@ def multi_adaptive(owflop, max_iterations=np.inf):
                     owflop,
                     owflop.proximity_repulsion(
                         proximity_violated,
-                        owflop._ds['unit_vector'],
-                        owflop._ds['distance']
+                        owflop._ds.unit_vector,
+                        owflop._ds.distance
                     )
                 )
                 corrections += 'p'
