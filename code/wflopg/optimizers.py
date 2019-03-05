@@ -5,7 +5,7 @@ import xarray as xr
 def _take_step(owflop, step):
     owflop._ds['layout'] = owflop._ds['context'] = (
         owflop._ds['layout'] + step)
-    owflop._ds['context'] = owflop._ds['context'].rename(target='source')
+    owflop._ds['context'] = owflop._ds.context.rename(target='source')
     owflop.calculate_geometry()
 
 
@@ -22,7 +22,7 @@ def _iterate(step_generator, owflop, max_iterations):
         owflop.calculate_deficit()
         owflop.calculate_power()
         owflop.history.append(xr.Dataset())
-        owflop.history[-1]['layout'] = owflop._ds['layout']
+        owflop.history[-1]['layout'] = owflop._ds.layout
         owflop.history[-1]['objective'] = owflop.objective()
         owflop.history[-1].attrs['corrections'] = corrections
         if len(owflop.history) == 1:  # first run
@@ -48,14 +48,14 @@ def _iterate(step_generator, owflop, max_iterations):
         corrections = ''
         maybe_violations = True
         while maybe_violations:
-            outside = ~owflop.inside(owflop._ds['layout'])['in_site']
+            outside = ~owflop.inside(owflop._ds.layout)['in_site']
             any_outside = outside.any()
             if any_outside:
                 print('s', outside.values.sum(), sep='', end='')
-                _take_step(owflop, owflop.to_border(owflop._ds['layout']))
+                _take_step(owflop, owflop.to_border(owflop._ds.layout))
                 corrections += 's'
             proximity_violated = (
-                owflop.proximity_violation(owflop._ds['distance']))
+                owflop.proximity_violation(owflop._ds.distance))
             too_close = proximity_violated.any()
             if too_close:
                 print('p', proximity_violated.values.sum(), sep='', end='')
@@ -63,8 +63,8 @@ def _iterate(step_generator, owflop, max_iterations):
                     owflop,
                     owflop.proximity_repulsion(
                         proximity_violated,
-                        owflop._ds['unit_vector'],
-                        owflop._ds['distance']
+                        owflop._ds.unit_vector,
+                        owflop._ds.distance
                     )
                 )
                 corrections += 'p'
@@ -79,9 +79,9 @@ def _adaptive_iterate(step_generator, owflop, max_iterations):
     iterations = 0
     corrections = ''
     owflop._ds['layout'] = (
-        owflop._ds['layout'] * xr.DataArray([1, 1], coords=[scale_coord])
+        owflop._ds.layout * xr.DataArray([1, 1], coords=[scale_coord])
     )
-    owflop._ds['context'] = owflop._ds['layout'].rename(target='source')
+    owflop._ds['context'] = owflop._ds.layout.rename(target='source')
     owflop.calculate_geometry()
     scaler = xr.DataArray([2/3, 6/5], coords=[scale_coord])
     scaling = xr.DataArray([1, 1], coords=[scale_coord])
@@ -93,7 +93,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations):
         i = objectives.argmin()
         owflop.history.append(xr.Dataset())
         owflop.history[-1]['layout'] = (
-            owflop._ds['layout'].isel(scale=i, drop=True))
+            owflop._ds.layout.isel(scale=i, drop=True))
         owflop.history[-1]['objective'] = objectives.isel(scale=i, drop=True)
         owflop.history[-1].attrs['corrections'] = corrections
         owflop.history[-1].attrs['scale'] = scaling[i].values.item()
@@ -115,10 +115,10 @@ def _adaptive_iterate(step_generator, owflop, max_iterations):
         scaling = scaling.isel(scale=i) * scaler
         # first calculate relative_wake_loss_vector just once
         owflop._ds['relative_deficit'] = (
-            owflop._ds['relative_deficit'].isel(scale=i))
+            owflop._ds.relative_deficit.isel(scale=i))
         owflop._ds['wake_loss_factor'] = (
-            owflop._ds['wake_loss_factor'].isel(scale=i))
-        owflop._ds['unit_vector'] = owflop._ds['unit_vector'].isel(scale=i)
+            owflop._ds.wake_loss_factor.isel(scale=i))
+        owflop._ds['unit_vector'] = owflop._ds.unit_vector.isel(scale=i)
         owflop.calculate_relative_wake_loss_vector()
         step = step_generator()
         step -= step.mean(dim='target')  # remove any global shift
@@ -128,14 +128,14 @@ def _adaptive_iterate(step_generator, owflop, max_iterations):
         corrections = ''
         maybe_violations = True
         while maybe_violations:
-            outside = ~owflop.inside(owflop._ds['layout'])['in_site']
+            outside = ~owflop.inside(owflop._ds.layout)['in_site']
             any_outside = outside.any()
             if any_outside:
                 print('s', outside.values.sum(), sep='', end='')
-                _take_step(owflop, owflop.to_border(owflop._ds['layout']))
+                _take_step(owflop, owflop.to_border(owflop._ds.layout))
                 corrections += 's'
             proximity_violated = (
-                owflop.proximity_violation(owflop._ds['distance']))
+                owflop.proximity_violation(owflop._ds.distance))
             too_close = proximity_violated.any()
             if too_close:
                 print('p', proximity_violated.values.sum(), sep='', end='')
@@ -143,8 +143,8 @@ def _adaptive_iterate(step_generator, owflop, max_iterations):
                     owflop,
                     owflop.proximity_repulsion(
                         proximity_violated,
-                        owflop._ds['unit_vector'],
-                        owflop._ds['distance']
+                        owflop._ds.unit_vector,
+                        owflop._ds.distance
                     )
                 )
                 corrections += 'p'

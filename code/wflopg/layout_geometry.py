@@ -28,7 +28,7 @@ def generate_crosswind(downwind):
 
     """
     crosswind = downwind.roll(xy=1)
-    crosswind.coords['xy'] = downwind.coords['xy']
+    crosswind.coords['xy'] = downwind.xy
         # workaround for bug in roll that also rolls coordinates;
         # fixed in xarray 0.10.9
     return crosswind * xr.DataArray([-1, 1], coords=[('xy', COORDS['xy'])])

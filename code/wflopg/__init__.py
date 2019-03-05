@@ -66,9 +66,9 @@ class Owflop():
 
         # Store downwind and crosswind unit vectors
         self._ds['downwind'] = layout_geometry.generate_downwind(
-            self._ds.coords['direction'])
+            self._ds.direction)
         self._ds['crosswind'] = layout_geometry.generate_crosswind(
-            self._ds['downwind'])
+            self._ds.downwind)
 
         # create function to generate turbine constraint violation fixup steps
         self.minimal_proximity = (
@@ -205,11 +205,11 @@ class Owflop():
         )
         # turbines causing the wakes
         # NOTE: currently, these are the same as the ones affected
-        self._ds['context'] = self._ds['layout'].rename(target='source')
+        self._ds['context'] = self._ds.layout.rename(target='source')
 
     def process_wake_model(self,
                            model, expansion_coefficient, combination_rule):
-        thrusts = self.thrust_curve(self._ds.coords['speed'])
+        thrusts = self.thrust_curve(self._ds.speed)
         # preliminaries for wake model definition
         if model.startswith("Jensen"):
             if not expansion_coefficient:
@@ -247,13 +247,13 @@ class Owflop():
         if objective == "maximize expected power":
             # we minimize the average expected wake loss factor
             self.objective = (
-                lambda: self._ds['average_expected_wake_loss_factor'])
+                lambda: self._ds.average_expected_wake_loss_factor)
         elif objective == "minimize cost of energy (Mosetti)":
             # we minimize a proxy for the marginal expected cost of energy per
             # turbine
             self.objective = lambda: (
-                np.exp(-0.00174 * len(self._ds.coords['target']) ** 2)
-                / (1 - self._ds['average_expected_wake_loss_factor'])
+                np.exp(-0.00174 * len(self._ds.target) ** 2)
+                / (1 - self._ds.average_expected_wake_loss_factor)
             )
         else:
             raise ValueError("Unknown objective specified.")
@@ -262,77 +262,76 @@ class Owflop():
         # standard coordinates for vectors
         # between all source and target turbines
         self._ds['vector'] = layout_geometry.generate_vector(
-            self._ds['context'], self._ds['layout'])
+            self._ds.context, self._ds.layout)
         # distances between source and target turbines
         self._ds['distance'] = (
-            layout_geometry.generate_distance(self._ds['vector']))
+            layout_geometry.generate_distance(self._ds.vector))
         # standard coordinates for unit vectors
         # between all source and target turbines
         self._ds['unit_vector'] = (
-            self._ds['vector']
-            / (self._ds['distance'] + (self._ds['distance'] == 0))
+            self._ds.vector
+            / (self._ds.distance + (self._ds.distance == 0))
         )  # we change 0-distances in the denumerator to 1 to avoid divide by 0
 
     def calculate_deficit(self):
         # downwind/crosswind coordinates for vectors
         # between all source and target turbines, for all directions
         self._ds['dc_vector'] = layout_geometry.generate_dc_vector(
-            self._ds['vector'], self._ds['downwind'], self._ds['crosswind'])
+            self._ds.vector, self._ds.downwind, self._ds.crosswind)
         # deficit
-        self._ds['deficit'] = self.wake_model(self._ds['dc_vector']
+        self._ds['deficit'] = self.wake_model(self._ds.dc_vector
                                               * self.site_radius)
         (self._ds['combined_deficit'],
          self._ds['relative_deficit']) = self.combination_rule(
-                                                           self._ds['deficit'])
+                                                           self._ds.deficit)
 
     def expectation(self, array):
         return (
-            array * self._ds['wind_speed_cpmf']
-        ).sum(dim='speed').dot(self._ds['direction_pmf'])
+            array * self._ds.wind_speed_cpmf
+        ).sum(dim='speed').dot(self._ds.direction_pmf)
 
     def calculate_wakeless_power(self):
-        self._ds['wakeless_power'] = self.power_curve(
-            self._ds.coords['speed'])
+        self._ds['wakeless_power'] = self.power_curve(self._ds.speed)
         self._ds['expected_wakeless_power'] = self.expectation(
-            self._ds['wakeless_power'])
+            self._ds.wakeless_power)
 
     def calculate_power(self):
         # raw values
         power = self.power_curve(
-            self._ds.coords['speed'] * (1 - self._ds['combined_deficit']))
-        wake_loss = self._ds['wakeless_power'] - power
+            self._ds.speed * (1 - self._ds.combined_deficit))
+        wake_loss = self._ds.wakeless_power - power
         self._ds['wake_loss_factor'] = (
-            wake_loss / self._ds['expected_wakeless_power'])
+            wake_loss / self._ds.expected_wakeless_power)
         # expectations
         self._ds['expected_wake_loss_factor'] = self.expectation(
-            self._ds['wake_loss_factor'])
+            self._ds.wake_loss_factor)
         # turbine average
         self._ds['average_expected_wake_loss_factor'] = (
-            self._ds['expected_wake_loss_factor'].mean(dim='target'))
+            self._ds.expected_wake_loss_factor.mean(dim='target'))
 
     def calculate_relative_wake_loss_vector(self):
         self._ds['relative_wake_loss_vector'] = (
-            self._ds['relative_deficit']
-            * self._ds['wake_loss_factor']
-            * self._ds['unit_vector']
+            self._ds.relative_deficit
+            * self._ds.wake_loss_factor
+            * self._ds.unit_vector
         )
 
     def calculate_push_down_vector(self):
         return self.expectation(
-            self._ds['relative_wake_loss_vector'].sum(dim='source')
+            self._ds.relative_wake_loss_vector.sum(dim='source')
         ) * 10 * (self.rotor_radius / self.site_radius)
             # a fully waked turbine (deficit = 1) is moved 5 rotor diameters
 
     def calculate_push_back_vector(self):
         return self.expectation(
-            -self._ds['relative_wake_loss_vector'].sum(dim='target')
+            -self._ds.relative_wake_loss_vector.sum(dim='target')
         ).rename(source='target') * 10 * (self.rotor_radius / self.site_radius)
             # a fully waking turbine (deficit = 1) is moved 5 rotor diameters
 
     def calculate_push_cross_vector(self):
         return self.expectation(
-            (self._ds['relative_wake_loss_vector'].dot(self._ds['crosswind'])
-             * self._ds['crosswind']).sum(dim='source')
+            (self._ds.relative_wake_loss_vector.dot(self._ds.crosswind)
+             * self._ds.crosswind).sum(dim='source')
         ) * 100 * (self.rotor_radius / self.site_radius)
             # as cross steps are determined by projection onto the crosswind
             # vectors, these are very small relative to down steps, so we add
