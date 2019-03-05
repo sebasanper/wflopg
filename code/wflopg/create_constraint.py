@@ -21,7 +21,7 @@ def distance(turbine_distance):
     def proximity_violation(distance):
         """Check whether a pair of turbines are too close"""
         return ((distance < turbine_distance)  # too close
-                & (distance.coords['target'] != distance.coords['source']))
+                & (distance.target != distance.source))
                     # but turbines are never too close to themselves
 
     def proximity_repulsion(violation, unit_vector, distance):
