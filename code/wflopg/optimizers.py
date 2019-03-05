@@ -54,19 +54,15 @@ def _iterate(step_generator, owflop, max_iterations):
                 print('s', outside.values.sum(), sep='', end='')
                 _take_step(owflop, owflop.to_border(owflop._ds.layout))
                 corrections += 's'
-            proximity_violated = (
-                owflop.proximity_violation(owflop._ds.distance))
-            too_close = proximity_violated.any()
+            proximity_repulsion_step = (
+                owflop.proximity_repulsion(
+                    owflop._ds.distance, owflop._ds.unit_vector)
+            )
+            too_close = proximity_repulsion_step is not None
             if too_close:
-                print('p', proximity_violated.values.sum(), sep='', end='')
-                _take_step(
-                    owflop,
-                    owflop.proximity_repulsion(
-                        proximity_violated,
-                        owflop._ds.unit_vector,
-                        owflop._ds.distance
-                    )
-                )
+                print('p', proximity_repulsion_step.attrs['violations'],
+                      sep='', end='')
+                _take_step(owflop, proximity_repulsion_step)
                 corrections += 'p'
             print(',', end='')
             maybe_violations = any_outside & too_close
@@ -134,19 +130,15 @@ def _adaptive_iterate(step_generator, owflop, max_iterations):
                 print('s', outside.values.sum(), sep='', end='')
                 _take_step(owflop, owflop.to_border(owflop._ds.layout))
                 corrections += 's'
-            proximity_violated = (
-                owflop.proximity_violation(owflop._ds.distance))
-            too_close = proximity_violated.any()
+            proximity_repulsion_step = (
+                owflop.proximity_repulsion(
+                    owflop._ds.distance, owflop._ds.unit_vector)
+            )
+            too_close = proximity_repulsion_step is not None
             if too_close:
-                print('p', proximity_violated.values.sum(), sep='', end='')
-                _take_step(
-                    owflop,
-                    owflop.proximity_repulsion(
-                        proximity_violated,
-                        owflop._ds.unit_vector,
-                        owflop._ds.distance
-                    )
-                )
+                print('p', proximity_repulsion_step.attrs['violations'],
+                      sep='', end='')
+                _take_step(owflop, proximity_repulsion_step)
                 corrections += 'p'
             print(',', end='')
             maybe_violations = any_outside & too_close

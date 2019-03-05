@@ -74,7 +74,7 @@ class Owflop():
         self.minimal_proximity = (
             problem.get('turbine_distance', 1)
             * (2 * self.rotor_radius) / self.site_radius)
-        self.proximity_violation, self.proximity_repulsion = (
+        self.proximity_repulsion = (
             create_constraint.distance(self.minimal_proximity))
 
         # deal with initial layout

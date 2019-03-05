@@ -18,47 +18,55 @@ def distance(turbine_distance):
     The turbine_distance is assumed to be site-distance adimensional.
 
     """
-    def proximity_violation(distance):
-        """Check whether a pair of turbines are too close"""
-        return ((distance < turbine_distance)  # too close
-                & (distance.target != distance.source))
-                    # but turbines are never too close to themselves
-
-    def proximity_repulsion(violation, unit_vector, distance):
-        """Return steps that can fix turbine constraints
+    def proximity_repulsion(distance, unit_vector):
+        """Check whether turbines are too close & return step to fix this
 
         Both vector and distance must be DataArrays with source and
         target as dimensions, of adimensional xy-coordinate pairs and
         distances, respectively.
 
         """
-        # before we can correct the proximity violations, we need to make sure
-        # that for any pair of nonidentical turbines there is a nonzero unit
-        # vector; this may happen, e.g., if site constraint correction places
-        # more than one turbine at the same parcel vertex
-        collision = violation & (distance == 0)
-        if collision.any():
-            # TODO: it may be more efficient to try and generate just enough
-            #       random unit vectors
-            random_angle = xr.DataArray(
-                np.random.uniform(0, 2 * np.pi, distance.shape),
-                coords=distance.coords
+        violation = (
+            # too close
+            (distance < turbine_distance)
+            # but turbines are never too close to themselves
+            & (distance.target != distance.source)
+        )
+        if violation.any():
+            dims_to_stack = list(distance.dims)
+            distance_flat = distance.stack(pair=dims_to_stack)
+            violation_flat = violation.stack(pair=dims_to_stack)
+            unit_vector_flat = (
+                unit_vector.stack(pair=dims_to_stack).transpose('pair', 'xy'))
+            # before we can correct the proximity violations, we need to make
+            # sure that for any pair of nonidentical turbines there is a
+            # nonzero unit vector; this may happen, e.g., if site constraint
+            # correction places more than one turbine at the same parcel vertex
+            collision = distance_flat[violation_flat] == 0
+            collisions = collision.sum().values.item()
+            if collisions:
+                random_angle = np.random.uniform(0, 2 * np.pi, collisions)
+                unit_vector_flat[violation_flat][collision] = (
+                    np.vstack([np.cos(random_angle), np.sin(random_angle)]).T)
+            # Now that we have appropriate unit vectors everywhere, we can
+            # correct. We take thrice the minimally required step, as in case a
+            # turbine is pushed outside of the site, half the step can be
+            # undone by the site constraint correction procedure; we take
+            # thrice and not twice because this leaves some extra room that
+            # might be squandered in the sum (from experience we know this is
+            # necessary)
+            step_flat = xr.zeros_like(unit_vector_flat)
+            step_flat[violation_flat] = (
+                3 * (turbine_distance - distance_flat[violation_flat]) / 2
+                * unit_vector_flat[violation_flat]
             )
-            random_unit_vector = xr.concat(
-                [np.cos(random_angle), np.sin(random_angle)], 'xy')
-            random_unit_vector.coords['xy'] = COORDS['xy']
-            unit_vector = xr.where(collision, random_unit_vector, unit_vector)
-        # Now that we have appropriate unit vectors everywhere, we can correct.
-        # We take thrice the minimally required step, as in case a turbine is
-        # pushed outside of the site, half the step can be undone by the site
-        # constraint correction procedure; we take thrice and not twice because
-        # this leaves some extra room that might be squandered in the sum
-        # (from experience we know this is necessary)
-        return (
-            3 * violation * (turbine_distance - distance) / 2 * unit_vector
-        ).sum(dim='source')
+            step = step_flat.unstack('pair').sum(dim='source')
+            step.attrs['violations'] = violation_flat.sum().values.item()
+            return step
+        else:
+            return None
 
-    return proximity_violation, proximity_repulsion
+    return proximity_repulsion
 
 
 def inside_site(site):
@@ -72,22 +80,26 @@ def inside_site(site):
 
     """
     def inside(layout):
+        dims_to_stack = list(layout.dims)
+        dims_to_stack.remove('xy')
+        layout_flat = (  # but see https://github.com/pydata/xarray/issues/2802
+            layout.stack(position=dims_to_stack).transpose('position', 'xy'))
+        layout_flat_mon = xy_to_monomial(layout_flat)
 
-        layout_mon = xy_to_monomial(layout)
-        def inside_polygon(constraints):
+        def inside_polygon(constraints, positions_mon):
             # calculate signed distance from constraint
-            distance = constraints.dot(layout_mon)
+            distance = constraints.dot(positions_mon)
             # turbines with a positive constraint evaluation value
             # lie outside the polygon, so violate the constraint
             inside = (distance <= 0).all(dim='constraint')
             return {'distance': distance, 'inside': inside}
 
-        def inside_disc(circle):
-            distance = np.sqrt(np.square(layout - circle).sum(dim='xy'))
+        def inside_disc(circle, positions):
+            distance = np.sqrt(np.square(positions - circle).sum(dim='xy'))
             inside = distance <= circle.radius
             return {'distance': distance, 'inside': inside}
 
-        def in_site(site, undecided, exclusion=True):
+        def in_site(site, undecided, exclusion):
             """Return which turbines are inside the given site
 
             This recursive function walks over the site and its exclusions.
@@ -99,13 +111,15 @@ def inside_site(site):
             """
             info = {}
             if 'constraints' in site:
-                info['constraints'] = inside_polygon(site['constraints'])
+                info['constraints'] = inside_polygon(
+                    site['constraints'], layout_flat_mon[undecided])
                 inside = info['constraints']['inside']
             elif 'circle' in site:
-                info['circle'] = inside_disc(site['circle'])
+                info['circle'] = inside_disc(
+                    site['circle'], layout_flat[undecided])
                 inside = info['circle']['inside']
             ##
-            is_in_site = undecided & (~inside if exclusion else inside)
+            is_in_site = ~inside if exclusion else inside
             if 'exclusions' in site:
                 # recurse to evaluate the exclusions or inclusions (which, that
                 # depends on the status of the exclusion variable)
@@ -114,15 +128,15 @@ def inside_site(site):
                     subinfo = in_site(subsite, inside, not exclusion)
                     info['exclusions'].append(subinfo)
                     if exclusion:
-                        is_in_site |= subinfo['in_site']
+                        is_in_site[inside] |= subinfo['in_site']
                     else:
-                        is_in_site &= subinfo['in_site']
+                        is_in_site[inside] &= subinfo['in_site']
             info['in_site'] = is_in_site
 
             return info
 
-        undecided = xr.DataArray(np.full(len(layout), True), dims=['target'])
-        return in_site(site, undecided)
+        undecided = xr.full_like(layout_flat.position, True, 'bool')
+        return in_site(site, undecided, True)
 
     return inside
 
@@ -198,11 +212,11 @@ def site(parcels):
         # return step to update layout and exclaves to be treated
         return step, exclaves, inside, enclave
 
-    def process_exclave(exclave, layout, scrutinize, enclave):
+    def process_exclave(exclave, layout_flat, scrutinize, enclave):
         # determine step to exclave border
         if 'constraints' in exclave:
             distance, satisfies = _constraint_common(
-                exclave, layout, scrutinize)
+                exclave, layout_flat, scrutinize)
             # turbines are inside the exclave if all of the constraints are
             # satisfied
             inside = scrutinize & satisfies.all(dim='constraint')
@@ -221,24 +235,24 @@ def site(parcels):
                 # now check if correction lies in the encompassing enclave;
                 # if not, move to the closest vertex of this exclave
                 distance, satisfies = _constraint_common(
-                    enclave, layout + step, inside)
+                    enclave, layout_flat + step, inside)
                 outside_enclave = inside & ~satisfies.all(dim='constraint')
                 # TODO: ideally, we only check the relevant vertices,
                 #       now we brute-force it by checking all (non-violating)
                 vertices = exclave['vertices'][~exclave['violates']]
                 vertex_dist_sqr = np.square(
-                    layout - vertices
+                    layout_flat - vertices
                 ).sum(dim='xy').where(outside_enclave, np.inf)
                 step = xr.where(
                     outside_enclave,
                     vertices.isel(vertex=vertex_dist_sqr.argmin(dim='vertex'))
-                    - layout,
+                    - layout_flat,
                     step
                 )
                 enclave = None
         elif 'circle' in exclave:
             layout_centered, dist_sqr, radius_sqr, inside = _circle_common(
-                exclave, layout, scrutinize)
+                exclave, layout_flat, scrutinize)
             step = xr.where(
                 dist_sqr > 0,
                 layout_centered * inside * (np.sqrt(radius_sqr / dist_sqr) - 1)
@@ -251,7 +265,7 @@ def site(parcels):
         if 'exclusions' in exclave:
             # determine step to exclave border or some enclave border
             steps, exclaves, insides, enclaves = list(
-                zip(*(process_enclave(enclave, layout, scrutinize)
+                zip(*(process_enclave(enclave, layout_flat, scrutinize)
                       for enclave in exclave['exclusions']))
             )
             steps = xr.concat([step] + list(steps), 'border')
@@ -264,11 +278,10 @@ def site(parcels):
             insides = xr.concat(insides, 'enclave')
             outside = scrutinize & ~insides.any(dim='enclave')
             # TODO: I suspect that the rest of this if-branch is inefficient
-            # TODO: It is also very flakey in view of arbitrary dimensionality
             for target, border in enumerate(borders.values):
-                if (border < 0).all() or not outside[target].any():
+                if border < 0 or not outside[target]:
                     continue
-                insides[border][{'target': target}] = True
+                insides[border][target] = True
             exclaves = [(exclave, inside, enclaves[i])
                         for i, inside in enumerate(insides)
                         for exclave in exclaves[i]]
@@ -283,17 +296,35 @@ def site(parcels):
         layout is an xarray DataArray of xy-coordinates for the turbines.
 
         """
-        old_layout = layout
-        layout = old_layout.copy()
-        scrutinize = xr.full_like(layout, True).all(dim='xy')
+        dims_to_stack = list(layout.dims)
+        dims_to_stack.remove('xy')
+        if len(dims_to_stack) > 1:
+            layout_flat = (
+                # but see https://github.com/pydata/xarray/issues/2802
+                layout.stack(position=dims_to_stack)
+                      .transpose('position', 'xy')
+            )
+            position_name = 'position'
+        else:
+            layout_flat = layout
+            position_name = dims_to_stack[0]
+        old_layout_flat = layout_flat
+        layout_flat = old_layout_flat.copy()
+        scrutinize = xr.full_like(
+            layout_flat.coords[position_name], True, 'bool')
         todo = cl.deque([(parcels, scrutinize, None)])
         while todo:
             exclave, scrutinize, enclave = todo.popleft()
-            step, deeper_todo = process_exclave(
-                exclave, layout, scrutinize, enclave)
-            layout = xr.where(scrutinize, layout + step, layout)
+            step_flat, deeper_todo = process_exclave(
+                exclave, layout_flat, scrutinize, enclave)
+            layout_flat = xr.where(
+                scrutinize, layout_flat + step_flat, layout_flat)
             todo.extend(deeper_todo)
 
-        return layout - old_layout
+        step_flat = layout_flat - old_layout_flat
+        if len(dims_to_stack) > 1:
+            return step_flat.unstack('position')
+        else:
+            return step_flat
 
     return to_border
