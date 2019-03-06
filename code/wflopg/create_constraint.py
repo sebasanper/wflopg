@@ -42,11 +42,11 @@ def distance(turbine_distance):
             # sure that for any pair of nonidentical turbines there is a
             # nonzero unit vector; this may happen, e.g., if site constraint
             # correction places more than one turbine at the same parcel vertex
-            collision = distance_flat[violation_flat] == 0
+            collision = violation_flat & (distance_flat == 0)
             collisions = collision.sum().values.item()
             if collisions:
                 random_angle = np.random.uniform(0, 2 * np.pi, collisions)
-                unit_vector_flat[violation_flat][collision] = (
+                unit_vector_flat[collision] = (
                     np.vstack([np.cos(random_angle), np.sin(random_angle)]).T)
             # Now that we have appropriate unit vectors everywhere, we can
             # correct. We take twice the minimally required step, as in case a
@@ -56,10 +56,8 @@ def distance(turbine_distance):
             # the turbine distance to reduce the probability immediate later
             # conflict
             step_flat = xr.zeros_like(unit_vector_flat)
-            step_flat[violation_flat] = (
-                (1.125 * turbine_distance - distance_flat[violation_flat])
-                * unit_vector_flat[violation_flat]
-            )
+            step_flat = violation_flat * (
+                (1.125 * turbine_distance - distance_flat) * unit_vector_flat)
             step = step_flat.unstack('pair').sum(dim='source')
             step.attrs['violations'] = violation_flat.sum().values.item()
             return step
@@ -82,20 +80,27 @@ def inside_site(site):
     def inside(layout):
         dims_to_stack = list(layout.dims)
         dims_to_stack.remove('xy')
-        layout_flat = (  # but see https://github.com/pydata/xarray/issues/2802
-            layout.stack(position=dims_to_stack).transpose('position', 'xy'))
+        if dims_to_stack == 1:
+            # see https://github.com/pydata/xarray/issues/2802
+            layout_flat = layout
+            position_name = dims_to_stack[0]
+        else:  # dims_to_stack > 1
+            layout_flat = layout.stack(
+                position=dims_to_stack
+            ).transpose('position', 'xy')
+            position_name = 'position'
         layout_flat_mon = xy_to_monomial(layout_flat)
 
-        def inside_polygon(constraints, positions_mon):
+        def inside_polygon(constraints):
             # calculate signed distance from constraint
-            distance = constraints.dot(positions_mon)
+            distance = constraints.dot(layout_flat_mon)
             # turbines with a positive constraint evaluation value
             # lie outside the polygon, so violate the constraint
             inside = (distance <= 0).all(dim='constraint')
             return {'distance': distance, 'inside': inside}
 
-        def inside_disc(circle, positions):
-            distance = np.sqrt(np.square(positions - circle).sum(dim='xy'))
+        def inside_disc(circle):
+            distance = np.sqrt(np.square(layout_flat - circle).sum(dim='xy'))
             inside = distance <= circle.radius
             return {'distance': distance, 'inside': inside}
 
@@ -111,15 +116,13 @@ def inside_site(site):
             """
             info = {}
             if 'constraints' in site:
-                info['constraints'] = inside_polygon(
-                    site['constraints'], layout_flat_mon[undecided])
+                info['constraints'] = inside_polygon(site['constraints'])
                 inside = info['constraints']['inside']
             elif 'circle' in site:
-                info['circle'] = inside_disc(
-                    site['circle'], layout_flat[undecided])
+                info['circle'] = inside_disc(site['circle'])
                 inside = info['circle']['inside']
             ##
-            is_in_site = ~inside if exclusion else inside
+            is_in_site = undecided & (~inside if exclusion else inside)
             if 'exclusions' in site:
                 # recurse to evaluate the exclusions or inclusions (which, that
                 # depends on the status of the exclusion variable)
@@ -128,14 +131,15 @@ def inside_site(site):
                     subinfo = in_site(subsite, inside, not exclusion)
                     info['exclusions'].append(subinfo)
                     if exclusion:
-                        is_in_site[inside] |= subinfo['in_site']
+                        is_in_site |= subinfo['in_site']
                     else:
-                        is_in_site[inside] &= subinfo['in_site']
+                        is_in_site &= subinfo['in_site']
             info['in_site'] = is_in_site
 
             return info
 
-        undecided = xr.full_like(layout_flat.position, True, 'bool')
+        undecided = xr.full_like(
+            layout_flat.coords[position_name], True, 'bool')
         return in_site(site, undecided, True)
 
     return inside

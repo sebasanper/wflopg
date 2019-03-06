@@ -77,7 +77,7 @@ def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
 
 
 def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
-                   frandsen=False, averaging=False):
+                    frandsen=False, averaging=False):
     """Return a Jensen wake model function
 
     The thrust_curve must be an xarray DataArray with as a single dimension the
