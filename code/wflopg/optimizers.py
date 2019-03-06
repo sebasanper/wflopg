@@ -79,7 +79,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations):
     )
     owflop._ds['context'] = owflop._ds.layout.rename(target='source')
     owflop.calculate_geometry()
-    scaler = xr.DataArray([2/3, 6/5], coords=[scale_coord])
+    scaler = xr.DataArray([7/8, 8/7], coords=[scale_coord])
     scaling = xr.DataArray([1, 1], coords=[scale_coord])
     while iterations < max_iterations:
         print('(', iterations, sep='', end=':')
@@ -228,12 +228,16 @@ def multi_adaptive(owflop, max_iterations=np.inf):
         owflop.history.append(xr.Dataset())
         owflop.history[-1]['layout'] = (
             owflop._ds.layout.isel(scale=i, drop=True)
-                                .isel(method=j, drop=True))
+                             .isel(method=j, drop=True)
+        )
         owflop.history[-1]['objective'] = (
             objectives.isel(scale=i, drop=True).isel(method=j, drop=True))
         owflop.history[-1].attrs['corrections'] = corrections
         owflop.history[-1].attrs['method'] = method_coord[1][j]
-        owflop.history[-1].attrs['scale'] = scaling[i[j]].values.item()
+        owflop.history[-1].attrs['scale'] = (
+            scaling.isel(scale=i, drop=True)
+                   .isel(method=j, drop=True).values.item()
+        )
         if len(owflop.history) == 1:
             best = last = start = owflop.history[0]['objective']
         else:
@@ -278,19 +282,15 @@ def multi_adaptive(owflop, max_iterations=np.inf):
                 print('s', outside.values.sum(), sep='', end='')
                 _take_step(owflop, owflop.to_border(owflop._ds.layout))
                 corrections += 's'
-            proximity_violated = (
-                owflop.proximity_violation(owflop._ds.distance))
-            too_close = proximity_violated.any()
+            proximity_repulsion_step = (
+                owflop.proximity_repulsion(
+                    owflop._ds.distance, owflop._ds.unit_vector)
+            )
+            too_close = proximity_repulsion_step is not None
             if too_close:
-                print('p', proximity_violated.values.sum(), sep='', end='')
-                _take_step(
-                    owflop,
-                    owflop.proximity_repulsion(
-                        proximity_violated,
-                        owflop._ds.unit_vector,
-                        owflop._ds.distance
-                    )
-                )
+                print('p', proximity_repulsion_step.attrs['violations'],
+                      sep='', end='')
+                _take_step(owflop, proximity_repulsion_step)
                 corrections += 'p'
             print(',', end='')
             maybe_violations = any_outside & too_close

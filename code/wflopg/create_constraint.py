@@ -49,15 +49,15 @@ def distance(turbine_distance):
                 unit_vector_flat[violation_flat][collision] = (
                     np.vstack([np.cos(random_angle), np.sin(random_angle)]).T)
             # Now that we have appropriate unit vectors everywhere, we can
-            # correct. We take thrice the minimally required step, as in case a
+            # correct. We take twice the minimally required step, as in case a
             # turbine is pushed outside of the site, half the step can be
-            # undone by the site constraint correction procedure; we take
-            # thrice and not twice because this leaves some extra room that
-            # might be squandered in the sum (from experience we know this is
-            # necessary)
+            # undone by the site constraint correction procedure. Furthermore,
+            # we add a constant extra distance of 1/8 (chosen from experience)
+            # the turbine distance to reduce the probability immediate later
+            # conflict
             step_flat = xr.zeros_like(unit_vector_flat)
             step_flat[violation_flat] = (
-                3 * (turbine_distance - distance_flat[violation_flat]) / 2
+                (1.125 * turbine_distance - distance_flat[violation_flat])
                 * unit_vector_flat[violation_flat]
             )
             step = step_flat.unstack('pair').sum(dim='source')
