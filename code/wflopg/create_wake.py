@@ -9,19 +9,28 @@ def _common(dc_vector_adim):
     return downwind, crosswind, is_downwind
 
 
-def _half_lens_area(distance, own_radius, other_radius, partially):
+def _lens_area(d, r, R):
     """Return relative area of half-lens
 
-    https://christianhill.co.uk/blog/overlapping-circles/
+    This function is used to calculate the area of a lens with radii r and R at
+    distance d.
 
-    This function is used to calculate relative areas for analytical partial
-    wake calculations. It is relevant for models with top-hat wake profiles.
+    From <http://mathworld.wolfram.com/Lens.html>, modified for efficiency.
+
+    (Alternative: <https://christianhill.co.uk/blog/overlapping-circles/>)
 
     """
-    cosine = ((distance ** 2 + own_radius ** 2 - other_radius ** 2)
-              / (2 * distance * own_radius))
-    angle = np.arccos(cosine.where(partially, 0))
-    return (angle - np.sin(2 * angle) / 2) * own_radius ** 2 / np.pi
+    dd = np.square(d)
+    rr = np.square(r)
+    RR = np.square(R)
+    RR_rr = RR - rr
+    return (
+        rr * np.arccos((dd - RR_rr) / (2 * d * r))
+        +
+        RR * np.arccos((dd + RR_rr) / (2 * d * R))
+        -
+        np.sqrt(2 * dd * (RR + rr) - np.square(dd) - np.square(RR_rr)) / 2
+    )
 
 
 def rss_combination():
@@ -102,21 +111,22 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
 
         """
         downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
-        wake_radius = (
-            1 + expansion_coeff * downwind / stream_tube_radius
-        ).where(is_downwind, -np.inf)
+        wake_radius = 1 + expansion_coeff * downwind / stream_tube_radius
         if averaging:
-            waked = crosswind < 1 + wake_radius
-            partially = waked & (crosswind > wake_radius - 1)
-            relative_area = waked * (
-                _half_lens_area(crosswind, 1, wake_radius, partially)
-                + _half_lens_area(crosswind, wake_radius, 1, partially)
-            ).where(partially, 1)
+            waked = is_downwind & (crosswind < 1 + wake_radius)
+            relative_area = np.float64(waked)
+            partial = waked & (crosswind > wake_radius - 1)
+            relative_area = xr.where(
+                partial,
+                _lens_area(partial * crosswind, partial, partial * wake_radius)
+                / np.pi,
+                relative_area
+            )
         else:
-            waked = crosswind <= wake_radius
-            relative_area = 1
+            relative_area = np.float64(
+                is_downwind & (crosswind <= wake_radius))
         return (
-            waked * relative_area * induction_factor / np.square(wake_radius))
+            relative_area * induction_factor / np.square(wake_radius))
 
     return wake_model
 
