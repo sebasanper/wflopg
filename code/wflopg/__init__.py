@@ -25,7 +25,7 @@ class Owflop():
         # history of layouts and friends as a list of xr.DataSets
         self.history = []
 
-    def load_problem(self, filename):
+    def load_problem(self, filename, random_layout=False):
         """Load wind farm layout optimization problem file
 
         The file is assumed to be a YAML file in the format described by the
@@ -78,13 +78,43 @@ class Owflop():
             create_constraint.distance(self.minimal_proximity))
 
         # deal with initial layout
-        if 'layout' in problem:
+        if ('layout' in problem) and not random_layout:
             with open(problem['layout']) as f:
                 initial_layout = yaml(typ='safe').load(f)['layout']
         else:
-            initial_layout = [[0, 0]]
+            # (random) number of turbines
+            if random_layout is True:
+                turbines = self.turbines
+            elif isinstance(random_layout, int):
+                turbines = random_layout
+            elif isinstance(self.turbines, list):
+                turbines = np.random.randint(*self.turbines)
+            initial_layout = self.create_random_layout(turbines)
         self.process_initial_layout(initial_layout)
         self.calculate_geometry()
+
+    def create_random_layout(self, turbines):
+        # create squarish hexagonal—so densest—packing to cover site
+        x_step = self.minimal_proximity
+        y_step = x_step * np.sqrt(3) / 2
+        n = int(1 / x_step) + 1
+        m = int(1 / y_step)
+        xs = np.arange(-n, n) * x_step
+        ys = np.arange(-m, m + 1) * y_step
+        mg = np.meshgrid(xs, ys)
+        mg[0] = (mg[0].T + (np.arange(-m, m+1) % 2) * x_step / 2).T
+        covering_layout = xr.DataArray(
+            np.stack([mg[0].ravel(), mg[1].ravel()], axis=-1),
+            dims=['target', 'xy'], coords={'xy': COORDS['xy']}
+        )
+        # TODO: rotate over random angle
+        dense_layout = covering_layout[
+            self.inside(covering_layout)['in_site'].rename(position='target')]
+        # TODO: avoid the rename in some way
+        max_turbines = len(dense_layout)
+        return dense_layout[
+            np.random.choice(
+                max_turbines, min(turbines, max_turbines), replace=False)]
 
     def process_turbine(self, turbine):
         self.rotor_radius = turbine['rotor_radius']
