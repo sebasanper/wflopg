@@ -160,7 +160,6 @@ class Owflop():
         # Process boundaries
         if 'boundaries' in site:
             self.boundaries = create_site.boundaries(site['boundaries'])
-        # TODO: * use this to create a function to visualize the boundaries
 
     def process_wind_resource(self, wind_resource, roughness_length,
                               dir_subs, speeds, cut_in, cut_out):
