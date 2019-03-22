@@ -9,7 +9,7 @@ def _take_step(owflop, step):
     owflop.calculate_geometry()
 
 
-def _iterate(step_generator, owflop, max_iterations):
+def _iterate(step_generator, owflop, max_iterations, step_normalizer):
     iterations = 0
     corrections = ''
     while iterations < max_iterations:
@@ -41,7 +41,7 @@ def _iterate(step_generator, owflop, max_iterations):
                 break
         # calculate new layout
         owflop.calculate_relative_wake_loss_vector()
-        step = step_generator()
+        step = step_generator() * step_normalizer
         step -= step.mean(dim='target')  # remove any global shift
         _take_step(owflop, step)
         # deal with any constraint violations in layout
@@ -70,7 +70,7 @@ def _iterate(step_generator, owflop, max_iterations):
         iterations += 1
 
 
-def _adaptive_iterate(step_generator, owflop, max_iterations):
+def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer):
     scale_coord = ('scale', ['-', '+'])
     iterations = 0
     corrections = ''
@@ -116,7 +116,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations):
             owflop._ds.wake_loss_factor.isel(scale=i))
         owflop._ds['unit_vector'] = owflop._ds.unit_vector.isel(scale=i)
         owflop.calculate_relative_wake_loss_vector()
-        step = step_generator()
+        step = step_generator() * step_normalizer
         step -= step.mean(dim='target')  # remove any global shift
         step = step * scaling  # generate the different step variants
         _take_step(owflop, step)
@@ -153,11 +153,17 @@ def pure_down(owflop, max_iterations=np.inf, scaling=False):
     necessarily have any further actions applied.
 
     """
+    step_normalizer = (owflop.rotor_radius / owflop.site_radius) * 2
     if scaling:
         _adaptive_iterate(
-            owflop.calculate_push_down_vector, owflop, max_iterations)
+            owflop.calculate_push_down_vector, owflop,
+            max_iterations, step_normalizer
+        )
     else:
-        _iterate(owflop.calculate_push_down_vector, owflop, max_iterations)
+        _iterate(
+            owflop.calculate_push_down_vector, owflop,
+            max_iterations, step_normalizer
+        )
 
 
 def pure_back(owflop, max_iterations=np.inf, scaling=False):
@@ -167,11 +173,17 @@ def pure_back(owflop, max_iterations=np.inf, scaling=False):
     necessarily have any further actions applied.
 
     """
+    step_normalizer = (owflop.rotor_radius / owflop.site_radius) * 2
     if scaling:
         _adaptive_iterate(
-            owflop.calculate_push_back_vector, owflop, max_iterations)
+            owflop.calculate_push_back_vector, owflop,
+            max_iterations, step_normalizer
+        )
     else:
-        _iterate(owflop.calculate_push_back_vector, owflop, max_iterations)
+        _iterate(
+            owflop.calculate_push_back_vector, owflop,
+            max_iterations, step_normalizer
+        )
 
 
 def mixed_down_and_back(owflop, max_iterations=np.inf, scaling=False):
@@ -181,14 +193,16 @@ def mixed_down_and_back(owflop, max_iterations=np.inf, scaling=False):
     necessarily have any further actions applied.
 
     """
+    step_normalizer = (owflop.rotor_radius / owflop.site_radius) * 2
     def step_generator():
         return (owflop.calculate_push_down_vector()
                 + owflop.calculate_push_back_vector()) / 2
 
     if scaling:
-        _adaptive_iterate(step_generator, owflop, max_iterations)
+        _adaptive_iterate(
+            step_generator, owflop, max_iterations, step_normalizer)
     else:
-        _iterate(step_generator, owflop, max_iterations)
+        _iterate(step_generator, owflop, max_iterations, step_normalizer)
 
 
 def pure_cross(owflop, max_iterations=np.inf, scaling=False):
@@ -198,11 +212,17 @@ def pure_cross(owflop, max_iterations=np.inf, scaling=False):
     necessarily have any further actions applied.
 
     """
+    step_normalizer = (owflop.rotor_radius / owflop.site_radius) * 2 * 100
     if scaling:
         _adaptive_iterate(
-            owflop.calculate_push_cross_vector, owflop, max_iterations)
+            owflop.calculate_push_cross_vector,
+            owflop, max_iterations, step_normalizer
+        )
     else:
-        _iterate(owflop.calculate_push_cross_vector, owflop, max_iterations)
+        _iterate(
+            owflop.calculate_push_cross_vector, owflop,
+            max_iterations, step_normalizer
+        )
 
 
 def multi_adaptive(owflop, max_iterations=np.inf):
