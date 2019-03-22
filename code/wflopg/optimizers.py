@@ -226,6 +226,7 @@ def pure_cross(owflop, max_iterations=np.inf, scaling=False):
 
 
 def multi_adaptive(owflop, max_iterations=np.inf):
+    site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     scale_coord = ('scale', ['-', '+'])
     method_coord = ('method', ['down', 'back', 'cross'])
     iterations = 0
@@ -285,13 +286,103 @@ def multi_adaptive(owflop, max_iterations=np.inf):
             owflop._ds.unit_vector.isel(scale=i, drop=True)
                                      .isel(method=j, drop=True))
         owflop.calculate_relative_wake_loss_vector()
-        down_step = owflop.calculate_push_down_vector()
-        back_step = owflop.calculate_push_back_vector()
-        cross_step = owflop.calculate_push_cross_vector()
+        down_step = (
+            # a fully waked turbine (deficit = 1) is moved 1 rotor diameter
+            owflop.calculate_push_down_vector() * site_rotor_diameter)
+        back_step = (
+            # a fully waking turbine (deficit = 1) is moved 1 rotor diameter
+            owflop.calculate_push_back_vector() * site_rotor_diameter)
+        cross_step =  (
+            # a fully waked turbine (deficit = 1) is moved 1 rotor diameter
+            # but because crosswind vectors are by construction small,
+            # we add a heuristic factor to compensate
+            owflop.calculate_push_cross_vector() * site_rotor_diameter * 100)
         step = xr.concat([down_step, back_step, cross_step], 'method')
         step -= step.mean(dim='target')  # remove any global shift
         step = step * scaling  # generate the different step variants
         _take_step(owflop, step)
+        # deal with any constraint violations in layout
+        corrections = ''
+        maybe_violations = True
+        while maybe_violations:
+            outside = ~owflop.inside(owflop._ds.layout)['in_site']
+            any_outside = outside.any()
+            if any_outside:
+                print('s', outside.values.sum(), sep='', end='')
+                _take_step(owflop, owflop.to_border(owflop._ds.layout))
+                corrections += 's'
+            proximity_repulsion_step = (
+                owflop.proximity_repulsion(
+                    owflop._ds.distance, owflop._ds.unit_vector)
+            )
+            too_close = proximity_repulsion_step is not None
+            if too_close:
+                print('p', proximity_repulsion_step.attrs['violations'],
+                      sep='', end='')
+                _take_step(owflop, proximity_repulsion_step)
+                corrections += 'p'
+            print(',', end='')
+            maybe_violations = any_outside & too_close
+        print(')', end=' ')
+        iterations += 1
+
+
+def method_chooser(owflop, max_iterations=np.inf):
+    site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
+    method_coord = ('method', ['down', 'back', 'cross'])
+    iterations = 0
+    corrections = ''
+    owflop._ds['layout'] = (
+        owflop._ds.layout * xr.DataArray([1, 1, 1], coords=[method_coord]))
+    owflop._ds['context'] = owflop._ds.layout.rename(target='source')
+    owflop.calculate_geometry()
+    while iterations < max_iterations:
+        print('(', iterations, sep='', end=':')
+        owflop.calculate_deficit()
+        owflop.calculate_power()
+        objectives = owflop.objective()
+        j = objectives.argmin('method').values.item()
+        owflop.history.append(xr.Dataset())
+        owflop.history[-1]['layout'] = (
+            owflop._ds.layout.isel(method=j, drop=True))
+        owflop.history[-1]['objective'] = objectives.isel(method=j, drop=True)
+        owflop.history[-1].attrs['corrections'] = corrections
+        owflop.history[-1].attrs['method'] = method_coord[1][j]
+        if len(owflop.history) == 1:
+            best = last = start = owflop.history[0]['objective']
+        else:
+            last = owflop.history[-1]['objective']
+            if last < best:
+                best = last
+            distance_from_previous = np.sqrt(
+                np.square(
+                    owflop.history[-1]['layout'] - owflop.history[-2]['layout']
+                ).sum(dim='xy')
+            )
+            # stop iterating if the largest step is smaller than 1 m
+            if distance_from_previous.max() * owflop.site_radius < 1:
+                break
+        # calculate new layouts
+        # first calculate relative_wake_loss_vector just once
+        owflop._ds['relative_deficit'] = (
+            owflop._ds.relative_deficit.isel(method=j, drop=True))
+        owflop._ds['wake_loss_factor'] = (
+            owflop._ds.wake_loss_factor.isel(method=j, drop=True))
+        owflop._ds['unit_vector'] = (
+            owflop._ds.unit_vector.isel(method=j, drop=True))
+        owflop.calculate_relative_wake_loss_vector()
+        down_step = owflop.calculate_push_down_vector()
+        back_step = owflop.calculate_push_back_vector()
+        cross_step = owflop.calculate_push_cross_vector()
+        # normalize the step to the largest pseudo-gradient
+        down_step /= down_step.max('target')
+        back_step /= back_step.max('target')
+        cross_step /= cross_step.max('target')
+        # throw steps in one big DataArray
+        step = xr.concat([down_step, back_step, cross_step], 'method')
+        step -= step.mean(dim='target')  # remove any global shift
+        # take the step, one rotor diameter for the largest pseudo-gradient
+        _take_step(owflop, step * site_rotor_diameter)
         # deal with any constraint violations in layout
         corrections = ''
         maybe_violations = True
