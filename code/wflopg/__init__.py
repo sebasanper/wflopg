@@ -229,8 +229,11 @@ class Owflop():
                 coords=[('direction', dirs), ('speed', speeds)]
             )
 
+        # normalize direction pmf
+        dir_probs = dir_weights / dir_weights.sum()
+
         # Store pmfs; obtain them from the weight arrays by normalization
-        self._ds['direction_pmf'] = dir_weights / dir_weights.sum()
+        self._ds['direction_pmf'] = dir_probs
         self._ds['wind_speed_cpmf'] = speed_probs
 
     def process_initial_layout(self, initial_layout):
