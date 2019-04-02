@@ -326,9 +326,8 @@ class Owflop():
                                                            self._ds.deficit)
 
     def expectation(self, array):
-        return (
-            array * self._ds.wind_speed_cpmf
-        ).sum(dim='speed').dot(self._ds.direction_pmf)
+        return (array.dot(self._ds.wind_speed_cpmf, 'speed')
+                     .dot(self._ds.direction_pmf))
 
     def calculate_wakeless_power(self):
         self._ds['wakeless_power'] = self.power_curve(self._ds.speed)
@@ -367,7 +366,9 @@ class Owflop():
         ).rename(source='target')
 
     def calculate_push_cross_vector(self):
+        # TODO: perhaps dot with everything except 'direction' instead of 'xy'?
         return self.expectation(
-            (self._ds.relative_wake_loss_vector.dot(self._ds.crosswind)
-             * self._ds.crosswind).sum(dim='source')
+            self._ds.relative_wake_loss_vector.sum(dim='source')
+                                              .dot(self._ds.crosswind, 'xy')
+            * self._ds.crosswind
         )
