@@ -1,8 +1,6 @@
 import numpy as np
 import xarray as xr
 
-from wflopg.constants import COORDS
-
 
 def _check_start(interpolation_data, start_speed, start_value):
     """Adapt interpolation_data or start_speed as needed
@@ -69,8 +67,9 @@ def cubic_power_curve(rated_power, rated_speed, cut_in, cut_out):
         """
         wc = _within_cut(speeds, cut_in, cut_out)
         return rated_power * (
-            wc * (speeds.where(speeds < rated_speed, rated_speed) - cut_in)
-               / (rated_speed - cut_in)
+            wc
+            * (speeds.where(speeds < rated_speed, rated_speed) - cut_in)
+            / (rated_speed - cut_in)
         ) ** 3
 
     return power_curve

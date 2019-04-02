@@ -194,6 +194,7 @@ def mixed_down_and_back(owflop, max_iterations=np.inf, scaling=False):
 
     """
     step_normalizer = (owflop.rotor_radius / owflop.site_radius) * 2
+
     def step_generator():
         return (owflop.calculate_push_down_vector()
                 + owflop.calculate_push_back_vector()) / 2
@@ -278,13 +279,13 @@ def multi_adaptive(owflop, max_iterations=np.inf):
         # first calculate relative_wake_loss_vector just once
         owflop._ds['relative_deficit'] = (
             owflop._ds.relative_deficit.isel(scale=i, drop=True)
-                                          .isel(method=j, drop=True))
+                                       .isel(method=j, drop=True))
         owflop._ds['wake_loss_factor'] = (
             owflop._ds.wake_loss_factor.isel(scale=i, drop=True)
-                                          .isel(method=j, drop=True))
+                                       .isel(method=j, drop=True))
         owflop._ds['unit_vector'] = (
             owflop._ds.unit_vector.isel(scale=i, drop=True)
-                                     .isel(method=j, drop=True))
+                                  .isel(method=j, drop=True))
         owflop.calculate_relative_wake_loss_vector()
         down_step = (
             # a fully waked turbine (deficit = 1) is moved 1 rotor diameter
@@ -292,7 +293,7 @@ def multi_adaptive(owflop, max_iterations=np.inf):
         back_step = (
             # a fully waking turbine (deficit = 1) is moved 1 rotor diameter
             owflop.calculate_push_back_vector() * site_rotor_diameter)
-        cross_step =  (
+        cross_step = (
             # a fully waked turbine (deficit = 1) is moved 1 rotor diameter
             # but because crosswind vectors are by construction small,
             # we add a heuristic factor to compensate

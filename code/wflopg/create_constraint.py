@@ -2,7 +2,6 @@ import numpy as np
 import xarray as xr
 import collections as cl
 
-from wflopg.constants import COORDS
 from wflopg.create_site import xy_to_monomial
 
 
