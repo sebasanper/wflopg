@@ -25,7 +25,10 @@ class Owflop():
         # history of layouts and friends as a list of xr.DataSets
         self.history = []
 
-    def load_problem(self, filename, random_layout=False):
+    def load_problem(self, filename,
+                     random_layout=False,
+                     layout_filename=None,
+                     wind_resource_filename=None):
         """Load wind farm layout optimization problem file
 
         The file is assumed to be a YAML file in the format described by the
@@ -44,7 +47,9 @@ class Owflop():
             self.process_turbine(yaml(typ='safe').load(f))
         with open(problem['site']) as f:
             self.process_site(yaml(typ='safe').load(f))
-        with open(problem['wind_resource']) as f:
+        if wind_resource_filename is None:
+            wind_resource_filename = problem['wind_resource']
+        with open(wind_resource_filename) as f:
             self.process_wind_resource(
                 yaml(typ='safe').load(f),
                 self.roughness_length,
@@ -78,7 +83,10 @@ class Owflop():
             create_constraint.distance(self.minimal_proximity))
 
         # deal with initial layout
-        if ('layout' in problem) and not random_layout:
+        if layout_filename is not None:
+            with open(layout_filename) as f:
+                initial_layout = yaml(typ='safe').load(f)['layout']
+        elif ('layout' in problem) and not random_layout:
             with open(problem['layout']) as f:
                 initial_layout = yaml(typ='safe').load(f)['layout']
         else:
