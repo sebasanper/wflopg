@@ -99,8 +99,6 @@ def subdivide(dirs, speeds, dir_weights, speed_probs, dir_subs,
         rel=np.linspace(0, 1, dir_subs * len(dirs) + 1)
     ).values
     dirs_interp = dirs_interp[:-1]  # drop the last, cyclical value
-    dirs_interp = np.round(dirs_interp)
-        # Interpolation introduces floating point errors! We fix those here.
 
     #
     dir_weights = dir_weights_cyc.interp(direction=dirs_interp,
