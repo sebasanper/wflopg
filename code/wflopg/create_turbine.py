@@ -100,13 +100,11 @@ def interpolated_power_curve(rated_power, rated_speed, cut_in, cut_out,
         """
         # only 1D-arrays can be interpolated
         speeds_flat = speeds.values.flatten()
-        wc = _within_cut(speeds_flat, cut_in, cut_out)  # within cut
         return xr.DataArray(
-            (
-                wc * interpolator.interp(speed=speeds_flat)
-            ).values.reshape(speeds.shape),
-            dims=speeds.dims, coords=speeds.coords
-        )
+                interpolator.interp(
+                        speed=speeds_flat, kwargs={'fill_value': 0.0}
+                ).values.reshape(speeds.shape),
+                dims=speeds.dims, coords=speeds.coords)
 
     return power_curve
 
@@ -145,12 +143,10 @@ def interpolated_thrust_curve(cut_in, cut_out, interpolation_data):
         """
         # only 1D-arrays can be interpolated
         speeds_flat = speeds.values.flatten()
-        wc = _within_cut(speeds_flat, cut_in, cut_out)  # within cut
         return xr.DataArray(
-            (
-                wc * interpolator.interp(speed=speeds_flat)
-            ).values.reshape(speeds.shape),
-            dims=speeds.dims, coords=speeds.coords
-        )
+                interpolator.interp(
+                        speed=speeds_flat, kwargs={'fill_value': 0.0}
+                ).values.reshape(speeds.shape),
+                dims=speeds.dims, coords=speeds.coords)
 
     return thrust_curve
