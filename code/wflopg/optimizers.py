@@ -41,8 +41,10 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
                 break
         # calculate new layout
         owflop.calculate_relative_wake_loss_vector()
-        step = step_generator() * step_normalizer
+        step = step_generator()
         step -= step.mean(dim='target')  # remove any global shift
+        step /= step.max(dim='target')
+        step *= step_normalizer
         _take_step(owflop, step)
         # deal with any constraint violations in layout
         corrections = ''
@@ -121,8 +123,10 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer):
             owflop._ds.wake_loss_factor.isel(scale=i))
         owflop._ds['unit_vector'] = owflop._ds.unit_vector.isel(scale=i)
         owflop.calculate_relative_wake_loss_vector()
-        step = step_generator() * step_normalizer
+        step = step_generator()
         step -= step.mean(dim='target')  # remove any global shift
+        step /= step.max(dim='target')
+        step *= step_normalizer
         step = step * scaling  # generate the different step variants
         _take_step(owflop, step)
         # deal with any constraint violations in layout
@@ -218,7 +222,7 @@ def pure_cross(owflop, max_iterations=np.inf, scaling=False):
     necessarily have any further actions applied.
 
     """
-    step_normalizer = (owflop.rotor_radius / owflop.site_radius) * 2 * 100
+    step_normalizer = (owflop.rotor_radius / owflop.site_radius) * 2
     if scaling:
         _adaptive_iterate(
             owflop.calculate_push_cross_vector,
@@ -297,24 +301,21 @@ def multi_adaptive(owflop, max_iterations=np.inf, only_above_average=False):
             owflop._ds.unit_vector.isel(scale=i, drop=True)
                                   .isel(method=j, drop=True))
         owflop.calculate_relative_wake_loss_vector()
-        down_step = (
-            # a fully waked turbine (deficit = 1) is moved 1 rotor diameter
-            owflop.calculate_push_down_vector() * site_rotor_diameter)
-        back_step = (
-            # a fully waking turbine (deficit = 1) is moved 1 rotor diameter
-            owflop.calculate_push_back_vector() * site_rotor_diameter)
-        cross_step = (
-            # a fully waked turbine (deficit = 1) is moved 1 rotor diameter
-            # but because crosswind vectors are by construction small,
-            # we add a heuristic factor to compensate
-            owflop.calculate_push_cross_vector() * site_rotor_diameter * 100)
+        down_step = owflop.calculate_push_down_vector()
+        back_step = owflop.calculate_push_back_vector()
+        cross_step = owflop.calculate_push_cross_vector()
+        # throw steps in one big DataArray
         step = xr.concat([down_step, back_step, cross_step], 'method')
         step -= step.mean(dim='target')  # remove any global shift
-        step = step * scaling  # generate the different step variants
+        # normalize the step to the largest pseudo-gradient
+        step /= step.max('target')
         if only_above_average:  # only take above average steps
             distance = np.sqrt(np.square(step).sum(dim='xy'))
             mean_distance = distance.mean(dim='target')
             step *= (distance > mean_distance)
+        # generate the different step variants
+        step = step * site_rotor_diameter * scaling
+        # take the step
         _take_step(owflop, step)
         # deal with any constraint violations in layout
         corrections = ''
