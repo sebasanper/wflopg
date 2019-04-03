@@ -231,7 +231,7 @@ def pure_cross(owflop, max_iterations=np.inf, scaling=False):
         )
 
 
-def multi_adaptive(owflop, max_iterations=np.inf):
+def multi_adaptive(owflop, max_iterations=np.inf, only_above_average=False):
     site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     scale_coord = ('scale', ['-', '+'])
     method_coord = ('method', ['down', 'back', 'cross'])
@@ -311,6 +311,10 @@ def multi_adaptive(owflop, max_iterations=np.inf):
         step = xr.concat([down_step, back_step, cross_step], 'method')
         step -= step.mean(dim='target')  # remove any global shift
         step = step * scaling  # generate the different step variants
+        if only_above_average:  # only take above average steps
+            distance = np.sqrt(np.square(step).sum(dim='xy'))
+            mean_distance = distance.mean(dim='target')
+            step *= (distance > mean_distance)
         _take_step(owflop, step)
         # deal with any constraint violations in layout
         corrections = ''
