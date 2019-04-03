@@ -82,6 +82,11 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer):
     scaler = xr.DataArray([7/8, 8/7], coords=[scale_coord])
     scaling = xr.DataArray([1, 1], coords=[scale_coord])
     while iterations < max_iterations:
+        # stop iterating if no real objective improvement is being made
+        if iterations > 0:
+            if (last - best
+                > (start - best) / np.log2(len(owflop.history) + 2)):
+                break
         print('(', iterations, sep='', end=':')
         owflop.calculate_deficit()
         owflop.calculate_power()
@@ -241,6 +246,11 @@ def multi_adaptive(owflop, max_iterations=np.inf):
     scaler = xr.DataArray([2/3, 6/5], coords=[scale_coord])
     scaling = xr.DataArray([1, 1], coords=[scale_coord])
     while iterations < max_iterations:
+        # stop iterating if no real objective improvement is being made
+        if iterations > 0:
+            if (last - best
+                > (start - best) / np.log2(len(owflop.history) + 2)):
+                break
         print('(', iterations, sep='', end=':')
         owflop.calculate_deficit()
         owflop.calculate_power()
@@ -338,6 +348,11 @@ def method_chooser(owflop, max_iterations=np.inf):
     owflop._ds['context'] = owflop._ds.layout.rename(target='source')
     owflop.calculate_geometry()
     while iterations < max_iterations:
+        # stop iterating if no real objective improvement is being made
+        if iterations > 0:
+            if (last - best
+                > (start - best) / np.log2(len(owflop.history) + 2)):
+                break
         print('(', iterations, sep='', end=':')
         owflop.calculate_deficit()
         owflop.calculate_power()
