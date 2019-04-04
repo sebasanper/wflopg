@@ -1,5 +1,9 @@
 import numpy as np
 import xarray as xr
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gs
+
+import wflopg.visualization as vis
 
 
 def _take_step(owflop, step):
@@ -72,7 +76,34 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
         iterations += 1
 
 
-def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer):
+def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
+                      visualize=False):
+    if visualize:
+        fig = plt.figure()
+        grid = gs.GridSpec(3, 5)
+        ax_windrose = fig.add_subplot(grid[0, :2], polar=True)
+        ax_windrose.set_aspect(1.0)
+        ax_windrose.set_theta_zero_location("N")
+        ax_windrose.set_theta_direction(-1)
+        ax_windrose.set_ylim(
+                0, 1.1 * owflop._ds.direction_pmf.max().values.item())
+        ax_windrose.bar(owflop._ds.direction / 360 * 2 * np.pi,
+                        owflop._ds.direction_pmf,
+                        color='b', width=2 * np.pi / len(owflop._ds.direction))
+        ax_convergence = fig.add_subplot(grid[1, :2])
+        ax_convergence.set_xlim(-1, max_iterations + 1)
+        ax_convergence.set_ylim(0, 100)
+        ax_scaling = fig.add_subplot(grid[2, :2], sharex=ax_convergence)
+        ax_layout = fig.add_subplot(grid[:, 2:])
+        ax_layout.set_aspect('equal')
+        ax_layout.set_axis_off()
+        ax_layout.set_xlim(-1.01, 1.01)
+        ax_layout.set_ylim(-1.01, 1.01)
+        vis.draw_turbines(ax_layout, owflop, owflop._ds.layout,
+                          proximity=True, in_or_out=True)
+        vis.draw_boundaries(ax_layout, owflop)
+        grid.tight_layout(fig)
+        plt.pause(10)
     scale_coord = ('scale', ['-', '+'])
     iterations = 0
     corrections = ''
@@ -100,6 +131,25 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer):
         owflop.history[-1]['objective'] = objectives.isel(scale=i, drop=True)
         owflop.history[-1].attrs['corrections'] = corrections
         owflop.history[-1].attrs['scale'] = scaling[i].values.item()
+        if visualize:
+            ax_convergence.clear()
+            ax_convergence.plot(
+                    100 * np.array([ds.objective for ds in owflop.history]))
+            ax_scaling.clear()
+            ax_scaling.semilogy(
+                    np.array([ds.scale for ds in owflop.history]), '.')
+            ax_layout.clear()
+            ax_layout.set_aspect('equal')
+            ax_layout.set_axis_off()
+            ax_layout.set_xlim(-1.01, 1.01)
+            ax_layout.set_ylim(-1.01, 1.01)
+            vis.connect_layouts(ax_layout,
+                                [ds.layout for ds in owflop.history])
+            vis.draw_turbines(ax_layout, owflop, owflop.history[0].layout)
+            vis.draw_turbines(ax_layout, owflop, owflop.history[-1].layout,
+                              proximity=True, in_or_out=True)
+            vis.draw_boundaries(ax_layout, owflop)
+            plt.pause(0.1)
         if len(owflop.history) == 1:
             best = last = start = owflop.history[0]['objective']
         else:
@@ -155,7 +205,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer):
         iterations += 1
 
 
-def pure_down(owflop, max_iterations=np.inf, scaling=False):
+def pure_down(owflop, max_iterations=np.inf, scaling=False, visualize=False):
     """Optimize the layout using push-down only
 
     The problem object owflop is assumed to have a problem loaded, but not
@@ -166,7 +216,7 @@ def pure_down(owflop, max_iterations=np.inf, scaling=False):
     if scaling:
         _adaptive_iterate(
             owflop.calculate_push_down_vector, owflop,
-            max_iterations, step_normalizer
+            max_iterations, step_normalizer, visualize=visualize
         )
     else:
         _iterate(
@@ -175,7 +225,7 @@ def pure_down(owflop, max_iterations=np.inf, scaling=False):
         )
 
 
-def pure_back(owflop, max_iterations=np.inf, scaling=False):
+def pure_back(owflop, max_iterations=np.inf, scaling=False, visualize=False):
     """Optimize the layout using push-back only
 
     The problem object owflop is assumed to have a problem loaded, but not
@@ -186,7 +236,7 @@ def pure_back(owflop, max_iterations=np.inf, scaling=False):
     if scaling:
         _adaptive_iterate(
             owflop.calculate_push_back_vector, owflop,
-            max_iterations, step_normalizer
+            max_iterations, step_normalizer, visualize=visualize
         )
     else:
         _iterate(
@@ -195,7 +245,8 @@ def pure_back(owflop, max_iterations=np.inf, scaling=False):
         )
 
 
-def mixed_down_and_back(owflop, max_iterations=np.inf, scaling=False):
+def mixed_down_and_back(owflop, max_iterations=np.inf,
+                        scaling=False, visualize=False):
     """Optimize the layout using a mixture of push-down and push-back
 
     The problem object owflop is assumed to have a problem loaded, but not
@@ -210,12 +261,13 @@ def mixed_down_and_back(owflop, max_iterations=np.inf, scaling=False):
 
     if scaling:
         _adaptive_iterate(
-            step_generator, owflop, max_iterations, step_normalizer)
+            step_generator, owflop, max_iterations,
+            step_normalizer, visualize=visualize)
     else:
         _iterate(step_generator, owflop, max_iterations, step_normalizer)
 
 
-def pure_cross(owflop, max_iterations=np.inf, scaling=False):
+def pure_cross(owflop, max_iterations=np.inf, scaling=False, visualize=False):
     """Optimize the layout using push-back only
 
     The problem object owflop is assumed to have a problem loaded, but not
@@ -226,7 +278,7 @@ def pure_cross(owflop, max_iterations=np.inf, scaling=False):
     if scaling:
         _adaptive_iterate(
             owflop.calculate_push_cross_vector,
-            owflop, max_iterations, step_normalizer
+            owflop, max_iterations, step_normalizer, visualize=visualize
         )
     else:
         _iterate(
@@ -235,7 +287,34 @@ def pure_cross(owflop, max_iterations=np.inf, scaling=False):
         )
 
 
-def multi_adaptive(owflop, max_iterations=np.inf, only_above_average=False):
+def multi_adaptive(owflop, max_iterations=np.inf, only_above_average=False,
+                   visualize=False):
+    if visualize:
+        fig = plt.figure()
+        grid = gs.GridSpec(3, 5)
+        ax_windrose = fig.add_subplot(grid[0, :2], polar=True)
+        ax_windrose.set_aspect(1.0)
+        ax_windrose.set_theta_zero_location("N")
+        ax_windrose.set_theta_direction(-1)
+        ax_windrose.set_ylim(
+                0, 1.1 * owflop._ds.direction_pmf.max().values.item())
+        ax_windrose.bar(owflop._ds.direction / 360 * 2 * np.pi,
+                        owflop._ds.direction_pmf,
+                        color='b', width=2 * np.pi / len(owflop._ds.direction))
+        ax_convergence = fig.add_subplot(grid[1, :2])
+        ax_convergence.set_xlim(-1, max_iterations + 1)
+        ax_convergence.set_ylim(0, 100)
+        ax_scaling = fig.add_subplot(grid[2, :2], sharex=ax_convergence)
+        ax_layout = fig.add_subplot(grid[:, 2:])
+        ax_layout.set_aspect('equal')
+        ax_layout.set_axis_off()
+        ax_layout.set_xlim(-1.01, 1.01)
+        ax_layout.set_ylim(-1.01, 1.01)
+        vis.draw_turbines(ax_layout, owflop, owflop._ds.layout,
+                          proximity=True, in_or_out=True)
+        vis.draw_boundaries(ax_layout, owflop)
+        grid.tight_layout(fig)
+        plt.pause(10)
     site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     scale_coord = ('scale', ['-', '+'])
     method_coord = ('method', ['down', 'back', 'cross'])
@@ -274,6 +353,25 @@ def multi_adaptive(owflop, max_iterations=np.inf, only_above_average=False):
             scaling.isel(scale=i, drop=True)
                    .isel(method=j, drop=True).values.item()
         )
+        if visualize:
+            ax_convergence.clear()
+            ax_convergence.plot(
+                    100 * np.array([ds.objective for ds in owflop.history]))
+            ax_scaling.clear()
+            ax_scaling.semilogy(
+                    np.array([ds.scale for ds in owflop.history]), '.')
+            ax_layout.clear()
+            ax_layout.set_aspect('equal')
+            ax_layout.set_axis_off()
+            ax_layout.set_xlim(-1.01, 1.01)
+            ax_layout.set_ylim(-1.01, 1.01)
+            vis.connect_layouts(ax_layout,
+                                [ds.layout for ds in owflop.history])
+            vis.draw_turbines(ax_layout, owflop, owflop.history[0].layout)
+            vis.draw_turbines(ax_layout, owflop, owflop.history[-1].layout,
+                              proximity=True, in_or_out=True)
+            vis.draw_boundaries(ax_layout, owflop)
+            plt.pause(0.1)
         if len(owflop.history) == 1:
             best = last = start = owflop.history[0]['objective']
         else:
