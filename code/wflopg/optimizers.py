@@ -78,7 +78,7 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
 
 
 def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
-                      visualize=False):
+                      scaler=[7/8, 8/7], visualize=False):
     site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     if visualize:
         fig = plt.figure()
@@ -114,7 +114,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
     )
     owflop._ds['context'] = owflop._ds.layout.rename(target='source')
     owflop.calculate_geometry()
-    scaler = xr.DataArray([7/8, 8/7], coords=[scale_coord])
+    scaler = xr.DataArray(scaler, coords=[scale_coord])
     scaling = xr.DataArray([1, 1], coords=[scale_coord])
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
@@ -207,7 +207,8 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
         iterations += 1
 
 
-def pure_down(owflop, max_iterations=np.inf, scaling=False, visualize=False):
+def pure_down(owflop, max_iterations=np.inf, scaling=False, scaler=[7/8, 8/7],
+              visualize=False):
     """Optimize the layout using push-down only
 
     The problem object owflop is assumed to have a problem loaded, but not
@@ -227,7 +228,8 @@ def pure_down(owflop, max_iterations=np.inf, scaling=False, visualize=False):
         )
 
 
-def pure_back(owflop, max_iterations=np.inf, scaling=False, visualize=False):
+def pure_back(owflop, max_iterations=np.inf, scaling=False, scaler=[7/8, 8/7],
+              visualize=False):
     """Optimize the layout using push-back only
 
     The problem object owflop is assumed to have a problem loaded, but not
@@ -248,7 +250,7 @@ def pure_back(owflop, max_iterations=np.inf, scaling=False, visualize=False):
 
 
 def mixed_down_and_back(owflop, max_iterations=np.inf,
-                        scaling=False, visualize=False):
+                        scaling=False, scaler=[7/8, 8/7], visualize=False):
     """Optimize the layout using a mixture of push-down and push-back
 
     The problem object owflop is assumed to have a problem loaded, but not
@@ -269,7 +271,8 @@ def mixed_down_and_back(owflop, max_iterations=np.inf,
         _iterate(step_generator, owflop, max_iterations, step_normalizer)
 
 
-def pure_cross(owflop, max_iterations=np.inf, scaling=False, visualize=False):
+def pure_cross(owflop, max_iterations=np.inf, scaling=False, scaler=[7/8, 8/7],
+               visualize=False):
     """Optimize the layout using push-back only
 
     The problem object owflop is assumed to have a problem loaded, but not
@@ -289,8 +292,8 @@ def pure_cross(owflop, max_iterations=np.inf, scaling=False, visualize=False):
         )
 
 
-def multi_adaptive(owflop, max_iterations=np.inf, only_above_average=False,
-                   visualize=False):
+def multi_adaptive(owflop, max_iterations=np.inf, scaler=[7/8, 8/7],
+                   only_above_average=False, visualize=False):
     if visualize:
         fig = plt.figure()
         grid = gs.GridSpec(3, 5)
@@ -328,7 +331,7 @@ def multi_adaptive(owflop, max_iterations=np.inf, only_above_average=False,
     )
     owflop._ds['context'] = owflop._ds.layout.rename(target='source')
     owflop.calculate_geometry()
-    scaler = xr.DataArray([7/8, 8/7], coords=[scale_coord])
+    scaler = xr.DataArray(scaler, coords=[scale_coord])
     scaling = xr.DataArray([1, 1], coords=[scale_coord])
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
