@@ -14,6 +14,7 @@ def _take_step(owflop, step):
 
 
 def _iterate(step_generator, owflop, max_iterations, step_normalizer):
+    site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     iterations = 0
     corrections = ''
     while iterations < max_iterations:
@@ -40,8 +41,8 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
                     owflop.history[-1]['layout'] - owflop.history[-2]['layout']
                 ).sum(dim='xy')
             )
-            # stop iterating if the largest step is smaller than 1 m
-            if distance_from_previous.max() * owflop.site_radius < 1:
+            # stop iterating if the largest step is smaller than D/10
+            if distance_from_previous.max() < site_rotor_diameter / 10:
                 break
         # calculate new layout
         owflop.calculate_relative_wake_loss_vector()
@@ -78,6 +79,7 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
 
 def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
                       visualize=False):
+    site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     if visualize:
         fig = plt.figure()
         grid = gs.GridSpec(3, 5)
@@ -161,8 +163,8 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
                     owflop.history[-1]['layout'] - owflop.history[-2]['layout']
                 ).sum(dim='xy')
             )
-            # stop iterating if the largest step is smaller than 1 m
-            if distance_from_previous.max() * owflop.site_radius < 1:
+            # stop iterating if the largest step is smaller than D/10
+            if distance_from_previous.max() < site_rotor_diameter / 10:
                 break
         # calculate new layout
         scaling = scaling.isel(scale=i) * scaler
@@ -383,8 +385,8 @@ def multi_adaptive(owflop, max_iterations=np.inf, only_above_average=False,
                     owflop.history[-1]['layout'] - owflop.history[-2]['layout']
                 ).sum(dim='xy')
             )
-            # stop iterating if the largest step is smaller than 1 m
-            if distance_from_previous.max() * owflop.site_radius < 1:
+            # stop iterating if the largest step is smaller than D/10
+            if distance_from_previous.max() < site_rotor_diameter / 10:
                 break
         # calculate new layout
         scaling = scaling.isel(scale=i, drop=True) * scaler
@@ -478,8 +480,8 @@ def method_chooser(owflop, max_iterations=np.inf):
                     owflop.history[-1]['layout'] - owflop.history[-2]['layout']
                 ).sum(dim='xy')
             )
-            # stop iterating if the largest step is smaller than 1 m
-            if distance_from_previous.max() * owflop.site_radius < 1:
+            # stop iterating if the largest step is smaller than D/10
+            if distance_from_previous.max() < site_rotor_diameter / 10:
                 break
         # calculate new layouts
         # first calculate relative_wake_loss_vector just once
