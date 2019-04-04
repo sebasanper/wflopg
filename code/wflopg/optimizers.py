@@ -207,8 +207,8 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
         iterations += 1
 
 
-def pure_down(owflop, max_iterations=np.inf, scaling=False, scaler=[7/8, 8/7],
-              visualize=False):
+def pure_down(owflop, max_iterations=np.inf,
+              scaling=False, scaler=[7/8, 8/7], multiplier=1, visualize=False):
     """Optimize the layout using push-down only
 
     The problem object owflop is assumed to have a problem loaded, but not
@@ -219,17 +219,17 @@ def pure_down(owflop, max_iterations=np.inf, scaling=False, scaler=[7/8, 8/7],
     if scaling:
         _adaptive_iterate(
             owflop.calculate_push_down_vector, owflop,
-            max_iterations, step_normalizer, visualize=visualize
+            max_iterations, step_normalizer * multiplier, visualize=visualize
         )
     else:
         _iterate(
             owflop.calculate_push_down_vector, owflop,
-            max_iterations, step_normalizer
+            max_iterations, step_normalizer * multiplier
         )
 
 
-def pure_back(owflop, max_iterations=np.inf, scaling=False, scaler=[7/8, 8/7],
-              visualize=False):
+def pure_back(owflop, max_iterations=np.inf,
+              scaling=False, scaler=[7/8, 8/7], multiplier=1, visualize=False):
     """Optimize the layout using push-back only
 
     The problem object owflop is assumed to have a problem loaded, but not
@@ -240,17 +240,18 @@ def pure_back(owflop, max_iterations=np.inf, scaling=False, scaler=[7/8, 8/7],
     if scaling:
         _adaptive_iterate(
             owflop.calculate_push_back_vector, owflop,
-            max_iterations, step_normalizer, visualize=visualize
+            max_iterations, step_normalizer * multiplier, visualize=visualize
         )
     else:
         _iterate(
             owflop.calculate_push_back_vector, owflop,
-            max_iterations, step_normalizer
+            max_iterations, step_normalizer * multiplier
         )
 
 
 def mixed_down_and_back(owflop, max_iterations=np.inf,
-                        scaling=False, scaler=[7/8, 8/7], visualize=False):
+                        scaling=False, scaler=[7/8, 8/7], multiplier=1,
+                        visualize=False):
     """Optimize the layout using a mixture of push-down and push-back
 
     The problem object owflop is assumed to have a problem loaded, but not
@@ -266,13 +267,14 @@ def mixed_down_and_back(owflop, max_iterations=np.inf,
     if scaling:
         _adaptive_iterate(
             step_generator, owflop, max_iterations,
-            step_normalizer, visualize=visualize)
+            step_normalizer * multiplier, visualize=visualize)
     else:
-        _iterate(step_generator, owflop, max_iterations, step_normalizer)
+        _iterate(step_generator, owflop, max_iterations,
+                 step_normalizer * multiplier)
 
 
-def pure_cross(owflop, max_iterations=np.inf, scaling=False, scaler=[7/8, 8/7],
-               visualize=False):
+def pure_cross(owflop, max_iterations=np.inf, scaling=False,
+               scaler=[7/8, 8/7], multiplier=1, visualize=False):
     """Optimize the layout using push-back only
 
     The problem object owflop is assumed to have a problem loaded, but not
@@ -283,16 +285,18 @@ def pure_cross(owflop, max_iterations=np.inf, scaling=False, scaler=[7/8, 8/7],
     if scaling:
         _adaptive_iterate(
             owflop.calculate_push_cross_vector,
-            owflop, max_iterations, step_normalizer, visualize=visualize
+            owflop, max_iterations, step_normalizer * multiplier,
+            visualize=visualize
         )
     else:
         _iterate(
             owflop.calculate_push_cross_vector, owflop,
-            max_iterations, step_normalizer
+            max_iterations, step_normalizer * multiplier
         )
 
 
-def multi_adaptive(owflop, max_iterations=np.inf, scaler=[7/8, 8/7],
+def multi_adaptive(owflop, max_iterations=np.inf,
+                   scaler=[7/8, 8/7], multiplier=1,
                    only_above_average=False, visualize=False):
     if visualize:
         fig = plt.figure()
@@ -417,7 +421,7 @@ def multi_adaptive(owflop, max_iterations=np.inf, scaler=[7/8, 8/7],
             mean_distance = distance.mean(dim='target')
             step *= (distance > mean_distance)
         # generate the different step variants
-        step = step * site_rotor_diameter * scaling
+        step = step * site_rotor_diameter * multiplier * scaling
         # take the step
         _take_step(owflop, step)
         # deal with any constraint violations in layout
