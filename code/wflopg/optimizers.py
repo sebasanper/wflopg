@@ -47,8 +47,10 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
         # calculate new layout
         owflop.calculate_relative_wake_loss_vector()
         step = step_generator()
-        step -= step.mean(dim='target')  # remove any global shift
-        step /= step.max(dim='target')
+        # normalize the step to the largest pseudo-gradient
+        step /= step.max('target')
+        # remove any global shift
+        step -= step.mean(dim='target')
         step *= step_normalizer
         _take_step(owflop, step)
         # deal with any constraint violations in layout
@@ -176,8 +178,10 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
         owflop._ds['unit_vector'] = owflop._ds.unit_vector.isel(scale=i)
         owflop.calculate_relative_wake_loss_vector()
         step = step_generator()
-        step -= step.mean(dim='target')  # remove any global shift
-        step /= step.max(dim='target')
+        # normalize the step to the largest pseudo-gradient
+        step /= step.max('target')
+        # remove any global shift
+        step -= step.mean(dim='target')
         step *= step_normalizer
         step = step * scaling  # generate the different step variants
         _take_step(owflop, step)
@@ -413,10 +417,12 @@ def multi_adaptive(owflop, max_iterations=np.inf,
         cross_step = owflop.calculate_push_cross_vector()
         # throw steps in one big DataArray
         step = xr.concat([down_step, back_step, cross_step], 'method')
-        step -= step.mean(dim='target')  # remove any global shift
         # normalize the step to the largest pseudo-gradient
         step /= step.max('target')
-        if only_above_average:  # only take above average steps
+        # remove any global shift
+        step -= step.mean(dim='target')
+        # only take above average steps
+        if only_above_average:
             distance = np.sqrt(np.square(step).sum(dim='xy'))
             mean_distance = distance.mean(dim='target')
             step *= (distance > mean_distance)
@@ -502,13 +508,12 @@ def method_chooser(owflop, max_iterations=np.inf):
         down_step = owflop.calculate_push_down_vector()
         back_step = owflop.calculate_push_back_vector()
         cross_step = owflop.calculate_push_cross_vector()
-        # normalize the step to the largest pseudo-gradient
-        down_step /= down_step.max('target')
-        back_step /= back_step.max('target')
-        cross_step /= cross_step.max('target')
         # throw steps in one big DataArray
         step = xr.concat([down_step, back_step, cross_step], 'method')
-        step -= step.mean(dim='target')  # remove any global shift
+        # normalize the step to the largest pseudo-gradient
+        step /= step.max('target')
+        # remove any global shift
+        step -= step.mean(dim='target')
         # take the step, one rotor diameter for the largest pseudo-gradient
         _take_step(owflop, step * site_rotor_diameter)
         # deal with any constraint violations in layout
