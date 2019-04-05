@@ -218,8 +218,8 @@ def pure_down(owflop, max_iterations=np.inf,
     step_normalizer = (owflop.rotor_radius / owflop.site_radius) * 2
     if scaling:
         _adaptive_iterate(
-            owflop.calculate_push_down_vector, owflop,
-            max_iterations, step_normalizer * multiplier, visualize=visualize
+            owflop.calculate_push_down_vector, owflop, max_iterations,
+            step_normalizer * multiplier, scaler=scaler, visualize=visualize
         )
     else:
         _iterate(
@@ -239,8 +239,8 @@ def pure_back(owflop, max_iterations=np.inf,
     step_normalizer = (owflop.rotor_radius / owflop.site_radius) * 2
     if scaling:
         _adaptive_iterate(
-            owflop.calculate_push_back_vector, owflop,
-            max_iterations, step_normalizer * multiplier, visualize=visualize
+            owflop.calculate_push_back_vector, owflop, max_iterations,
+            step_normalizer * multiplier, scaler=scaler, visualize=visualize
         )
     else:
         _iterate(
@@ -267,7 +267,7 @@ def mixed_down_and_back(owflop, max_iterations=np.inf,
     if scaling:
         _adaptive_iterate(
             step_generator, owflop, max_iterations,
-            step_normalizer * multiplier, visualize=visualize)
+            step_normalizer * multiplier, scaler=scaler, visualize=visualize)
     else:
         _iterate(step_generator, owflop, max_iterations,
                  step_normalizer * multiplier)
@@ -284,8 +284,8 @@ def pure_cross(owflop, max_iterations=np.inf, scaling=False,
     step_normalizer = (owflop.rotor_radius / owflop.site_radius) * 2
     if scaling:
         _adaptive_iterate(
-            owflop.calculate_push_cross_vector,
-            owflop, max_iterations, step_normalizer * multiplier,
+            owflop.calculate_push_cross_vector, owflop, max_iterations,
+            step_normalizer * multiplier, scaler=scaler,
             visualize=visualize
         )
     else:
