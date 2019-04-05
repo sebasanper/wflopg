@@ -107,7 +107,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
                           proximity=True, in_or_out=True)
         vis.draw_boundaries(ax_layout, owflop)
         grid.tight_layout(fig)
-        plt.pause(10)
+        plt.pause(.10)
     scale_coord = ('scale', ['-', '+'])
     iterations = 0
     corrections = ''
@@ -327,7 +327,7 @@ def multi_adaptive(owflop, max_iterations=np.inf,
                           proximity=True, in_or_out=True)
         vis.draw_boundaries(ax_layout, owflop)
         grid.tight_layout(fig)
-        plt.pause(10)
+        plt.pause(.10)
     site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     scale_coord = ('scale', ['-', '+'])
     method_coord = ('method', ['down', 'back', 'cross'])
