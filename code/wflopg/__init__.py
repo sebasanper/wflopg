@@ -26,9 +26,9 @@ class Owflop():
         self.history = []
 
     def load_problem(self, filename,
-                     hex_layout=False,
+                     wind_resource_filename=None,
                      layout_filename=None,
-                     wind_resource_filename=None):
+                     hex_layout=False, hex_proximity_factor=None):
         """Load wind farm layout optimization problem file
 
         The file is assumed to be a YAML file in the format described by the
@@ -75,13 +75,6 @@ class Owflop():
         self._ds['crosswind'] = layout_geometry.generate_crosswind(
             self._ds.downwind)
 
-        # create function to generate turbine constraint violation fixup steps
-        self.minimal_proximity = (
-            problem.get('turbine_distance', 1)
-            * (2 * self.rotor_radius) / self.site_radius)
-        self.proximity_repulsion = (
-            create_constraint.distance(self.minimal_proximity))
-
         # deal with initial layout
         if layout_filename is not None:
             with open(layout_filename) as f:
@@ -100,6 +93,18 @@ class Owflop():
             initial_layout = self.create_hex_layout(turbines)
         self.process_initial_layout(initial_layout)
         self.calculate_geometry()
+
+        # create function to generate turbine constraint violation fixup steps
+        self.minimal_proximity = (
+            problem.get('turbine_distance', 1)
+            * (2 * self.rotor_radius) / self.site_radius)
+        if hex_layout and hex_proximity_factor:
+            minimal_proximity = (self._ds.layout.hex_distance
+                                 * hex_proximity_factor)
+            if minimal_proximity > self.minimal_proximity:
+                self.minimal_proximity = minimal_proximity
+        self.proximity_repulsion = (
+            create_constraint.distance(self.minimal_proximity))
 
     def create_hex_layout(self, turbines):
         # create squarish hexagonal—so densest—packing to cover site
@@ -122,6 +127,7 @@ class Owflop():
             inside = self.inside(covering_layout)
             dense_layout = covering_layout[
                 inside['in_site'].rename(position='target')]
+            dense_layout.attrs['hex_distance'] = x_step
             # TODO: avoid the rename in some way
             max_turbines = len(dense_layout)
             factor *= max_turbines / turbines
