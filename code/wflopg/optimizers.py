@@ -80,7 +80,7 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
 
 
 def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
-                      scaler=[7/8, 8/7], visualize=False):
+                      scaler=[.5, 1.1], visualize=False):
     site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     if visualize:
         fig = plt.figure()
@@ -212,7 +212,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
 
 
 def pure_down(owflop, max_iterations=np.inf,
-              scaling=False, scaler=[7/8, 8/7], multiplier=1, visualize=False):
+              scaling=False, scaler=[.5, 1.1], multiplier=3, visualize=False):
     """Optimize the layout using push-down only
 
     The problem object owflop is assumed to have a problem loaded, but not
@@ -233,7 +233,7 @@ def pure_down(owflop, max_iterations=np.inf,
 
 
 def pure_back(owflop, max_iterations=np.inf,
-              scaling=False, scaler=[7/8, 8/7], multiplier=1, visualize=False):
+              scaling=False, scaler=[.5, 1.1], multiplier=3, visualize=False):
     """Optimize the layout using push-back only
 
     The problem object owflop is assumed to have a problem loaded, but not
@@ -254,7 +254,7 @@ def pure_back(owflop, max_iterations=np.inf,
 
 
 def mixed_down_and_back(owflop, max_iterations=np.inf,
-                        scaling=False, scaler=[7/8, 8/7], multiplier=1,
+                        scaling=False, scaler=[.5, 1.1], multiplier=3,
                         visualize=False):
     """Optimize the layout using a mixture of push-down and push-back
 
@@ -278,7 +278,7 @@ def mixed_down_and_back(owflop, max_iterations=np.inf,
 
 
 def pure_cross(owflop, max_iterations=np.inf, scaling=False,
-               scaler=[7/8, 8/7], multiplier=1, visualize=False):
+               scaler=[.5, 1.1], multiplier=3, visualize=False):
     """Optimize the layout using push-back only
 
     The problem object owflop is assumed to have a problem loaded, but not
@@ -300,7 +300,7 @@ def pure_cross(owflop, max_iterations=np.inf, scaling=False,
 
 
 def multi_adaptive(owflop, max_iterations=np.inf,
-                   scaler=[7/8, 8/7], multiplier=1,
+                   scaler=[.5, 1.1], multiplier=3,
                    only_above_average=False, visualize=False):
     if visualize:
         fig = plt.figure()
