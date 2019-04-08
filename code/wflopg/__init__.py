@@ -95,14 +95,13 @@ class Owflop():
         self.calculate_geometry()
 
         # create function to generate turbine constraint violation fixup steps
-        self.minimal_proximity = (
-            problem.get('turbine_distance', 1)
-            * (2 * self.rotor_radius) / self.site_radius)
         if hex_layout and hex_proximity_factor:
-            minimal_proximity = (self._ds.layout.hex_distance
-                                 * hex_proximity_factor)
-            if minimal_proximity > self.minimal_proximity:
-                self.minimal_proximity = minimal_proximity
+            self.minimal_proximity = (self._ds.layout.hex_distance
+                                      * hex_proximity_factor)
+        else:
+            self.minimal_proximity = (
+                    problem.get('turbine_distance', 1)
+                    * (2 * self.rotor_radius) / self.site_radius)
         self.proximity_repulsion = (
             create_constraint.distance(self.minimal_proximity))
 
