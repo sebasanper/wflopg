@@ -74,7 +74,7 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
                 _take_step(owflop, proximity_repulsion_step)
                 corrections += 'p'
             print(',', end='')
-            maybe_violations = any_outside or too_close
+            maybe_violations = too_close
         print(')', end=' ')
         iterations += 1
 
@@ -206,7 +206,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
                 _take_step(owflop, proximity_repulsion_step)
                 corrections += 'p'
             print(',', end='')
-            maybe_violations = any_outside or too_close
+            maybe_violations = too_close
         print(')', end=' ')
         iterations += 1
 
@@ -451,7 +451,7 @@ def multi_adaptive(owflop, max_iterations=np.inf,
                 _take_step(owflop, proximity_repulsion_step)
                 corrections += 'p'
             print(',', end='')
-            maybe_violations = any_outside or too_close
+            maybe_violations = too_close
         print(')', end=' ')
         iterations += 1
 
@@ -537,6 +537,6 @@ def method_chooser(owflop, max_iterations=np.inf):
                 _take_step(owflop, proximity_repulsion_step)
                 corrections += 'p'
             print(',', end='')
-            maybe_violations = any_outside or too_close
+            maybe_violations = too_close
         print(')', end=' ')
         iterations += 1
