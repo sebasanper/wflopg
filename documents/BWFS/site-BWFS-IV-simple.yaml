@@ -17,6 +17,7 @@ location:
   - reference_system: ETRS89
   - utm_zone: 31
   - utm: [492539.33, 5733792.49]
+roughness: 0.0001
 parcels:
   - constraints: # IVa
       - {"x": -0.871282, "y": -0.899564, "1": -1., rotor_constraint: true}
