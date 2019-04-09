@@ -48,7 +48,8 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
         owflop.calculate_relative_wake_loss_vector()
         step = step_generator()
         # normalize the step to the largest pseudo-gradient
-        step /= step.max('target')
+        distance = np.sqrt(np.square(step).sum(dim='xy'))
+        step /= distance.max('target')
         # remove any global shift
         step -= step.mean(dim='target')
         step *= step_normalizer
@@ -179,7 +180,8 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
         owflop.calculate_relative_wake_loss_vector()
         step = step_generator()
         # normalize the step to the largest pseudo-gradient
-        step /= step.max('target')
+        distance = np.sqrt(np.square(step).sum(dim='xy'))
+        step /= distance.max('target')
         # remove any global shift
         step -= step.mean(dim='target')
         step *= step_normalizer
@@ -418,12 +420,12 @@ def multi_adaptive(owflop, max_iterations=np.inf,
         # throw steps in one big DataArray
         step = xr.concat([down_step, back_step, cross_step], 'method')
         # normalize the step to the largest pseudo-gradient
-        step /= step.max('target')
+        distance = np.sqrt(np.square(step).sum(dim='xy'))
+        step /= distance.max('target')
         # remove any global shift
         step -= step.mean(dim='target')
         # only take above average steps
         if only_above_average:
-            distance = np.sqrt(np.square(step).sum(dim='xy'))
             mean_distance = distance.mean(dim='target')
             step *= (distance > mean_distance)
         # generate the different step variants
@@ -511,7 +513,8 @@ def method_chooser(owflop, max_iterations=np.inf):
         # throw steps in one big DataArray
         step = xr.concat([down_step, back_step, cross_step], 'method')
         # normalize the step to the largest pseudo-gradient
-        step /= step.max('target')
+        distance = np.sqrt(np.square(step).sum(dim='xy'))
+        step /= distance.max('target')
         # remove any global shift
         step -= step.mean(dim='target')
         # take the step, one rotor diameter for the largest pseudo-gradient
