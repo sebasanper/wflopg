@@ -13,8 +13,49 @@ Example usage (given some problem object `o`):
 
 """
 
+import numpy as np
 import matplotlib.pyplot as plt
 import xarray as xr
+
+
+def draw_windrose(axes, wind_direction_pmf, color='b'):
+    """Draw a windrose.
+
+    Parameters
+    ----------
+    axes
+        matplotlib `axes` object with `projection='polar'`
+    wind_direction_pmf
+        xarray `DataArray` object with direction dimension.
+        No normalization is applied to the `DataArray` values
+    color
+        matplotlib color specification
+
+    """
+    axes.set_aspect(1.0)
+    axes.set_theta_zero_location("N")
+    axes.set_theta_direction(-1)
+    axes.set_ylim(0, 1.1 * wind_direction_pmf.max().values.item())
+    axes.bar(
+        wind_direction_pmf.direction / 360 * 2 * np.pi, wind_direction_pmf,
+        width=2 * np.pi / len(wind_direction_pmf),
+        color=color
+    )
+
+
+def site_setup(axes):
+    """Setup the axes for site plots.
+
+    Parameters
+    ----------
+    axes
+        matplotlib `axes` object
+
+    """
+    axes.set_aspect('equal')
+    axes.set_axis_off()
+    axes.set_xlim(-1.01, 1.01)
+    axes.set_ylim(-1.01, 1.01)
 
 
 def draw_boundaries(axes, owflop):
@@ -90,3 +131,25 @@ def connect_layouts(axes, layouts):
     ys = xr.concat(
         [layout.sel(xy='y', drop=True) for layout in layouts], dim='layout')
     axes.plot(xs, ys, '-k')
+
+
+def draw_convergence(axes, history, max_length=None,
+                     min_loss_percentage=0, max_loss_percentage=None):
+    """Draw a convergence plot for an optimization run
+
+    Parameters
+    ----------
+    axes
+        matplotlib `axes` object
+    history
+        sequence of xarray `Dataset` objects with direction dimension
+        No normalization is applied to the `DataArray` values
+
+    """
+    max_length = len(history) if max_length is None else max_length
+    loss_percentage = 100 * np.array([ds.objective for ds in history])
+    if max_loss_percentage is None:
+        max_loss_percentage = loss_percentage.max()
+    axes.set_xlim(1, 1+max_length)
+    axes.set_ylim(min_loss_percentage, max_loss_percentage)
+    axes.semilogx(np.arange(1, 1+len(history)), loss_percentage)
