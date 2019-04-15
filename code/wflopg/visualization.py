@@ -134,8 +134,7 @@ def connect_layouts(axes, layouts):
     axes.plot(xs, ys, '-k')
 
 
-def draw_convergence(axes, history, max_length=None,
-                     min_loss_percentage=0, max_loss_percentage=None):
+def draw_convergence(axes, history, max_length=None):
     """Draw a convergence plot for an optimization run.
 
     Parameters
@@ -150,11 +149,15 @@ def draw_convergence(axes, history, max_length=None,
     axes.xaxis.set_major_locator(tkr.MaxNLocator(integer=True))
     max_length = len(history) if max_length is None else max_length
     loss_percentage = 100 * np.array([ds.objective for ds in history])
-    if max_loss_percentage is None:
+    if len(loss_percentage) > 0:
+        min_loss_percentage = loss_percentage.min()
         max_loss_percentage = loss_percentage.max()
-    axes.set_xlim(1, 1+max_length)
-    axes.set_ylim(min_loss_percentage, max_loss_percentage)
-    axes.semilogx(np.arange(1, 1+len(history)), loss_percentage)
+    else:
+        min_loss_percentage = 0
+        max_loss_percentage = 100
+    axes.set_xlim(-1, max_length)
+    axes.set_ylim(min_loss_percentage - 0.1, max_loss_percentage + 0.1)
+    axes.plot(loss_percentage)
 
 
 def draw_scaling(axes, history, max_length=None):
@@ -171,12 +174,22 @@ def draw_scaling(axes, history, max_length=None):
     """
     axes.xaxis.set_major_locator(tkr.MaxNLocator(integer=True))
     max_length = len(history) if max_length is None else max_length
+    axes.set_xlim(-1, max_length)
     scales = np.array([ds.scale for ds in history])
+    if len(scales) > 0:
+        min_scale = scales.min() * 0.9
+        max_scales = scales.max() / 0.9
+    else:
+        min_scales = 0.5
+        max_scales = 2
+    axes.set_ylim(min_scale, max_scales)
     if 'method' in history[-1].attrs:
         methods = np.array([ds.method for ds in history])
-    down = methods == 'down'
-    axes.semilogy(np.flatnonzero(down), scales[down], '>')
-    back = methods == 'back'
-    axes.semilogy(np.flatnonzero(back), scales[back], '<')
-    cross = methods == 'cross'
-    axes.semilogy(np.flatnonzero(cross), scales[cross], 'X')
+        down = methods == 'down'
+        axes.semilogy(down, scales[down], '>')
+        back = methods == 'back'
+        axes.semilogy(back, scales[back], '<')
+        cross = methods == 'cross'
+        axes.semilogy(cross, scales[cross], 'X')
+    else:
+        axes.semilogy(scales, '.')
