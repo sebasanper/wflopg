@@ -87,23 +87,12 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
         fig = plt.figure()
         grid = gs.GridSpec(3, 5)
         ax_windrose = fig.add_subplot(grid[0, :2], polar=True)
-        ax_windrose.set_aspect(1.0)
-        ax_windrose.set_theta_zero_location("N")
-        ax_windrose.set_theta_direction(-1)
-        ax_windrose.set_ylim(
-                0, 1.1 * owflop._ds.direction_pmf.max().values.item())
-        ax_windrose.bar(owflop._ds.direction / 360 * 2 * np.pi,
-                        owflop._ds.direction_pmf,
-                        color='b', width=2 * np.pi / len(owflop._ds.direction))
+        vis.draw_windrose(ax_windrose, owflop._ds.direction_pmf)
         ax_convergence = fig.add_subplot(grid[1, :2])
-        ax_convergence.set_xlim(-1, max_iterations + 1)
-        ax_convergence.set_ylim(0, 100)
+        vis.draw_convergence(ax_convergence, owflop.history)
         ax_scaling = fig.add_subplot(grid[2, :2], sharex=ax_convergence)
         ax_layout = fig.add_subplot(grid[:, 2:])
-        ax_layout.set_aspect('equal')
-        ax_layout.set_axis_off()
-        ax_layout.set_xlim(-1.01, 1.01)
-        ax_layout.set_ylim(-1.01, 1.01)
+        vis.site_setup(ax_layout)
         vis.draw_turbines(ax_layout, owflop, owflop._ds.layout,
                           proximity=True, in_or_out=True)
         vis.draw_boundaries(ax_layout, owflop)
@@ -138,16 +127,11 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
         owflop.history[-1].attrs['scale'] = scaling[i].values.item()
         if visualize:
             ax_convergence.clear()
-            ax_convergence.plot(
-                    100 * np.array([ds.objective for ds in owflop.history]))
+            vis.draw_convergence(ax_convergence, owflop.history)
             ax_scaling.clear()
-            ax_scaling.semilogy(
-                    np.array([ds.scale for ds in owflop.history]), '.')
+            vis.draw_scaling(ax_scaling, owflop.history)
             ax_layout.clear()
-            ax_layout.set_aspect('equal')
-            ax_layout.set_axis_off()
-            ax_layout.set_xlim(-1.01, 1.01)
-            ax_layout.set_ylim(-1.01, 1.01)
+            vis.site_setup(ax_layout)
             vis.connect_layouts(ax_layout,
                                 [ds.layout for ds in owflop.history])
             vis.draw_turbines(ax_layout, owflop, owflop.history[0].layout)
@@ -308,23 +292,12 @@ def multi_adaptive(owflop, max_iterations=np.inf,
         fig = plt.figure()
         grid = gs.GridSpec(3, 5)
         ax_windrose = fig.add_subplot(grid[0, :2], polar=True)
-        ax_windrose.set_aspect(1.0)
-        ax_windrose.set_theta_zero_location("N")
-        ax_windrose.set_theta_direction(-1)
-        ax_windrose.set_ylim(
-                0, 1.1 * owflop._ds.direction_pmf.max().values.item())
-        ax_windrose.bar(owflop._ds.direction / 360 * 2 * np.pi,
-                        owflop._ds.direction_pmf,
-                        color='b', width=2 * np.pi / len(owflop._ds.direction))
+        vis.draw_windrose(ax_windrose, owflop._ds.direction_pmf)
         ax_convergence = fig.add_subplot(grid[1, :2])
-        ax_convergence.set_xlim(-1, max_iterations + 1)
-        ax_convergence.set_ylim(0, 100)
+        vis.draw_convergence(ax_convergence, owflop.history)
         ax_scaling = fig.add_subplot(grid[2, :2], sharex=ax_convergence)
         ax_layout = fig.add_subplot(grid[:, 2:])
-        ax_layout.set_aspect('equal')
-        ax_layout.set_axis_off()
-        ax_layout.set_xlim(-1.01, 1.01)
-        ax_layout.set_ylim(-1.01, 1.01)
+        vis.site_setup(ax_layout)
         vis.draw_turbines(ax_layout, owflop, owflop._ds.layout,
                           proximity=True, in_or_out=True)
         vis.draw_boundaries(ax_layout, owflop)
@@ -370,16 +343,11 @@ def multi_adaptive(owflop, max_iterations=np.inf,
         )
         if visualize:
             ax_convergence.clear()
-            ax_convergence.plot(
-                    100 * np.array([ds.objective for ds in owflop.history]))
+            vis.draw_convergence(ax_convergence, owflop.history)
             ax_scaling.clear()
-            ax_scaling.semilogy(
-                    np.array([ds.scale for ds in owflop.history]), '.')
+            vis.draw_scaling(ax_scaling, owflop.history)
             ax_layout.clear()
-            ax_layout.set_aspect('equal')
-            ax_layout.set_axis_off()
-            ax_layout.set_xlim(-1.01, 1.01)
-            ax_layout.set_ylim(-1.01, 1.01)
+            vis.site_setup(ax_layout)
             vis.connect_layouts(ax_layout,
                                 [ds.layout for ds in owflop.history])
             vis.draw_turbines(ax_layout, owflop, owflop.history[0].layout)
