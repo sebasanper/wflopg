@@ -136,7 +136,7 @@ def connect_layouts(axes, layouts):
 
 def draw_convergence(axes, history, max_length=None,
                      min_loss_percentage=0, max_loss_percentage=None):
-    """Draw a convergence plot for an optimization run
+    """Draw a convergence plot for an optimization run.
 
     Parameters
     ----------
@@ -147,6 +147,7 @@ def draw_convergence(axes, history, max_length=None,
         No normalization is applied to the `DataArray` values
 
     """
+    axes.xaxis.set_major_locator(tkr.MaxNLocator(integer=True))
     max_length = len(history) if max_length is None else max_length
     loss_percentage = 100 * np.array([ds.objective for ds in history])
     if max_loss_percentage is None:
