@@ -186,10 +186,10 @@ def draw_scaling(axes, history, max_length=None):
     if 'method' in history[-1].attrs:
         methods = np.array([ds.method for ds in history])
         down = methods == 'down'
-        axes.semilogy(down, scales[down], '>')
+        axes.semilogy(np.flatnonzero(down), scales[down], '>')
         back = methods == 'back'
-        axes.semilogy(back, scales[back], '<')
+        axes.semilogy(np.flatnonzero(back), scales[back], '<')
         cross = methods == 'cross'
-        axes.semilogy(cross, scales[cross], 'X')
+        axes.semilogy(np.flatnonzero(cross), scales[cross], 'X')
     else:
         axes.semilogy(scales, '.')
