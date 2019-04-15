@@ -15,6 +15,7 @@ Example usage (given some problem object `o`):
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as tkr
 import xarray as xr
 
 
@@ -153,3 +154,28 @@ def draw_convergence(axes, history, max_length=None,
     axes.set_xlim(1, 1+max_length)
     axes.set_ylim(min_loss_percentage, max_loss_percentage)
     axes.semilogx(np.arange(1, 1+len(history)), loss_percentage)
+
+
+def draw_scaling(axes, history, max_length=None):
+    """Draw a relative scale factor plot.
+
+    Parameters
+    ----------
+    axes
+        matplotlib `axes` object
+    history
+        sequence of xarray `Dataset` objects with direction dimension
+        No normalization is applied to the `DataArray` values
+
+    """
+    axes.xaxis.set_major_locator(tkr.MaxNLocator(integer=True))
+    max_length = len(history) if max_length is None else max_length
+    scales = np.array([ds.scale for ds in history])
+    if 'method' in history[-1].attrs:
+        methods = np.array([ds.method for ds in history])
+    down = methods == 'down'
+    axes.semilogy(np.flatnonzero(down), scales[down], '>')
+    back = methods == 'back'
+    axes.semilogy(np.flatnonzero(back), scales[back], '<')
+    cross = methods == 'cross'
+    axes.semilogy(np.flatnonzero(cross), scales[cross], 'X')
