@@ -120,11 +120,28 @@ class Owflop():
             mg[0] = (mg[0].T + (np.arange(-m, m+1) % 2) * x_step / 2).T
             covering_layout = xr.DataArray(
                 np.stack([mg[0].ravel(), mg[1].ravel()], axis=-1),
-                dims=['target', 'xy'], coords={'xy': COORDS['xy']}
+                dims=['target', 'uv'], coords={'uv': ['u', 'v']}
             )
-            # TODO: rotate over random angle
-            inside = self.inside(covering_layout)
-            dense_layout = covering_layout[
+            # add random offset
+            offset = xr.DataArray(
+                np.random.random(2) * np.array([x_step, y_step]),
+                coords=[('uv', ['u', 'v'])]
+            )
+            print(offset)
+            covering_layout += offset
+            # rotate over random angle
+            angle = np.random.random() * np.pi / 3  # hexgrid is π/3-symmetric
+            cos_angle = np.cos(angle)
+            sin_angle = np.sin(angle)
+            rotation_matrix = xr.DataArray(
+                np.array([[cos_angle, -sin_angle], [sin_angle, cos_angle]]),
+                coords=[('uv', ['u', 'v']), ('xy', COORDS['xy'])]
+            )
+            print(rotation_matrix)
+            rotated_covering_layout = covering_layout.dot(rotation_matrix)
+            # only keep turbines inside
+            inside = self.inside(rotated_covering_layout)
+            dense_layout = rotated_covering_layout[
                 inside['in_site'].rename(position='target')]
             dense_layout.attrs['hex_distance'] = x_step
             # TODO: avoid the rename in some way
