@@ -127,7 +127,6 @@ class Owflop():
                 _np.random.random(2) * _np.array([x_step, y_step]),
                 coords=[('uv', ['u', 'v'])]
             )
-            print(offset)
             covering_layout += offset
             # rotate over random angle
             angle = _np.random.random() * _np.pi / 3  # hexgrid is π/3-symmetric
@@ -137,7 +136,6 @@ class Owflop():
                 _np.array([[cos_angle, -sin_angle], [sin_angle, cos_angle]]),
                 coords=[('uv', ['u', 'v']), ('xy', COORDS['xy'])]
             )
-            print(rotation_matrix)
             rotated_covering_layout = covering_layout.dot(rotation_matrix)
             # only keep turbines inside
             inside = self.inside(rotated_covering_layout)
