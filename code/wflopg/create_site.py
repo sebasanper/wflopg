@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as _np
 import xarray as xr
 import pypoman.polygon as ppmp
 
@@ -13,7 +13,7 @@ def xy_to_monomial(xy):
     """
     monshape = list(xy.shape)
     monshape[xy.dims.index('xy')] = 3
-    mon = xr.DataArray(np.ones(monshape),
+    mon = xr.DataArray(_np.ones(monshape),
                        dims=xy.dims, coords={'xy': COORDS['monomial']})
     mon.loc[{'xy': COORDS['xy']}] = xy
     return mon.rename(xy='monomial')
@@ -65,8 +65,8 @@ def parcels(parcels_list, rotor_radius):
                 dims=['constraint', 'monomial'],
                 coords={'monomial': COORDS['monomial']}
             )
-            norms = np.sqrt(
-                np.square(coeffs.sel(monomial=['x', 'y'])).sum(dim='monomial')
+            norms = _np.sqrt(
+                _np.square(coeffs.sel(monomial=['x', 'y'])).sum(dim='monomial')
             )
             coeffs = coeffs / norms  # normalize the coefficients
             rotor_constraint = xr.DataArray(
@@ -121,7 +121,7 @@ def parcels(parcels_list, rotor_radius):
         return processed_area
 
     parcels_dict = {
-        'circle': {'center': [0, 0], 'radius': np.inf},
+        'circle': {'center': [0, 0], 'radius': _np.inf},
         'exclusions': parcels_list
     }
     return parcels_recursive(parcels_dict)

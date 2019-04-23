@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as _np
 import xarray as xr
 
 from wflopg.constants import COORDS
@@ -15,8 +15,8 @@ def generate_downwind(directions):
     # - from windrose (N=0, CW) to standard (E=0, CCW): 90 - wind_dir
     # - from upwind to downwind: +180
     # - from degrees to radians
-    directions_rad = np.radians(90 - directions + 180)
-    return xr.concat([np.cos(directions_rad), np.sin(directions_rad)], 'xy')
+    directions_rad = _np.radians(90 - directions + 180)
+    return xr.concat([_np.cos(directions_rad), _np.sin(directions_rad)], 'xy')
 
 
 def generate_crosswind(downwind):
@@ -52,7 +52,7 @@ def generate_distance(vector):
     dimension, is returned.
 
     """
-    return np.sqrt(np.square(vector).sum(dim='xy'))
+    return _np.sqrt(_np.square(vector).sum(dim='xy'))
 
 
 def generate_dc_vector(vector, downwind, crosswind):

@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as _np
 import xarray as xr
 
 from wflopg.constants import COORDS
@@ -12,20 +12,20 @@ def logarithmic_wind_shear(reference_height, roughness_length):
         heights and speeds are assumed to be numpy arrays of compatible size.
 
         """
-        if np.all(heights == reference_height):
+        if _np.all(heights == reference_height):
             return speeds
         else:
             return (speeds
-                    * np.log(heights / roughness_length)
-                    / np.log(reference_height / roughness_length))
+                    * _np.log(heights / roughness_length)
+                    / _np.log(reference_height / roughness_length))
 
     return wind_shear
 
 
 def sort_directions(dirs, dir_weights):
     """Return sorted wind direction and mass arrays"""
-    dirs = np.array(dirs)
-    dir_weights = np.array(dir_weights)
+    dirs = _np.array(dirs)
+    dir_weights = _np.array(dir_weights)
     # we do not assume the wind directions are sorted in the data file and
     # therefore sort them here
     dir_sort_index = dirs.argsort()
@@ -39,11 +39,11 @@ def discretize_weibull(weibull, speeds, cut_in, cut_out):
     # prepare the data structures used to discretize the Weibull
     # distribution
     speeds = speeds[(speeds >= cut_in) & (speeds <= cut_out)]
-    speed_borders = np.concatenate(([cut_in],
+    speed_borders = _np.concatenate(([cut_in],
                                     (speeds[:-1] + speeds[1:]) / 2,
                                     [cut_out]))
     speed_bins = xr.DataArray(
-        np.vstack((speed_borders[:-1], speed_borders[1:])).T,
+        _np.vstack((speed_borders[:-1], speed_borders[1:])).T,
         coords=[('speed', speeds), ('interval', COORDS['interval'])]
     )
     cweibull = xr.DataArray(
@@ -55,7 +55,7 @@ def discretize_weibull(weibull, speeds, cut_in, cut_out):
     # an interval is
     # exp(-(xstart/scale)**shape) - exp(-(xend/scale)**shape)
     speed_bins = speed_bins / cweibull.sel(weibull_param='scale', drop=True)
-    terms = np.exp(
+    terms = _np.exp(
         - speed_bins ** cweibull.sel(weibull_param='shape', drop=True))
     speed_cpmf = (terms.sel(interval='lower', drop=True) -
                   terms.sel(interval='upper', drop=True))
@@ -82,22 +82,22 @@ def subdivide(dirs, speeds, dir_weights, speed_probs, dir_subs,
     in our tests.
 
     """
-    dirs_cyc = np.concatenate((dirs, 360 + dirs[:1]))
+    dirs_cyc = _np.concatenate((dirs, 360 + dirs[:1]))
     dir_weights_cyc = xr.DataArray(
-        np.concatenate((dir_weights, dir_weights[:1])),
+        _np.concatenate((dir_weights, dir_weights[:1])),
         coords=[('direction', dirs_cyc)]
     )
     speed_probs_cyc = xr.DataArray(
-        np.concatenate((speed_probs, speed_probs[:1])),
+        _np.concatenate((speed_probs, speed_probs[:1])),
         coords=[('direction', dirs_cyc), ('speed', speeds)]
     )
     dirs_cyc = xr.DataArray(
         dirs_cyc,
-        coords=[('rel', np.linspace(0, 1, len(dirs) + 1))]
+        coords=[('rel', _np.linspace(0, 1, len(dirs) + 1))]
         # 'rel' is an ad-hoc dimension for ‘local’ relative direction
     )
     dirs_interp = dirs_cyc.interp(
-        rel=np.linspace(0, 1, dir_subs * len(dirs) + 1)
+        rel=_np.linspace(0, 1, dir_subs * len(dirs) + 1)
     ).values
     dirs_interp = dirs_interp[:-1]  # drop the last, cyclical value
 

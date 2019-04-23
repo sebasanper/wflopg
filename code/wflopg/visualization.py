@@ -13,7 +13,7 @@ Example usage (given some problem object `o`):
 
 """
 
-import numpy as np
+import numpy as _np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
 import xarray as xr
@@ -38,8 +38,8 @@ def draw_windrose(axes, wind_direction_pmf, color='b'):
     axes.set_theta_direction(-1)
     axes.set_ylim(0, 1.1 * wind_direction_pmf.max().values.item())
     axes.bar(
-        wind_direction_pmf.direction / 360 * 2 * np.pi, wind_direction_pmf,
-        width=2 * np.pi / len(wind_direction_pmf),
+        wind_direction_pmf.direction / 360 * 2 * _np.pi, wind_direction_pmf,
+        width=2 * _np.pi / len(wind_direction_pmf),
         color=color
     )
 
@@ -205,7 +205,7 @@ def draw_convergence(axes, history, max_length=None):
     """
     axes.xaxis.set_major_locator(tkr.MaxNLocator(integer=True))
     max_length = len(history) if max_length is None else max_length
-    loss_percentage = 100 * np.array([ds.objective for ds in history])
+    loss_percentage = 100 * _np.array([ds.objective for ds in history])
     if len(loss_percentage) > 0:
         min_loss_percentage = loss_percentage.min()
         max_loss_percentage = loss_percentage.max()
@@ -235,7 +235,7 @@ def draw_scaling(axes, history, max_length=None):
     axes.xaxis.set_major_locator(tkr.MaxNLocator(integer=True))
     max_length = len(history) if max_length is None else max_length
     axes.set_xlim(-1, max_length)
-    scales = np.array([ds.scale for ds in history])
+    scales = _np.array([ds.scale for ds in history])
     if len(scales) > 0:
         min_scale = scales.min() * 0.9
         max_scales = scales.max() / 0.9
@@ -244,12 +244,12 @@ def draw_scaling(axes, history, max_length=None):
         max_scales = 2
     axes.set_ylim(min_scale, max_scales)
     if 'method' in history[-1].attrs:
-        methods = np.array([ds.method for ds in history])
+        methods = _np.array([ds.method for ds in history])
         down = methods == 'down'
-        axes.semilogy(np.flatnonzero(down), scales[down], '>')
+        axes.semilogy(_np.flatnonzero(down), scales[down], '>')
         back = methods == 'back'
-        axes.semilogy(np.flatnonzero(back), scales[back], '<')
+        axes.semilogy(_np.flatnonzero(back), scales[back], '<')
         cross = methods == 'cross'
-        axes.semilogy(np.flatnonzero(cross), scales[cross], 'X')
+        axes.semilogy(_np.flatnonzero(cross), scales[cross], 'X')
     else:
         axes.semilogy(scales, '.')

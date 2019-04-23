@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as _np
 import xarray as xr
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gs
@@ -21,7 +21,7 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
             if (last - best
-                > (start - best) / np.log2(len(owflop.history) + 2)):
+                > (start - best) / _np.log2(len(owflop.history) + 2)):
                 break
         print('(', iterations, sep='', end=':')
         owflop.calculate_deficit()
@@ -36,8 +36,8 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
             last = owflop.history[-1]['objective']
             if last < best:
                 best = last
-            distance_from_previous = np.sqrt(
-                np.square(
+            distance_from_previous = _np.sqrt(
+                _np.square(
                     owflop.history[-1]['layout'] - owflop.history[-2]['layout']
                 ).sum(dim='xy')
             )
@@ -48,7 +48,7 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
         owflop.calculate_relative_wake_loss_vector()
         step = step_generator()
         # normalize the step to the largest pseudo-gradient
-        distance = np.sqrt(np.square(step).sum(dim='xy'))
+        distance = _np.sqrt(_np.square(step).sum(dim='xy'))
         step /= distance.max('target')
         # remove any global shift
         step -= step.mean(dim='target')
@@ -112,7 +112,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
             if (last - best
-                > (start - best) / np.log2(len(owflop.history) + 2)):
+                > (start - best) / _np.log2(len(owflop.history) + 2)):
                 break
         print('(', iterations, sep='', end=':')
         owflop.calculate_deficit()
@@ -145,8 +145,8 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
             last = owflop.history[-1]['objective']
             if last < best:
                 best = last
-            distance_from_previous = np.sqrt(
-                np.square(
+            distance_from_previous = _np.sqrt(
+                _np.square(
                     owflop.history[-1]['layout'] - owflop.history[-2]['layout']
                 ).sum(dim='xy')
             )
@@ -164,7 +164,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
         owflop.calculate_relative_wake_loss_vector()
         step = step_generator()
         # normalize the step to the largest pseudo-gradient
-        distance = np.sqrt(np.square(step).sum(dim='xy'))
+        distance = _np.sqrt(_np.square(step).sum(dim='xy'))
         step /= distance.max('target')
         # remove any global shift
         step -= step.mean(dim='target')
@@ -197,7 +197,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
         iterations += 1
 
 
-def pure_down(owflop, max_iterations=np.inf,
+def pure_down(owflop, max_iterations=_np.inf,
               scaling=False, scaler=[.5, 1.1], multiplier=3, visualize=False):
     """Optimize the layout using push-down only
 
@@ -218,7 +218,7 @@ def pure_down(owflop, max_iterations=np.inf,
         )
 
 
-def pure_back(owflop, max_iterations=np.inf,
+def pure_back(owflop, max_iterations=_np.inf,
               scaling=False, scaler=[.5, 1.1], multiplier=3, visualize=False):
     """Optimize the layout using push-back only
 
@@ -239,7 +239,7 @@ def pure_back(owflop, max_iterations=np.inf,
         )
 
 
-def mixed_down_and_back(owflop, max_iterations=np.inf,
+def mixed_down_and_back(owflop, max_iterations=_np.inf,
                         scaling=False, scaler=[.5, 1.1], multiplier=3,
                         visualize=False):
     """Optimize the layout using a mixture of push-down and push-back
@@ -263,7 +263,7 @@ def mixed_down_and_back(owflop, max_iterations=np.inf,
                  step_normalizer * multiplier)
 
 
-def pure_cross(owflop, max_iterations=np.inf, scaling=False,
+def pure_cross(owflop, max_iterations=_np.inf, scaling=False,
                scaler=[.5, 1.1], multiplier=3, visualize=False):
     """Optimize the layout using push-back only
 
@@ -285,7 +285,7 @@ def pure_cross(owflop, max_iterations=np.inf, scaling=False,
         )
 
 
-def multi_adaptive(owflop, max_iterations=np.inf,
+def multi_adaptive(owflop, max_iterations=_np.inf,
                    scaler=[.5, 1.1], multiplier=3,
                    only_above_average=False, visualize=False):
     if visualize:
@@ -320,7 +320,7 @@ def multi_adaptive(owflop, max_iterations=np.inf,
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
             if (last - best
-                > (start - best) / np.log2(len(owflop.history) + 2)):
+                > (start - best) / _np.log2(len(owflop.history) + 2)):
                 break
         print('(', iterations, sep='', end=':')
         owflop.calculate_deficit()
@@ -361,8 +361,8 @@ def multi_adaptive(owflop, max_iterations=np.inf,
             last = owflop.history[-1]['objective']
             if last < best:
                 best = last
-            distance_from_previous = np.sqrt(
-                np.square(
+            distance_from_previous = _np.sqrt(
+                _np.square(
                     owflop.history[-1]['layout'] - owflop.history[-2]['layout']
                 ).sum(dim='xy')
             )
@@ -388,7 +388,7 @@ def multi_adaptive(owflop, max_iterations=np.inf,
         # throw steps in one big DataArray
         step = xr.concat([down_step, back_step, cross_step], 'method')
         # normalize the step to the largest pseudo-gradient
-        distance = np.sqrt(np.square(step).sum(dim='xy'))
+        distance = _np.sqrt(_np.square(step).sum(dim='xy'))
         step /= distance.max('target')
         # remove any global shift
         step -= step.mean(dim='target')
@@ -426,7 +426,7 @@ def multi_adaptive(owflop, max_iterations=np.inf,
         iterations += 1
 
 
-def method_chooser(owflop, max_iterations=np.inf):
+def method_chooser(owflop, max_iterations=_np.inf):
     site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     method_coord = ('method', ['down', 'back', 'cross'])
     iterations = 0
@@ -439,7 +439,7 @@ def method_chooser(owflop, max_iterations=np.inf):
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
             if (last - best
-                > (start - best) / np.log2(len(owflop.history) + 2)):
+                > (start - best) / _np.log2(len(owflop.history) + 2)):
                 break
         print('(', iterations, sep='', end=':')
         owflop.calculate_deficit()
@@ -458,8 +458,8 @@ def method_chooser(owflop, max_iterations=np.inf):
             last = owflop.history[-1]['objective']
             if last < best:
                 best = last
-            distance_from_previous = np.sqrt(
-                np.square(
+            distance_from_previous = _np.sqrt(
+                _np.square(
                     owflop.history[-1]['layout'] - owflop.history[-2]['layout']
                 ).sum(dim='xy')
             )
@@ -481,7 +481,7 @@ def method_chooser(owflop, max_iterations=np.inf):
         # throw steps in one big DataArray
         step = xr.concat([down_step, back_step, cross_step], 'method')
         # normalize the step to the largest pseudo-gradient
-        distance = np.sqrt(np.square(step).sum(dim='xy'))
+        distance = _np.sqrt(_np.square(step).sum(dim='xy'))
         step /= distance.max('target')
         # remove any global shift
         step -= step.mean(dim='target')
@@ -513,7 +513,7 @@ def method_chooser(owflop, max_iterations=np.inf):
         iterations += 1
 
 
-def multi_wind_resource(owflop, wind_resources, max_iterations=np.inf,
+def multi_wind_resource(owflop, wind_resources, max_iterations=_np.inf,
                         scaler=[.5, 1.1], multiplier=3):
     site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     scale_coord = ('scale', ['-', '+'])
@@ -536,7 +536,7 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=np.inf,
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
             if (last - best
-                > (start - best) / np.log2(len(owflop.history) + 2)):
+                > (start - best) / _np.log2(len(owflop.history) + 2)):
                 break
         print('(', iterations, sep='', end=':')
         owflop.calculate_deficit()
@@ -563,8 +563,8 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=np.inf,
             last = owflop.history[-1]['objective']
             if last < best:
                 best = last
-            distance_from_previous = np.sqrt(
-                np.square(
+            distance_from_previous = _np.sqrt(
+                _np.square(
                     owflop.history[-1]['layout'] - owflop.history[-2]['layout']
                 ).sum(dim='xy')
             )
@@ -596,7 +596,7 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=np.inf,
         # throw steps in one big DataArray
         step = xr.concat([down_step, back_step, cross_step], 'method')
         # normalize the step to the largest pseudo-gradient
-        distance = np.sqrt(np.square(step).sum(dim='xy'))
+        distance = _np.sqrt(_np.square(step).sum(dim='xy'))
         step /= distance.max('target')
         # remove any global shift
         step -= step.mean(dim='target')

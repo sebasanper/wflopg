@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as _np
 import xarray as xr
 from ruamel.yaml import YAML as yaml
 
@@ -89,7 +89,7 @@ class Owflop():
             elif isinstance(hex_layout, int):
                 turbines = hex_layout
             elif isinstance(self.turbines, list):
-                turbines = np.random.randint(*self.turbines)
+                turbines = _np.random.randint(*self.turbines)
             initial_layout = self.create_hex_layout(turbines)
         self.process_initial_layout(initial_layout)
         self.calculate_geometry()
@@ -110,31 +110,31 @@ class Owflop():
         max_turbines = 0
         factor = 1
         while max_turbines < turbines:
-            x_step = np.sqrt(factor / turbines) * 2
-            y_step = x_step * np.sqrt(3) / 2
+            x_step = _np.sqrt(factor / turbines) * 2
+            y_step = x_step * _np.sqrt(3) / 2
             n = int(1 / x_step) + 1
             m = int(1 / y_step)
-            xs = np.arange(-n, n) * x_step
-            ys = np.arange(-m, m + 1) * y_step
-            mg = np.meshgrid(xs, ys)
-            mg[0] = (mg[0].T + (np.arange(-m, m+1) % 2) * x_step / 2).T
+            xs = _np.arange(-n, n) * x_step
+            ys = _np.arange(-m, m + 1) * y_step
+            mg = _np.meshgrid(xs, ys)
+            mg[0] = (mg[0].T + (_np.arange(-m, m+1) % 2) * x_step / 2).T
             covering_layout = xr.DataArray(
-                np.stack([mg[0].ravel(), mg[1].ravel()], axis=-1),
+                _np.stack([mg[0].ravel(), mg[1].ravel()], axis=-1),
                 dims=['target', 'uv'], coords={'uv': ['u', 'v']}
             )
             # add random offset
             offset = xr.DataArray(
-                np.random.random(2) * np.array([x_step, y_step]),
+                _np.random.random(2) * _np.array([x_step, y_step]),
                 coords=[('uv', ['u', 'v'])]
             )
             print(offset)
             covering_layout += offset
             # rotate over random angle
-            angle = np.random.random() * np.pi / 3  # hexgrid is π/3-symmetric
-            cos_angle = np.cos(angle)
-            sin_angle = np.sin(angle)
+            angle = _np.random.random() * _np.pi / 3  # hexgrid is π/3-symmetric
+            cos_angle = _np.cos(angle)
+            sin_angle = _np.sin(angle)
             rotation_matrix = xr.DataArray(
-                np.array([[cos_angle, -sin_angle], [sin_angle, cos_angle]]),
+                _np.array([[cos_angle, -sin_angle], [sin_angle, cos_angle]]),
                 coords=[('uv', ['u', 'v']), ('xy', COORDS['xy'])]
             )
             print(rotation_matrix)
@@ -148,7 +148,7 @@ class Owflop():
             max_turbines = len(dense_layout)
             factor *= max_turbines / turbines
         return dense_layout[
-            np.random.choice(max_turbines, turbines, replace=False)]
+            _np.random.choice(max_turbines, turbines, replace=False)]
 
     def process_turbine(self, turbine):
         self.rotor_radius = turbine['rotor_radius']
@@ -156,10 +156,10 @@ class Owflop():
         self.rated_power = turbine['rated_power']
         self.rated_speed = turbine['rated_wind_speed']
         self.cut_in = turbine.get('cut_in', 0.0)
-        self.cut_out = turbine.get('cut_out', np.inf)
+        self.cut_out = turbine.get('cut_out', _np.inf)
         # define power curve
         if 'power_curve' in turbine:
-            pc = np.array(turbine['power_curve'])
+            pc = _np.array(turbine['power_curve'])
             self.power_curve = create_turbine.interpolated_power_curve(
                 self.rated_power, self.rated_speed, self.cut_in, self.cut_out,
                 pc
@@ -172,7 +172,7 @@ class Owflop():
             self.thrust_curve = create_turbine.constant_thrust_curve(
                 self.cut_in, self.cut_out, turbine['thrust_coefficient'])
         elif 'thrust_curve' in turbine:
-            tc = np.array(turbine['thrust_curve'])
+            tc = _np.array(turbine['thrust_curve'])
             self.thrust_curve = create_turbine.interpolated_thrust_curve(
                                                  self.cut_in, self.cut_out, tc)
         else:
@@ -228,13 +228,13 @@ class Owflop():
                     "wind resource is formulated in terms of Weibull "
                     "distributions")
             # take wind shear into account
-            speeds = self.wind_shear(self.hub_height, np.array(speeds))
+            speeds = self.wind_shear(self.hub_height, _np.array(speeds))
             speeds, speed_probs = create_wind.discretize_weibull(
                 wind_rose['speed_cweibull'], speeds, cut_in, cut_out)
         elif 'speed_cpmf' in wind_rose and 'speeds' in wind_rose:
             # take wind shear into account
             speeds = self.wind_shear(self.hub_height,
-                                     np.array(wind_rose['speeds']))
+                                     _np.array(wind_rose['speeds']))
             speeds, speed_probs = create_wind.conformize_cpmf(
                 wind_rose['speed_cpmf'], speeds, cut_in, cut_out)
         else:
@@ -280,7 +280,7 @@ class Owflop():
         if model.startswith("Jensen"):
             if not expansion_coefficient:
                 expansion_coefficient = (
-                    0.5 / np.log(self.hub_height / self.roughness_length))
+                    0.5 / _np.log(self.hub_height / self.roughness_length))
         # define wake model
         if model == "BPA (IEA37)":
             self.wake_model = create_wake.bpa_iea37(
@@ -318,7 +318,7 @@ class Owflop():
             # we minimize a proxy for the marginal expected cost of energy per
             # turbine
             self.objective = lambda: (
-                np.exp(-0.00174 * len(self._ds.target) ** 2)
+                _np.exp(-0.00174 * len(self._ds.target) ** 2)
                 / (1 - self._ds.average_expected_wake_loss_factor)
             )
         else:

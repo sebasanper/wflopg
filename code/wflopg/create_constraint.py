@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as _np
 import xarray as xr
 import collections as cl
 
@@ -8,7 +8,7 @@ from wflopg.create_site import xy_to_monomial
 # NOTE: We work with double and need this to deal with round-off issues.
 #       The multiplier has been determined experimentally,
 #       i.e., by trial-and-error.
-ε = np.finfo(np.double).eps * 64
+ε = _np.finfo(_np.double).eps * 64
 
 
 def distance(turbine_distance):
@@ -44,9 +44,9 @@ def distance(turbine_distance):
             collision = violation_flat & (distance_flat == 0)
             collisions = collision.sum().values.item()
             if collisions:
-                random_angle = np.random.uniform(0, 2 * np.pi, collisions)
+                random_angle = _np.random.uniform(0, 2 * _np.pi, collisions)
                 unit_vector_flat[collision] = (
-                    np.vstack([np.cos(random_angle), np.sin(random_angle)]).T)
+                    _np.vstack([_np.cos(random_angle), _np.sin(random_angle)]).T)
             # Now that we have appropriate unit vectors everywhere, we can
             # correct. We take twice the minimally required step, as in case a
             # turbine is pushed outside of the site, half the step can be
@@ -99,7 +99,7 @@ def inside_site(site):
             return {'distance': distance, 'inside': inside}
 
         def inside_disc(circle):
-            distance = np.sqrt(np.square(layout_flat - circle).sum(dim='xy'))
+            distance = _np.sqrt(_np.square(layout_flat - circle).sum(dim='xy'))
             inside = distance <= circle.radius
             return {'distance': distance, 'inside': inside}
 
@@ -164,8 +164,8 @@ def site(parcels):
 
     def _circle_common(e_clave, layout, scrutinize):
         layout_centered = layout - e_clave['circle']
-        dist_sqr = np.square(layout_centered).sum(dim='xy')
-        radius_sqr = np.square(e_clave['circle'].radius)
+        dist_sqr = _np.square(layout_centered).sum(dim='xy')
+        radius_sqr = _np.square(e_clave['circle'].radius)
         inside = scrutinize & (dist_sqr <= radius_sqr)
         return layout_centered, dist_sqr, radius_sqr, inside
 
@@ -189,9 +189,9 @@ def site(parcels):
             still_outside = scrutinize & ~satisfies.all(dim='constraint')
             # TODO: ideally, we only check the relevant vertices,
             #       now we brute-force it by checking all
-            vertex_dist_sqr = np.square(
+            vertex_dist_sqr = _np.square(
                 layout - enclave['vertices']
-            ).sum(dim='xy').where(still_outside, np.inf)
+            ).sum(dim='xy').where(still_outside, _np.inf)
             step = xr.where(
                 still_outside,
                 enclave['vertices'].isel(
@@ -203,7 +203,7 @@ def site(parcels):
                 enclave, layout, scrutinize)
             step = (
                 ~inside * layout_centered
-                * (np.sqrt(radius_sqr / dist_sqr) - 1)
+                * (_np.sqrt(radius_sqr / dist_sqr) - 1)
                 * (1 + ε)  # …+ε to avoid round-off ‘outsides’
             )
             enclave = None
@@ -243,9 +243,9 @@ def site(parcels):
                 # TODO: ideally, we only check the relevant vertices,
                 #       now we brute-force it by checking all (non-violating)
                 vertices = exclave['vertices'][~exclave['violates']]
-                vertex_dist_sqr = np.square(
+                vertex_dist_sqr = _np.square(
                     layout_flat - vertices
-                ).sum(dim='xy').where(outside_enclave, np.inf)
+                ).sum(dim='xy').where(outside_enclave, _np.inf)
                 step = xr.where(
                     outside_enclave,
                     vertices.isel(vertex=vertex_dist_sqr.argmin(dim='vertex'))
@@ -258,9 +258,9 @@ def site(parcels):
                 exclave, layout_flat, scrutinize)
             step = xr.where(
                 dist_sqr > 0,
-                layout_centered * inside * (np.sqrt(radius_sqr / dist_sqr) - 1)
+                layout_centered * inside * (_np.sqrt(radius_sqr / dist_sqr) - 1)
                 * (1 + ε),  # …+ε to avoid round-off ‘outsides’
-                [np.sqrt(radius_sqr), 0]  # arbitrarily break symmetry
+                [_np.sqrt(radius_sqr), 0]  # arbitrarily break symmetry
             )
         else:
             ValueError("An exclave should consist of at least constraints or "
@@ -272,7 +272,7 @@ def site(parcels):
                       for enclave in exclave['exclusions']))
             )
             steps = xr.concat([step] + list(steps), 'border')
-            dists_sqr = np.square(steps).sum(dim='xy')
+            dists_sqr = _np.square(steps).sum(dim='xy')
             borders = dists_sqr.argmin(dim='border')
                 # NOTE: argmin decides ties by picking first of minima
             step = xr.where(scrutinize, steps.isel(border=borders), step)

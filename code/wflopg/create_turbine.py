@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as _np
 import xarray as xr
 
 
@@ -11,9 +11,9 @@ def _check_start(interpolation_data, start_speed, start_value):
     interpolation_data coordinate value.
 
     """
-    min_interpolation_speed = np.min(interpolation_data[:, 0])
+    min_interpolation_speed = _np.min(interpolation_data[:, 0])
     if start_speed < min_interpolation_speed:
-        interpolation_data = np.concatenate(([[start_speed, start_value]],
+        interpolation_data = _np.concatenate(([[start_speed, start_value]],
                                              interpolation_data))
     else:
         start_speed = min_interpolation_speed
@@ -29,9 +29,9 @@ def _check_end(interpolation_data, end_speed, end_value):
     interpolation_data coordinate value.
 
     """
-    max_interpolation_speed = np.max(interpolation_data[:, 0])
+    max_interpolation_speed = _np.max(interpolation_data[:, 0])
     if end_speed > max_interpolation_speed:
-        interpolation_data = np.concatenate((interpolation_data,
+        interpolation_data = _np.concatenate((interpolation_data,
                                              [[end_speed, end_value]]))
     else:
         end_speed = max_interpolation_speed
@@ -52,7 +52,7 @@ def _create_interpolator(coord_name, interpolation_data):
 
 
 def _within_cut(speeds, cut_in, cut_out):
-    if np.any(speeds < 0):
+    if _np.any(speeds < 0):
         raise ValueError("Wind speeds may not be negative.")
     return (speeds >= cut_in) & (speeds <= cut_out)  # within cut
 
