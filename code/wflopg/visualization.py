@@ -60,7 +60,16 @@ def site_setup(axes):
 
 
 def draw_boundaries(axes, owflop):
-    """Draw the boundaries of a site"""
+    """Draw the boundaries of a site
+
+    Parameters
+    ----------
+    axes
+        matplotlib `axes` object
+    owflop
+        wflopg `Owflop` object
+
+    """
     def draw_boundary(boundary):
         if 'polygon' in boundary:
             axes.add_patch(
@@ -78,7 +87,16 @@ def draw_boundaries(axes, owflop):
 
 
 def draw_zones(axes, owflop):
-    """Draw the parcels of a site, i.e., all enclaves and exclaves"""
+    """Draw the parcels of a site, i.e., all enclaves and exclaves
+
+    Parameters
+    ----------
+    axes
+        matplotlib `axes` object
+    owflop
+        wflopg `Owflop` object
+
+    """
     def draw_zone(zone, exclusion=True):
         c = 'r' if exclusion else 'b'
         l = '--' if exclusion else '-'
@@ -98,7 +116,19 @@ def draw_zones(axes, owflop):
 def draw_turbines(axes, owflop, layout=None, proximity=False, in_or_out=False):
     """Draw the turbines and their proximity exclusion zones
 
-    The layout is assumed to have only a single non-xy dimension.
+    Parameters
+    ----------
+    axes
+        matplotlib `axes` object
+    owflop
+        wflopg `Owflop` object
+    layout
+        a farm layout, i.e., an xarray `DataArray` with an `'xy'` dimension and
+        one non-`'xy'`-dimension
+    proximity
+        whether or not to show turbine distance constraints
+    in_or_out
+        whether or not to show whether a turbine is outside the site
 
     """
     if layout is None:
@@ -118,7 +148,21 @@ def draw_turbines(axes, owflop, layout=None, proximity=False, in_or_out=False):
 
 
 def draw_step(axes, owflop, layout, step):
-    """Draw a layout change step using vectors"""
+    """Draw a layout change step using vectors
+
+    Parameters
+    ----------
+    axes
+        matplotlib `axes` object
+    owflop
+        wflopg `Owflop` object
+    layout
+        a farm layout, i.e., an xarray `DataArray` with an `'xy'` dimension and
+        one non-`'xy'`-dimension
+    step
+        a layout change step; effectively a difference of two layouts
+
+    """
     turbine_size = owflop.rotor_radius / owflop.site_radius
     axes.quiver(layout.sel(xy='x'), layout.sel(xy='y'),
                 step.sel(xy='x'), step.sel(xy='y'),
@@ -126,7 +170,17 @@ def draw_step(axes, owflop, layout, step):
 
 
 def connect_layouts(axes, layouts):
-    """Draw lines between corresponding turbines of an iterator of layouts"""
+    """Draw lines between corresponding turbines of an iterator of layouts
+
+    Parameters
+    ----------
+    axes
+        matplotlib `axes` object
+    layout
+        an iterator of farm layouts, i.e., of xarray `DataArray`s with an
+        `'xy'` dimension and one non-`'xy'`-dimension
+
+    """
     xs = xr.concat(
         [layout.sel(xy='x', drop=True) for layout in layouts], dim='layout')
     ys = xr.concat(
@@ -144,6 +198,9 @@ def draw_convergence(axes, history, max_length=None):
     history
         sequence of xarray `Dataset` objects with direction dimension
         No normalization is applied to the `DataArray` values
+    max_length
+        a positive integer that determines the plot's upper y limit;
+        useful when plotting iteratively
 
     """
     axes.xaxis.set_major_locator(tkr.MaxNLocator(integer=True))
@@ -170,6 +227,9 @@ def draw_scaling(axes, history, max_length=None):
     history
         sequence of xarray `Dataset` objects with direction dimension
         No normalization is applied to the `DataArray` values
+    max_length
+        a positive integer that determines the plot's upper y limit;
+        useful when plotting iteratively
 
     """
     axes.xaxis.set_major_locator(tkr.MaxNLocator(integer=True))
