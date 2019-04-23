@@ -353,7 +353,7 @@ class Owflop():
 
     def expectation(self, array):
         return (array.dot(self._ds.wind_speed_cpmf, 'speed')
-                     .dot(self._ds.direction_pmf))
+                     .dot(self._ds.direction_pmf, 'direction'))
 
     def calculate_wakeless_power(self):
         self._ds['wakeless_power'] = self.power_curve(self._ds.speed)
