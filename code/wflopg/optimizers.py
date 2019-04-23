@@ -1,7 +1,7 @@
 import numpy as _np
 import xarray as _xr
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gs
+import matplotlib.pyplot as _plt
+import matplotlib.gridspec as _gs
 
 import wflopg.visualization as vis
 
@@ -84,8 +84,8 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
                       scaler=[.5, 1.1], visualize=False):
     site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     if visualize:
-        fig = plt.figure()
-        grid = gs.GridSpec(3, 5)
+        fig = _plt.figure()
+        grid = _gs.GridSpec(3, 5)
         ax_windrose = fig.add_subplot(grid[0, :2], polar=True)
         vis.draw_windrose(ax_windrose, owflop._ds.direction_pmf)
         ax_convergence = fig.add_subplot(grid[1, :2])
@@ -97,7 +97,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
                           proximity=True, in_or_out=True)
         vis.draw_boundaries(ax_layout, owflop)
         grid.tight_layout(fig)
-        plt.pause(.10)
+        _plt.pause(.10)
     scale_coord = ('scale', ['-', '+'])
     iterations = 0
     corrections = ''
@@ -138,7 +138,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
             vis.draw_turbines(ax_layout, owflop, owflop.history[-1].layout,
                               proximity=True, in_or_out=True)
             vis.draw_boundaries(ax_layout, owflop)
-            plt.pause(0.1)
+            _plt.pause(0.1)
         if len(owflop.history) == 1:
             best = last = start = owflop.history[0]['objective']
         else:
@@ -289,8 +289,8 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
                    scaler=[.5, 1.1], multiplier=3,
                    only_above_average=False, visualize=False):
     if visualize:
-        fig = plt.figure()
-        grid = gs.GridSpec(3, 5)
+        fig = _plt.figure()
+        grid = _gs.GridSpec(3, 5)
         ax_windrose = fig.add_subplot(grid[0, :2], polar=True)
         vis.draw_windrose(ax_windrose, owflop._ds.direction_pmf)
         ax_convergence = fig.add_subplot(grid[1, :2])
@@ -302,7 +302,7 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
                           proximity=True, in_or_out=True)
         vis.draw_boundaries(ax_layout, owflop)
         grid.tight_layout(fig)
-        plt.pause(.10)
+        _plt.pause(.10)
     site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     scale_coord = ('scale', ['-', '+'])
     method_coord = ('method', ['down', 'back', 'cross'])
@@ -354,7 +354,7 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
             vis.draw_turbines(ax_layout, owflop, owflop.history[-1].layout,
                               proximity=True, in_or_out=True)
             vis.draw_boundaries(ax_layout, owflop)
-            plt.pause(0.1)
+            _plt.pause(0.1)
         if len(owflop.history) == 1:
             best = last = start = owflop.history[0]['objective']
         else:

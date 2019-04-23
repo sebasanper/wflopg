@@ -1,6 +1,6 @@
 import numpy as _np
 import xarray as _xr
-from ruamel.yaml import YAML as yaml
+from ruamel.yaml import YAML as _yaml
 
 from wflopg.constants import COORDS
 from wflopg import create_turbine
@@ -37,21 +37,21 @@ class Owflop():
 
         """
         with open(filename) as f:
-            problem = yaml(typ='safe').load(f)
+            problem = _yaml(typ='safe').load(f)
         # extract required parameters directly contained in problem document
         self.problem_uuid = problem['uuid']
         self.turbines = problem['turbines']
 
         # extract and process information and data from linked documents
         with open(problem['turbine']) as f:
-            self.process_turbine(yaml(typ='safe').load(f))
+            self.process_turbine(_yaml(typ='safe').load(f))
         with open(problem['site']) as f:
-            self.process_site(yaml(typ='safe').load(f))
+            self.process_site(_yaml(typ='safe').load(f))
         if wind_resource_filename is None:
             wind_resource_filename = problem['wind_resource']
         with open(wind_resource_filename) as f:
             self.process_wind_resource(
-                yaml(typ='safe').load(f),
+                _yaml(typ='safe').load(f),
                 self.roughness_length,
                 problem.get('wind_direction_subdivisions', None),
                 problem.get('wind_speeds', None),
@@ -78,10 +78,10 @@ class Owflop():
         # deal with initial layout
         if layout_filename is not None:
             with open(layout_filename) as f:
-                initial_layout = yaml(typ='safe').load(f)['layout']
+                initial_layout = _yaml(typ='safe').load(f)['layout']
         elif ('layout' in problem) and not hex_layout:
             with open(problem['layout']) as f:
-                initial_layout = yaml(typ='safe').load(f)['layout']
+                initial_layout = _yaml(typ='safe').load(f)['layout']
         else:
             # (random) number of turbines
             if hex_layout is True:

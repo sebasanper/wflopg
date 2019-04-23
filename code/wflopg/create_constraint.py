@@ -1,6 +1,6 @@
 import numpy as _np
 import xarray as _xr
-import collections as cl
+import collections as _cl
 
 from wflopg.create_site import xy_to_monomial
 
@@ -315,7 +315,7 @@ def site(parcels):
         layout_flat = old_layout_flat.copy()
         scrutinize = _xr.full_like(
             layout_flat.coords[position_name], True, 'bool')
-        todo = cl.deque([(parcels, scrutinize, None)])
+        todo = _cl.deque([(parcels, scrutinize, None)])
         while todo:
             exclave, scrutinize, enclave = todo.popleft()
             step_flat, deeper_todo = process_exclave(

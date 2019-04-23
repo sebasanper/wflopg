@@ -14,8 +14,8 @@ Example usage (given some problem object `o`):
 """
 
 import numpy as _np
-import matplotlib.pyplot as plt
-import matplotlib.ticker as tkr
+import matplotlib.pyplot as _plt
+import matplotlib.ticker as _tkr
 import xarray as _xr
 
 
@@ -73,10 +73,10 @@ def draw_boundaries(axes, owflop):
     def draw_boundary(boundary):
         if 'polygon' in boundary:
             axes.add_patch(
-                plt.Polygon(boundary['polygon'], edgecolor='k', fill=False))
+                _plt.Polygon(boundary['polygon'], edgecolor='k', fill=False))
         if 'circle' in boundary:
             axes.add_patch(
-                plt.Circle(boundary['circle'], boundary['circle'].radius,
+                _plt.Circle(boundary['circle'], boundary['circle'].radius,
                            edgecolor='k', fill=False))
         if 'exclusions' in boundary:
             for exclusion_boundary in boundary['exclusions']:
@@ -101,10 +101,10 @@ def draw_zones(axes, owflop):
         c = 'r' if exclusion else 'b'
         l = '--' if exclusion else '-'
         if 'vertices' in zone:
-            axes.add_patch(plt.Polygon(zone['vertices'],
+            axes.add_patch(_plt.Polygon(zone['vertices'],
                                        edgecolor=c, linestyle=l, fill=False))
         if 'circle' in zone:
-            axes.add_patch(plt.Circle(zone['circle'], zone['circle'].radius,
+            axes.add_patch(_plt.Circle(zone['circle'], zone['circle'].radius,
                                       edgecolor=c, linestyle=l, fill=False))
         if 'exclusions' in zone:
             for exclusion_zone in zone['exclusions']:
@@ -142,9 +142,9 @@ def draw_turbines(axes, owflop, layout=None, proximity=False, in_or_out=False):
             turbine_color = 'b' if inside.values[i] else 'r'
         if proximity:
             axes.add_patch(
-                plt.Circle(position, owflop.minimal_proximity / 2,
+                _plt.Circle(position, owflop.minimal_proximity / 2,
                            color='r', linestyle=':', fill=False))
-        axes.add_patch(plt.Circle(position, turbine_size, color=turbine_color))
+        axes.add_patch(_plt.Circle(position, turbine_size, color=turbine_color))
 
 
 def draw_step(axes, owflop, layout, step):
@@ -203,7 +203,7 @@ def draw_convergence(axes, history, max_length=None):
         useful when plotting iteratively
 
     """
-    axes.xaxis.set_major_locator(tkr.MaxNLocator(integer=True))
+    axes.xaxis.set_major_locator(_tkr.MaxNLocator(integer=True))
     max_length = len(history) if max_length is None else max_length
     loss_percentage = 100 * _np.array([ds.objective for ds in history])
     if len(loss_percentage) > 0:
@@ -232,7 +232,7 @@ def draw_scaling(axes, history, max_length=None):
         useful when plotting iteratively
 
     """
-    axes.xaxis.set_major_locator(tkr.MaxNLocator(integer=True))
+    axes.xaxis.set_major_locator(_tkr.MaxNLocator(integer=True))
     max_length = len(history) if max_length is None else max_length
     axes.set_xlim(-1, max_length)
     scales = _np.array([ds.scale for ds in history])
