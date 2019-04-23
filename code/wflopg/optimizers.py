@@ -1,5 +1,5 @@
 import numpy as _np
-import xarray as xr
+import xarray as _xr
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gs
 
@@ -26,7 +26,7 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
         print('(', iterations, sep='', end=':')
         owflop.calculate_deficit()
         owflop.calculate_power()
-        owflop.history.append(xr.Dataset())
+        owflop.history.append(_xr.Dataset())
         owflop.history[-1]['layout'] = owflop._ds.layout
         owflop.history[-1]['objective'] = owflop.objective()
         owflop.history[-1].attrs['corrections'] = corrections
@@ -102,12 +102,12 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
     iterations = 0
     corrections = ''
     owflop._ds['layout'] = (
-        owflop._ds.layout * xr.DataArray([1, 1], coords=[scale_coord])
+        owflop._ds.layout * _xr.DataArray([1, 1], coords=[scale_coord])
     )
     owflop._ds['context'] = owflop._ds.layout.rename(target='source')
     owflop.calculate_geometry()
-    scaler = xr.DataArray(scaler, coords=[scale_coord])
-    scaling = xr.DataArray([1, 1], coords=[scale_coord])
+    scaler = _xr.DataArray(scaler, coords=[scale_coord])
+    scaling = _xr.DataArray([1, 1], coords=[scale_coord])
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
@@ -119,7 +119,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
         owflop.calculate_power()
         objectives = owflop.objective()
         i = objectives.argmin()
-        owflop.history.append(xr.Dataset())
+        owflop.history.append(_xr.Dataset())
         owflop.history[-1]['layout'] = (
             owflop._ds.layout.isel(scale=i, drop=True))
         owflop.history[-1]['objective'] = objectives.isel(scale=i, drop=True)
@@ -309,13 +309,13 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
     iterations = 0
     corrections = ''
     owflop._ds['layout'] = (
-        owflop._ds.layout * xr.DataArray(
+        owflop._ds.layout * _xr.DataArray(
             [[1, 1], [1, 1], [1, 1]], coords=[method_coord, scale_coord])
     )
     owflop._ds['context'] = owflop._ds.layout.rename(target='source')
     owflop.calculate_geometry()
-    scaler = xr.DataArray(scaler, coords=[scale_coord])
-    scaling = xr.DataArray([1, 1], coords=[scale_coord])
+    scaler = _xr.DataArray(scaler, coords=[scale_coord])
+    scaling = _xr.DataArray([1, 1], coords=[scale_coord])
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
@@ -328,7 +328,7 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
         objectives = owflop.objective()
         i = objectives.argmin(dim='scale')
         j = objectives.min(dim='scale').argmin('method').values.item()
-        owflop.history.append(xr.Dataset())
+        owflop.history.append(_xr.Dataset())
         owflop.history[-1]['layout'] = (
             owflop._ds.layout.isel(scale=i, drop=True)
                              .isel(method=j, drop=True)
@@ -386,7 +386,7 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
         back_step = owflop.calculate_push_back_vector()
         cross_step = owflop.calculate_push_cross_vector()
         # throw steps in one big DataArray
-        step = xr.concat([down_step, back_step, cross_step], 'method')
+        step = _xr.concat([down_step, back_step, cross_step], 'method')
         # normalize the step to the largest pseudo-gradient
         distance = _np.sqrt(_np.square(step).sum(dim='xy'))
         step /= distance.max('target')
@@ -432,7 +432,7 @@ def method_chooser(owflop, max_iterations=_np.inf):
     iterations = 0
     corrections = ''
     owflop._ds['layout'] = (
-        owflop._ds.layout * xr.DataArray([1, 1, 1], coords=[method_coord]))
+        owflop._ds.layout * _xr.DataArray([1, 1, 1], coords=[method_coord]))
     owflop._ds['context'] = owflop._ds.layout.rename(target='source')
     owflop.calculate_geometry()
     while iterations < max_iterations:
@@ -446,7 +446,7 @@ def method_chooser(owflop, max_iterations=_np.inf):
         owflop.calculate_power()
         objectives = owflop.objective()
         j = objectives.argmin('method').values.item()
-        owflop.history.append(xr.Dataset())
+        owflop.history.append(_xr.Dataset())
         owflop.history[-1]['layout'] = (
             owflop._ds.layout.isel(method=j, drop=True))
         owflop.history[-1]['objective'] = objectives.isel(method=j, drop=True)
@@ -479,7 +479,7 @@ def method_chooser(owflop, max_iterations=_np.inf):
         back_step = owflop.calculate_push_back_vector()
         cross_step = owflop.calculate_push_cross_vector()
         # throw steps in one big DataArray
-        step = xr.concat([down_step, back_step, cross_step], 'method')
+        step = _xr.concat([down_step, back_step, cross_step], 'method')
         # normalize the step to the largest pseudo-gradient
         distance = _np.sqrt(_np.square(step).sum(dim='xy'))
         step /= distance.max('target')
@@ -519,19 +519,19 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=_np.inf,
     scale_coord = ('scale', ['-', '+'])
     method_coord = ('method', ['down', 'back', 'cross'])
     # save initial wind resource for objective evaluation
-    wind_resource = xr.Dataset()
+    wind_resource = _xr.Dataset()
     wind_resource['direction_pmf'] = owflop._ds.direction_pmf
     wind_resource['wind_speed_cpmf'] = owflop._ds.wind_speed_cpmf
     iterations = 0
     corrections = ''
     owflop._ds['layout'] = (
-        owflop._ds.layout * xr.DataArray(
+        owflop._ds.layout * _xr.DataArray(
             [[1, 1], [1, 1], [1, 1]], coords=[method_coord, scale_coord])
     )
     owflop._ds['context'] = owflop._ds.layout.rename(target='source')
     owflop.calculate_geometry()
-    scaler = xr.DataArray(scaler, coords=[scale_coord])
-    scaling = xr.DataArray([1, 1], coords=[scale_coord])
+    scaler = _xr.DataArray(scaler, coords=[scale_coord])
+    scaling = _xr.DataArray([1, 1], coords=[scale_coord])
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
@@ -544,7 +544,7 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=_np.inf,
         objectives = owflop.objective()
         i = objectives.argmin(dim='scale')
         j = objectives.min(dim='scale').argmin('method').values.item()
-        owflop.history.append(xr.Dataset())
+        owflop.history.append(_xr.Dataset())
         owflop.history[-1]['layout'] = (
             owflop._ds.layout.isel(scale=i, drop=True)
                              .isel(method=j, drop=True)
@@ -594,7 +594,7 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=_np.inf,
         cross_step = (
             owflop.calculate_push_cross_vector().mean(dim='wind_resource'))
         # throw steps in one big DataArray
-        step = xr.concat([down_step, back_step, cross_step], 'method')
+        step = _xr.concat([down_step, back_step, cross_step], 'method')
         # normalize the step to the largest pseudo-gradient
         distance = _np.sqrt(_np.square(step).sum(dim='xy'))
         step /= distance.max('target')

@@ -16,7 +16,7 @@ Example usage (given some problem object `o`):
 import numpy as _np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tkr
-import xarray as xr
+import xarray as _xr
 
 
 def draw_windrose(axes, wind_direction_pmf, color='b'):
@@ -181,9 +181,9 @@ def connect_layouts(axes, layouts):
         `'xy'` dimension and one non-`'xy'`-dimension
 
     """
-    xs = xr.concat(
+    xs = _xr.concat(
         [layout.sel(xy='x', drop=True) for layout in layouts], dim='layout')
-    ys = xr.concat(
+    ys = _xr.concat(
         [layout.sel(xy='y', drop=True) for layout in layouts], dim='layout')
     axes.plot(xs, ys, '-k')
 

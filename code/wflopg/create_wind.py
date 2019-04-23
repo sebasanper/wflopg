@@ -1,5 +1,5 @@
 import numpy as _np
-import xarray as xr
+import xarray as _xr
 
 from wflopg.constants import COORDS
 
@@ -42,11 +42,11 @@ def discretize_weibull(weibull, speeds, cut_in, cut_out):
     speed_borders = _np.concatenate(([cut_in],
                                     (speeds[:-1] + speeds[1:]) / 2,
                                     [cut_out]))
-    speed_bins = xr.DataArray(
+    speed_bins = _xr.DataArray(
         _np.vstack((speed_borders[:-1], speed_borders[1:])).T,
         coords=[('speed', speeds), ('interval', COORDS['interval'])]
     )
-    cweibull = xr.DataArray(
+    cweibull = _xr.DataArray(
         weibull,
         dims=['direction', 'weibull_param'],
         coords={'weibull_param': COORDS['weibull_param']}
@@ -64,7 +64,7 @@ def discretize_weibull(weibull, speeds, cut_in, cut_out):
 
 def conformize_cpmf(speed_weights, speeds, cut_in, cut_out):
     """Return relevant speeds and wind speed probabilities"""
-    speed_weights = xr.DataArray(
+    speed_weights = _xr.DataArray(
         speed_weights, dims=['direction', 'speed'])
     speed_probs = speed_weights / speed_weights.sum(dim='speed')
     wc = (speeds >= cut_in) & (speeds <= cut_out)  # within cut
@@ -83,15 +83,15 @@ def subdivide(dirs, speeds, dir_weights, speed_probs, dir_subs,
 
     """
     dirs_cyc = _np.concatenate((dirs, 360 + dirs[:1]))
-    dir_weights_cyc = xr.DataArray(
+    dir_weights_cyc = _xr.DataArray(
         _np.concatenate((dir_weights, dir_weights[:1])),
         coords=[('direction', dirs_cyc)]
     )
-    speed_probs_cyc = xr.DataArray(
+    speed_probs_cyc = _xr.DataArray(
         _np.concatenate((speed_probs, speed_probs[:1])),
         coords=[('direction', dirs_cyc), ('speed', speeds)]
     )
-    dirs_cyc = xr.DataArray(
+    dirs_cyc = _xr.DataArray(
         dirs_cyc,
         coords=[('rel', _np.linspace(0, 1, len(dirs) + 1))]
         # 'rel' is an ad-hoc dimension for ‘local’ relative direction

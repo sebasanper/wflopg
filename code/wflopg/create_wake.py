@@ -1,5 +1,5 @@
 import numpy as _np
-import xarray as xr
+import xarray as _xr
 
 
 def _common(dc_vector_adim):
@@ -116,7 +116,7 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
             waked = is_downwind & (crosswind < 1 + wake_radius)
             relative_area = _np.float64(waked)
             partial = waked & (crosswind > wake_radius - 1)
-            relative_area = xr.where(
+            relative_area = _xr.where(
                 partial,
                 _lens_area(partial * crosswind, partial, partial * wake_radius)
                 / _np.pi,

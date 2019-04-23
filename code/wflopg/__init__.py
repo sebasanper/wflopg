@@ -1,5 +1,5 @@
 import numpy as _np
-import xarray as xr
+import xarray as _xr
 from ruamel.yaml import YAML as yaml
 
 from wflopg.constants import COORDS
@@ -20,9 +20,9 @@ class Owflop():
     """
     def __init__(self):
         # _ds is the main working Dataset
-        self._ds = xr.Dataset(coords={dim: COORDS[dim]
+        self._ds = _xr.Dataset(coords={dim: COORDS[dim]
                                       for dim in {'xy', 'dc'}})
-        # history of layouts and friends as a list of xr.DataSets
+        # history of layouts and friends as a list of _xr.DataSets
         self.history = []
 
     def load_problem(self, filename,
@@ -118,12 +118,12 @@ class Owflop():
             ys = _np.arange(-m, m + 1) * y_step
             mg = _np.meshgrid(xs, ys)
             mg[0] = (mg[0].T + (_np.arange(-m, m+1) % 2) * x_step / 2).T
-            covering_layout = xr.DataArray(
+            covering_layout = _xr.DataArray(
                 _np.stack([mg[0].ravel(), mg[1].ravel()], axis=-1),
                 dims=['target', 'uv'], coords={'uv': ['u', 'v']}
             )
             # add random offset
-            offset = xr.DataArray(
+            offset = _xr.DataArray(
                 _np.random.random(2) * _np.array([x_step, y_step]),
                 coords=[('uv', ['u', 'v'])]
             )
@@ -132,7 +132,7 @@ class Owflop():
             angle = _np.random.random() * _np.pi / 3  # hexgrid is π/3-symmetric
             cos_angle = _np.cos(angle)
             sin_angle = _np.sin(angle)
-            rotation_matrix = xr.DataArray(
+            rotation_matrix = _xr.DataArray(
                 _np.array([[cos_angle, -sin_angle], [sin_angle, cos_angle]]),
                 coords=[('uv', ['u', 'v']), ('xy', COORDS['xy'])]
             )
@@ -246,9 +246,9 @@ class Owflop():
             dir_weights, speed_probs = create_wind.subdivide(
                 dirs, speeds, dir_weights, speed_probs, dir_subs)
         else:
-            dir_weights = xr.DataArray(dir_weights,
+            dir_weights = _xr.DataArray(dir_weights,
                                        coords=[('direction', dirs)])
-            speed_probs = xr.DataArray(
+            speed_probs = _xr.DataArray(
                 speed_probs,
                 coords=[('direction', dirs), ('speed', speeds)]
             )
@@ -262,7 +262,7 @@ class Owflop():
 
     def process_initial_layout(self, initial_layout):
         # turbines affected by the wake
-        self._ds['layout'] = xr.DataArray(
+        self._ds['layout'] = _xr.DataArray(
             initial_layout,
             dims=['target', 'xy'],
             coords={'target': range(len(initial_layout))}

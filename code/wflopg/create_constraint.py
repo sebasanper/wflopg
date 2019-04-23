@@ -1,5 +1,5 @@
 import numpy as _np
-import xarray as xr
+import xarray as _xr
 import collections as cl
 
 from wflopg.create_site import xy_to_monomial
@@ -54,7 +54,7 @@ def distance(turbine_distance):
             # we add a constant extra distance of 1/8 (chosen from experience)
             # the turbine distance to reduce the probability immediate later
             # conflict
-            step_flat = xr.zeros_like(unit_vector_flat)
+            step_flat = _xr.zeros_like(unit_vector_flat)
             step_flat = violation_flat * (
                 (1.125 * turbine_distance - distance_flat) * unit_vector_flat)
             step = step_flat.unstack('pair').sum(dim='source')
@@ -137,7 +137,7 @@ def inside_site(site):
 
             return info
 
-        undecided = xr.full_like(
+        undecided = _xr.full_like(
             layout_flat.coords[position_name], True, 'bool')
         return in_site(site, undecided, True)
 
@@ -192,7 +192,7 @@ def site(parcels):
             vertex_dist_sqr = _np.square(
                 layout - enclave['vertices']
             ).sum(dim='xy').where(still_outside, _np.inf)
-            step = xr.where(
+            step = _xr.where(
                 still_outside,
                 enclave['vertices'].isel(
                     vertex=vertex_dist_sqr.argmin(dim='vertex')) - layout,
@@ -246,7 +246,7 @@ def site(parcels):
                 vertex_dist_sqr = _np.square(
                     layout_flat - vertices
                 ).sum(dim='xy').where(outside_enclave, _np.inf)
-                step = xr.where(
+                step = _xr.where(
                     outside_enclave,
                     vertices.isel(vertex=vertex_dist_sqr.argmin(dim='vertex'))
                     - layout_flat,
@@ -256,7 +256,7 @@ def site(parcels):
         elif 'circle' in exclave:
             layout_centered, dist_sqr, radius_sqr, inside = _circle_common(
                 exclave, layout_flat, scrutinize)
-            step = xr.where(
+            step = _xr.where(
                 dist_sqr > 0,
                 layout_centered * inside * (_np.sqrt(radius_sqr / dist_sqr) - 1)
                 * (1 + ε),  # …+ε to avoid round-off ‘outsides’
@@ -271,14 +271,14 @@ def site(parcels):
                 zip(*(process_enclave(enclave, layout_flat, scrutinize)
                       for enclave in exclave['exclusions']))
             )
-            steps = xr.concat([step] + list(steps), 'border')
+            steps = _xr.concat([step] + list(steps), 'border')
             dists_sqr = _np.square(steps).sum(dim='xy')
             borders = dists_sqr.argmin(dim='border')
                 # NOTE: argmin decides ties by picking first of minima
-            step = xr.where(scrutinize, steps.isel(border=borders), step)
+            step = _xr.where(scrutinize, steps.isel(border=borders), step)
             # update scrutinize in exclaves depending on chosen border
             borders -= 1  # we want indices for enclaves only
-            insides = xr.concat(insides, 'enclave')
+            insides = _xr.concat(insides, 'enclave')
             outside = scrutinize & ~insides.any(dim='enclave')
             # TODO: I suspect that the rest of this if-branch is inefficient
             for target, border in enumerate(borders.values):
@@ -313,14 +313,14 @@ def site(parcels):
             position_name = dims_to_stack[0]
         old_layout_flat = layout_flat
         layout_flat = old_layout_flat.copy()
-        scrutinize = xr.full_like(
+        scrutinize = _xr.full_like(
             layout_flat.coords[position_name], True, 'bool')
         todo = cl.deque([(parcels, scrutinize, None)])
         while todo:
             exclave, scrutinize, enclave = todo.popleft()
             step_flat, deeper_todo = process_exclave(
                 exclave, layout_flat, scrutinize, enclave)
-            layout_flat = xr.where(
+            layout_flat = _xr.where(
                 scrutinize, layout_flat + step_flat, layout_flat)
             todo.extend(deeper_todo)
 

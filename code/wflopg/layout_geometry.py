@@ -1,5 +1,5 @@
 import numpy as _np
-import xarray as xr
+import xarray as _xr
 
 from wflopg.constants import COORDS
 
@@ -16,7 +16,7 @@ def generate_downwind(directions):
     # - from upwind to downwind: +180
     # - from degrees to radians
     directions_rad = _np.radians(90 - directions + 180)
-    return xr.concat([_np.cos(directions_rad), _np.sin(directions_rad)], 'xy')
+    return _xr.concat([_np.cos(directions_rad), _np.sin(directions_rad)], 'xy')
 
 
 def generate_crosswind(downwind):
@@ -31,7 +31,7 @@ def generate_crosswind(downwind):
     crosswind.coords['xy'] = downwind.xy
         # workaround for bug in roll that also rolls coordinates;
         # fixed in xarray 0.10.9
-    return crosswind * xr.DataArray([-1, 1], coords=[('xy', COORDS['xy'])])
+    return crosswind * _xr.DataArray([-1, 1], coords=[('xy', COORDS['xy'])])
 
 
 def generate_vector(context, layout):
@@ -64,4 +64,4 @@ def generate_dc_vector(vector, downwind, crosswind):
     DataArrays of downwind and crosswind vectors, respectively.
 
     """
-    return xr.concat([vector.dot(downwind), vector.dot(crosswind)], 'dc')
+    return _xr.concat([vector.dot(downwind), vector.dot(crosswind)], 'dc')

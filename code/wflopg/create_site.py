@@ -1,5 +1,5 @@
 import numpy as _np
-import xarray as xr
+import xarray as _xr
 import pypoman.polygon as ppmp
 
 from wflopg.constants import COORDS
@@ -13,7 +13,7 @@ def xy_to_monomial(xy):
     """
     monshape = list(xy.shape)
     monshape[xy.dims.index('xy')] = 3
-    mon = xr.DataArray(_np.ones(monshape),
+    mon = _xr.DataArray(_np.ones(monshape),
                        dims=xy.dims, coords={'xy': COORDS['monomial']})
     mon.loc[{'xy': COORDS['xy']}] = xy
     return mon.rename(xy='monomial')
@@ -24,12 +24,12 @@ def boundaries(boundaries_list):
     for boundary_nesting in boundaries_list:
         processed_boundary_nesting = {}
         if 'polygon' in boundary_nesting:
-            processed_boundary_nesting['polygon'] = xr.DataArray(
+            processed_boundary_nesting['polygon'] = _xr.DataArray(
                 boundary_nesting['polygon'],
                 dims=['vertex', 'xy'], coords={'xy': COORDS['xy']}
             )
         elif 'circle' in boundary_nesting:
-            processed_boundary_nesting['circle'] = xr.DataArray(
+            processed_boundary_nesting['circle'] = _xr.DataArray(
                 boundary_nesting['circle']['center'],
                 coords=[('xy', COORDS['xy'])]
             )
@@ -58,7 +58,7 @@ def parcels(parcels_list, rotor_radius):
         sign = -1 if exclusion else 1
         if 'constraints' in area:
             # https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_an_equation
-            coeffs = xr.DataArray(
+            coeffs = _xr.DataArray(
                 [[constraint.get(coefficient, 0)
                   for coefficient in COORDS['monomial']]
                  for constraint in area['constraints']],
@@ -69,7 +69,7 @@ def parcels(parcels_list, rotor_radius):
                 _np.square(coeffs.sel(monomial=['x', 'y'])).sum(dim='monomial')
             )
             coeffs = coeffs / norms  # normalize the coefficients
-            rotor_constraint = xr.DataArray(
+            rotor_constraint = _xr.DataArray(
                 [constraint.get('rotor_constraint', False)
                  for constraint in area['constraints']],
                 dims=['constraint']
@@ -83,7 +83,7 @@ def parcels(parcels_list, rotor_radius):
             if exclusion and (previous_coeffs is not None):
                 # we must include coefficients of the encompassing constraints
                 # (if any) as well to get the vertices
-                coeffs = xr.concat([coeffs, previous_coeffs], 'constraint')
+                coeffs = _xr.concat([coeffs, previous_coeffs], 'constraint')
                 previous_coeffs = None
             else:
                 previous_coeffs = coeffs
@@ -91,7 +91,7 @@ def parcels(parcels_list, rotor_radius):
                 coeffs.sel(monomial=COORDS['xy']).values,
                 -coeffs.sel(monomial='1').values
             )
-            processed_area['vertices'] = xr.DataArray(
+            processed_area['vertices'] = _xr.DataArray(
                 vertices, dims=['vertex', 'xy'], coords={'xy': COORDS['xy']})
             if exclusion:
                 # create a mask for vertices that fall outside the site
@@ -102,7 +102,7 @@ def parcels(parcels_list, rotor_radius):
                 processed_area['violates'] = (
                     distance < 0).all(dim='constraint')
         elif 'circle' in area:
-            processed_area['circle'] = xr.DataArray(
+            processed_area['circle'] = _xr.DataArray(
                 area['circle']['center'], coords=[('xy', COORDS['xy'])])
             dist = area['circle']['radius']
             if area['circle'].get('rotor_constraint', False):

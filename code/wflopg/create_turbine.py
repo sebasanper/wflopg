@@ -1,5 +1,5 @@
 import numpy as _np
-import xarray as xr
+import xarray as _xr
 
 
 def _check_start(interpolation_data, start_speed, start_value):
@@ -47,7 +47,7 @@ def _create_interpolator(coord_name, interpolation_data):
     interpolated.
 
     """
-    return xr.DataArray(interpolation_data[:, 1],
+    return _xr.DataArray(interpolation_data[:, 1],
                         [(coord_name, interpolation_data[:, 0])])
 
 
@@ -99,7 +99,7 @@ def interpolated_power_curve(rated_power, rated_speed, cut_in, cut_out,
         """
         # only 1D-arrays can be interpolated
         speeds_flat = speeds.values.flatten()
-        return xr.DataArray(
+        return _xr.DataArray(
                 interpolator.interp(
                         speed=speeds_flat, kwargs={'fill_value': 0.0}
                 ).values.reshape(speeds.shape),
@@ -142,7 +142,7 @@ def interpolated_thrust_curve(cut_in, cut_out, interpolation_data):
         """
         # only 1D-arrays can be interpolated
         speeds_flat = speeds.values.flatten()
-        return xr.DataArray(
+        return _xr.DataArray(
                 interpolator.interp(
                         speed=speeds_flat, kwargs={'fill_value': 0.0}
                 ).values.reshape(speeds.shape),
