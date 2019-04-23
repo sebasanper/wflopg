@@ -511,3 +511,123 @@ def method_chooser(owflop, max_iterations=np.inf):
             maybe_violations = too_close
         print(')', end=' ')
         iterations += 1
+
+
+def multi_wind_resource(owflop, wind_resources, max_iterations=np.inf,
+                        scaler=[.5, 1.1], multiplier=3):
+    site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
+    scale_coord = ('scale', ['-', '+'])
+    method_coord = ('method', ['down', 'back', 'cross'])
+    # save initial wind resource for objective evaluation
+    wind_resource = xr.Dataset()
+    wind_resource['direction_pmf'] = owflop._ds.direction_pmf
+    wind_resource['wind_speed_cpmf'] = owflop._ds.wind_speed_cpmf
+    iterations = 0
+    corrections = ''
+    owflop._ds['layout'] = (
+        owflop._ds.layout * xr.DataArray(
+            [[1, 1], [1, 1], [1, 1]], coords=[method_coord, scale_coord])
+    )
+    owflop._ds['context'] = owflop._ds.layout.rename(target='source')
+    owflop.calculate_geometry()
+    scaler = xr.DataArray(scaler, coords=[scale_coord])
+    scaling = xr.DataArray([1, 1], coords=[scale_coord])
+    while iterations < max_iterations:
+        # stop iterating if no real objective improvement is being made
+        if iterations > 0:
+            if (last - best
+                > (start - best) / np.log2(len(owflop.history) + 2)):
+                break
+        print('(', iterations, sep='', end=':')
+        owflop.calculate_deficit()
+        owflop.calculate_power()
+        objectives = owflop.objective()
+        i = objectives.argmin(dim='scale')
+        j = objectives.min(dim='scale').argmin('method').values.item()
+        owflop.history.append(xr.Dataset())
+        owflop.history[-1]['layout'] = (
+            owflop._ds.layout.isel(scale=i, drop=True)
+                             .isel(method=j, drop=True)
+        )
+        owflop.history[-1]['objective'] = (
+            objectives.isel(scale=i, drop=True).isel(method=j, drop=True))
+        owflop.history[-1].attrs['corrections'] = corrections
+        owflop.history[-1].attrs['method'] = method_coord[1][j]
+        owflop.history[-1].attrs['scale'] = (
+            scaling.isel(scale=i, drop=True)
+                   .isel(method=j, drop=True).values.item()
+        )
+        if len(owflop.history) == 1:
+            best = last = start = owflop.history[0]['objective']
+        else:
+            last = owflop.history[-1]['objective']
+            if last < best:
+                best = last
+            distance_from_previous = np.sqrt(
+                np.square(
+                    owflop.history[-1]['layout'] - owflop.history[-2]['layout']
+                ).sum(dim='xy')
+            )
+            # stop iterating if the largest step is smaller than D/10
+            if distance_from_previous.max() < site_rotor_diameter / 10:
+                break
+        # calculate new layout
+        scaling = scaling.isel(scale=i, drop=True) * scaler
+        # swap in driving wind resources
+        owflop._ds['direction_pmf'] = wind_resources.direction_pmf
+        owflop._ds['wind_speed_cpmf'] = wind_resources.wind_speed_cpmf
+        # first calculate relative_wake_loss_vector just once
+        owflop._ds['relative_deficit'] = (
+            owflop._ds.relative_deficit.isel(scale=i, drop=True)
+                                       .isel(method=j, drop=True))
+        owflop._ds['wake_loss_factor'] = (
+            owflop._ds.wake_loss_factor.isel(scale=i, drop=True)
+                                       .isel(method=j, drop=True))
+        owflop._ds['unit_vector'] = (
+            owflop._ds.unit_vector.isel(scale=i, drop=True)
+                                  .isel(method=j, drop=True))
+        owflop.calculate_relative_wake_loss_vector()
+        down_step = (
+            owflop.calculate_push_down_vector().mean(dim='wind_resource'))
+        back_step = (
+            owflop.calculate_push_back_vector().mean(dim='wind_resource'))
+        cross_step = (
+            owflop.calculate_push_cross_vector().mean(dim='wind_resource'))
+        # throw steps in one big DataArray
+        step = xr.concat([down_step, back_step, cross_step], 'method')
+        # normalize the step to the largest pseudo-gradient
+        distance = np.sqrt(np.square(step).sum(dim='xy'))
+        step /= distance.max('target')
+        # remove any global shift
+        step -= step.mean(dim='target')
+        # generate the different step variants
+        step = step * site_rotor_diameter * multiplier * scaling
+        # take the step
+        _take_step(owflop, step)
+        # deal with any constraint violations in layout
+        corrections = ''
+        maybe_violations = True
+        while maybe_violations:
+            outside = ~owflop.inside(owflop._ds.layout)['in_site']
+            any_outside = outside.any()
+            if any_outside:
+                print('s', outside.values.sum(), sep='', end='')
+                _take_step(owflop, owflop.to_border(owflop._ds.layout))
+                corrections += 's'
+            proximity_repulsion_step = (
+                owflop.proximity_repulsion(
+                    owflop._ds.distance, owflop._ds.unit_vector)
+            )
+            too_close = proximity_repulsion_step is not None
+            if too_close:
+                print('p', proximity_repulsion_step.attrs['violations'],
+                      sep='', end='')
+                _take_step(owflop, proximity_repulsion_step)
+                corrections += 'p'
+            print(',', end='')
+            maybe_violations = too_close
+        print(')', end=' ')
+        iterations += 1
+        # swap in objective wind resource again
+        owflop._ds['direction_pmf'] = wind_resource.direction_pmf
+        owflop._ds['wind_speed_cpmf'] = wind_resource.wind_speed_cpmf
