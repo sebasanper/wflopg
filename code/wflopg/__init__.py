@@ -343,11 +343,10 @@ class Owflop():
         self._ds['dc_vector'] = layout_geometry.generate_dc_vector(
             self._ds.vector, self._ds.downwind, self._ds.crosswind)
         # deficit
-        self._ds['deficit'] = self.wake_model(self._ds.dc_vector
-                                              * self.site_radius)
-        (self._ds['combined_deficit'],
-         self._ds['relative_deficit']) = self.combination_rule(
-                                                           self._ds.deficit)
+        self._ds['deficit'] = self.wake_model(
+            self._ds.dc_vector * self.site_radius)
+        self._ds['combined_deficit'], self._ds['relative_deficit'] = (
+            self.combination_rule(self._ds.deficit))
 
     def expectation(self, array):
         return (array.dot(self._ds.wind_speed_cpmf, 'speed')
