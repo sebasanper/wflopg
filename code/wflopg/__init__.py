@@ -82,14 +82,14 @@ class Owflop():
         elif ('layout' in problem) and not hex_layout:
             with open(problem['layout']) as f:
                 initial_layout = _yaml(typ='safe').load(f)['layout']
-        else:
-            # (random) number of turbines
-            if hex_layout is True:
-                turbines = self.turbines
-            elif isinstance(hex_layout, int):
+        else: # hex layout
+            if (isinstance(hex_layout, int)
+                  and not isinstance(hex_layout, bool)):
                 turbines = hex_layout
             elif isinstance(self.turbines, list):
                 turbines = _np.random.randint(*self.turbines)
+            else:
+                turbines = self.turbines
             initial_layout = self.create_hex_layout(turbines)
         self.process_initial_layout(initial_layout)
         self.calculate_geometry()
