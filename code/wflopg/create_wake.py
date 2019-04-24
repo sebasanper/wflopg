@@ -114,7 +114,7 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
         wake_radius = 1 + expansion_coeff * downwind / stream_tube_radius
         if averaging:
             waked = is_downwind & (crosswind < 1 + wake_radius)
-            relative_area = _np.float64(waked)
+            relative_area = waked.astype(_np.float64)
             partial = waked & (crosswind > wake_radius - 1)
             relative_area = _xr.where(
                 partial,
@@ -123,10 +123,9 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
                 relative_area
             )
         else:
-            relative_area = _np.float64(
-                is_downwind & (crosswind <= wake_radius))
-        return (
-            relative_area * induction_factor / _np.square(wake_radius))
+            relative_area = (
+                is_downwind & (crosswind <= wake_radius)).astype(_np.float64)
+        return relative_area * induction_factor / _np.square(wake_radius)
 
     return wake_model
 
