@@ -1,0 +1,55 @@
+uuid: bbda2d06-4612-4e4a-a665-0bb165ac48a5
+name: IEA37 Case Study 3 site
+radius: 3.282943785341342 # in km
+center: [9.379322651455396, 3.4097954066199607] # in km
+roughness: 0.0001 # not given in case study documentation
+parcels:
+  - constraints: # IIIa
+      - {"x": -0.6968574 , "y": -0.7172097 , "1": -0.72098228, rotor_constraint: false} # South
+      - {"x":  0.98782142, "y": -0.15559189, "1": -0.15022685, rotor_constraint: false} # East
+      - {"x": -0.80198875, "y":  0.59733914, "1": -0.78108703, rotor_constraint: false}
+      - {"x":  0.42552559, "y":  0.90494639, "1": -0.97674893, rotor_constraint: false}
+      - {"x": -0.09363486, "y":  0.99560661, "1": -0.9500965 , rotor_constraint: false} # North
+    exclusions:
+      - constraints: # exclusion North
+          - {"x": -.26450568, "y": -.96438413, "1": .77846626, rotor_constraint: false}
+          - {"x":  .6828023 , "y": -.73060319, "1": .53972976, rotor_constraint: false}
+          - {"x":  .0684296 , "y": -.99765595, "1": .81017116, rotor_constraint: false}
+          - {"x":  .39636375, "y": -.91809355, "1": .72881684, rotor_constraint: false}
+          - {"x": -.51380847, "y": -.85790493, "1": .65045697, rotor_constraint: false}
+          - {"x": -.42527611, "y": -.90506366, "1": .71729831, rotor_constraint: false}
+          - {"x":  .85788003, "y": -.51385004, "1": .31094544, rotor_constraint: false}
+          - {"x":  .79967407, "y": -.60043433, "1": .40610855, rotor_constraint: false}
+      - constraints: # exclusion East
+          - {"x": -.98296018, "y":  .18381864, "1":  .12228289, rotor_constraint: false}
+          - {"x": -.99346146, "y":  .11416794, "1":  .0841582 , rotor_constraint: false}
+          - {"x": -.99986868, "y":  .01620594, "1":  .00941269, rotor_constraint: false}
+          - {"x": -.99871216, "y":  .05073491, "1":  .03870204, rotor_constraint: false}
+          - {"x": -.9999955 , "y": -.00300051, "1": -.0084293 , rotor_constraint: false}
+      - constraints: # exclusion South
+          - {"x": .69572353, "y": .71830966, "1": .71988668, rotor_constraint: false}
+          - {"x": .99980783, "y": .01960382, "1": .02503135, rotor_constraint: false}
+        exclusions:
+          - constraints: # inclusion South
+              - {"x": -0.69572754, "y": -0.71830577, "1": -0.71989056, rotor_constraint: false}
+              - {"x": -0.69571794, "y": -0.71831508, "1": -0.71989205, rotor_constraint: false}
+boundaries:
+  - polygon: # IIIa
+      - [ .22162346,  .97513232]  # vertex convex hull + North exclusion vertex
+      - [ .21093183,  .95728249]  # North exclusion vertex
+      - [ .15704727,  .88551763]  # North exclusion vertex
+      - [ .1095594 ,  .84113673]  # North exclusion vertex
+      - [ .05022241,  .81551948]  # North exclusion vertex
+      - [-.01417102,  .81110271]  # North exclusion vertex
+      - [-.07503103,  .82779504]  # North exclusion vertex
+      - [-.26620092,  .91762296]  # North exclusion vertex
+      - [-.28298464,  .92767491]  # vertex convex hull + North exclusion vertex
+      - [-.99941481, -.0342057 ]  # vertex convex hull + South exclusion vertex + South inclusion vertex
+      - [-.42087917, -.59455645]  # South inclusion vertex
+      - [-.00548978, -.9968783 ]  # South exclusion vertex + South inclusion vertex
+      - [-.00542886, -.99998526]  # vertex convex hull + South exclusion vertex + East exclusion vertex
+      - [-.00564209, -.92892099]  # East exclusion vertex
+      - [-.00433229, -.84810938]  # East exclusion vertex
+      - [ .00233856, -.7167943 ]  # East exclusion vertex
+      - [ .02143727, -.550602  ]  # East exclusion vertex
+      - [ .2998764 ,  .93833608]  # vertex convex hull + East exclusion vertex
