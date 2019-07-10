@@ -8,4 +8,4 @@ rated_power: 10
 rated_wind_speed: 11
 cut_in: 4
 cut_out: 25
-thrust_coefficient: 0.889
+thrust_coefficient: 0.888888888888889 # 8/9
