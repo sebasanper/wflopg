@@ -1,0 +1,12 @@
+uuid: 79a08ed6-f8a8-4b67-9d63-7166d57bf96f
+name: Problem for the IEA 37 Case Study 3, with 9 wind direction subdivisions
+site: "site-IEA37_CS3.yaml"
+wind_resource: "wind_resource-IEA37_CS.yaml"
+wind_direction_subdivisions: 9  # results in 180 2° bins
+turbine: "turbine-IEA37_CS_10_MW.yaml"
+turbine_distance: 2
+turbines: 25
+layout: "layout-IEA37_CS3.yaml"
+objective: "maximize expected power"
+wake_model: "BPA (IEA37)"
+wake_combination: "RSS"

@@ -1,0 +1,12 @@
+uuid: 5c3d08fe-5f88-4d06-892f-8fa4f61e878b
+name: Problem for the IEA 37 Case Study 4
+site: "site-IEA37_CS4.yaml"
+wind_resource: "wind_resource-IEA37_CS.yaml"
+wind_direction_subdivisions: 9  # results in 180 2° bins
+turbine: "turbine-IEA37_CS_10_MW.yaml"
+turbine_distance: 2
+turbines: 81
+layout: "layout-IEA37_CS4.yaml"
+objective: "maximize expected power"
+wake_model: "Jensen according to Frandsen with partial wake"
+wake_combination: "RSS"
