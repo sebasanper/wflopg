@@ -14,6 +14,7 @@ required:
   anyOf:
     - geo
     - utm
+    - adhoc
 additionalProperties: false
 
 # PROPERTIES
@@ -60,3 +61,14 @@ properties:
     - title: Northerly
       type: number
       unit: m
+  #~
+  adhoc:
+    title: Ad hoc coordinates
+    type: array
+    items:
+    - title: Easterly
+      type: number
+      unit: km
+    - title: Northerly
+      type: number
+      unit: km

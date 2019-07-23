@@ -1,7 +1,8 @@
 uuid: bbda2d06-4612-4e4a-a665-0bb165ac48a5
 name: IEA37 Case Study 3 site
 radius: 3.282943785341342 # in km
-center: [9.379322651455396, 3.4097954066199607] # in km
+location:
+  adhoc: [9.379322651455396, 3.4097954066199607] # in km
 roughness: 0.0001 # not given in case study documentation
 parcels:
   - constraints: # IIIa
