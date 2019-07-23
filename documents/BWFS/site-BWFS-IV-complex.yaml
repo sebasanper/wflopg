@@ -14,9 +14,9 @@ particulars:
 
 radius: 8.4628
 location:
-  - reference_system: ETRS89
-  - utm_zone: 31
-  - utm: [492539.33, 5733792.49]
+  reference_system: ETRS89
+  utm_zone: 31
+  utm: [492539.33, 5733792.49]
 roughness: 0.0001
 parcels:
   - constraints: # IVa + IVb

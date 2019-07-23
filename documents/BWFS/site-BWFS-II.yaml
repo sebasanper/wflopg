@@ -8,9 +8,9 @@ particulars:
 
 radius: 7.1195
 location:
-  - reference_system: ETRS89
-  - utm_zone: 31
-  - utm: [503695.85, 5720357.25]
+  reference_system: ETRS89
+  utm_zone: 31
+  utm: [503695.85, 5720357.25]
 parcels:  # TODO
   - constraints:
       - {"x": , "y": , "1": , rotor_constraint: true}

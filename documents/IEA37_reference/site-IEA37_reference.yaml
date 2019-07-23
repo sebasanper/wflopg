@@ -5,9 +5,9 @@ particulars:
 
 radius: 12.2680
 location:
-  - reference_system: ETRS89
-  - utm_zone: 31
-  - utm: [494863.24, 5726454.39]
+  reference_system: ETRS89
+  utm_zone: 31
+  utm: [494863.24, 5726454.39]
 parcels:
   - constraints:
       - {"x": -0.316688, "y":  1.0, "1": -0.767208} # 3 4
