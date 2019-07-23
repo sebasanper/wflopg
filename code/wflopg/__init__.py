@@ -356,9 +356,15 @@ class Owflop():
         self._ds['combined_deficit'], self._ds['relative_deficit'] = (
             self.combination_rule(self._ds.deficit))
 
+    def conditional_expectation_wind_speed(self, array):
+        return array.dot(self._ds.wind_speed_cpmf, 'speed')
+
+    def expectation_direction(self, array):
+        return array.dot(self._ds.direction_pmf, 'direction')
+
     def expectation(self, array):
-        return (array.dot(self._ds.wind_speed_cpmf, 'speed')
-                     .dot(self._ds.direction_pmf, 'direction'))
+        return self.expectation_direction(
+            self.conditional_expectation_wind_speed(array))
 
     def calculate_wakeless_power(self):
         self._ds['wakeless_power'] = self.power_curve(self._ds.speed)
@@ -367,9 +373,9 @@ class Owflop():
 
     def calculate_power(self):
         # raw values
-        power = self.power_curve(
+        self._ds['power'] = self.power_curve(
             self._ds.speed * (1 - self._ds.combined_deficit))
-        wake_loss = self._ds.wakeless_power - power
+        wake_loss = self._ds.wakeless_power - self._ds.power
         self._ds['wake_loss_factor'] = (
             wake_loss / self._ds.expected_wakeless_power)
         # expectations
@@ -378,6 +384,13 @@ class Owflop():
         # turbine average
         self._ds['average_expected_wake_loss_factor'] = (
             self._ds.expected_wake_loss_factor.mean(dim='target'))
+
+    def calculate_aep(self):
+        hrs_per_yr = 8760
+        dir_power = self.conditional_expectation_wind_speed(
+            self._ds.power.sum(dim='target'))
+        self._ds['dir_AEP'] = hrs_per_yr * dir_power * self._ds.direction_pmf
+        self._ds['AEP'] = self._ds['dir_AEP'].sum(dim='direction')
 
     def calculate_relative_wake_loss_vector(self):
         self._ds['relative_wake_loss_vector'] = (
