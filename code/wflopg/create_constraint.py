@@ -79,11 +79,11 @@ def inside_site(site):
     def inside(layout):
         dims_to_stack = list(layout.dims)
         dims_to_stack.remove('xy')
-        if dims_to_stack == 1:
+        if len(dims_to_stack) == 1:
             # see https://github.com/pydata/xarray/issues/2802
             layout_flat = layout
             position_name = dims_to_stack[0]
-        else:  # dims_to_stack > 1
+        else:  # len(dims_to_stack) > 1
             layout_flat = layout.stack(
                 position=dims_to_stack
             ).transpose('position', 'xy')
