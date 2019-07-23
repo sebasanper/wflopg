@@ -28,7 +28,7 @@ class Owflop():
     def load_problem(self, filename,
                      wind_resource_filename=None,
                      layout_filename=None,
-                     hex_layout=False, hex_proximity_factor=None):
+                     hex_layout=False, hex_site_violation_factor=1):
         """Load wind farm layout optimization problem file
 
         The file is assumed to be a YAML file in the format described by the
@@ -75,6 +75,12 @@ class Owflop():
         self._ds['crosswind'] = layout_geometry.generate_crosswind(
             self._ds.downwind)
 
+        # create function to generate turbine constraint violation fixup steps
+        self.minimal_proximity = (problem.get('turbine_distance', 1)
+                                  * (2 * self.rotor_radius) / self.site_radius)
+        self.proximity_repulsion = (
+            create_constraint.distance(self.minimal_proximity))
+
         # deal with initial layout
         if layout_filename is not None:
             with open(layout_filename) as f:
@@ -90,32 +96,30 @@ class Owflop():
                 turbines = _np.random.randint(*self.turbines)
             else:
                 turbines = self.turbines
-            initial_layout = self.create_hex_layout(turbines)
+            initial_layout = self.create_hex_layout(
+                turbines, hex_site_violation_factor)
         self.process_initial_layout(initial_layout)
         self.calculate_geometry()
 
-        # create function to generate turbine constraint violation fixup steps
-        if hex_layout and hex_proximity_factor:
-            self.minimal_proximity = (self._ds.layout.hex_distance
-                                      * hex_proximity_factor)
-        else:
-            self.minimal_proximity = (
-                    problem.get('turbine_distance', 1)
-                    * (2 * self.rotor_radius) / self.site_radius)
-        self.proximity_repulsion = (
-            create_constraint.distance(self.minimal_proximity))
-
-    def create_hex_layout(self, turbines):
+    def create_hex_layout(self, turbines, hex_site_violation_factor):
         # create squarish hexagonal—so densest—packing to cover site
         max_turbines = 0
         factor = 1
-        while max_turbines < turbines:
+        # Process parcels
+        hex_parcels = create_site.parcels(
+            self.site_parcels,
+            -self.minimal_proximity * hex_site_violation_factor,
+            rotor_constraint_override=True
+        )
+        # create function that reports whether a turbine is inside the site
+        hex_inside = create_constraint.inside_site(hex_parcels)
+        while max_turbines != turbines:
             x_step = _np.sqrt(factor / turbines) * 2
             y_step = x_step * _np.sqrt(3) / 2
-            n = int(1 / x_step) + 1
-            m = int(1 / y_step)
-            xs = _np.arange(-n, n) * x_step
-            ys = _np.arange(-m, m + 1) * y_step
+            n = _np.ceil(1 / x_step)
+            m = _np.ceil(1 / y_step)
+            xs = _np.arange(-n, n+1) * x_step
+            ys = _np.arange(-m, m+1) * y_step
             mg = _np.meshgrid(xs, ys)
             mg[0] = (mg[0].T + (_np.arange(-m, m+1) % 2) * x_step / 2).T
             covering_layout = _xr.DataArray(
@@ -138,15 +142,12 @@ class Owflop():
             )
             rotated_covering_layout = covering_layout.dot(rotation_matrix)
             # only keep turbines inside
-            inside = self.inside(rotated_covering_layout)
-            dense_layout = rotated_covering_layout[
-                inside['in_site'].rename(position='target')]
+            inside = hex_inside(rotated_covering_layout)
+            dense_layout = rotated_covering_layout[inside['in_site']]
             dense_layout.attrs['hex_distance'] = x_step
-            # TODO: avoid the rename in some way
             max_turbines = len(dense_layout)
             factor *= max_turbines / turbines
-        return dense_layout[
-            _np.random.choice(max_turbines, turbines, replace=False)]
+        return dense_layout + self.to_border(dense_layout)
 
     def process_turbine(self, turbine):
         self.rotor_radius = turbine['rotor_radius']
@@ -189,10 +190,10 @@ class Owflop():
                 self.site_location = _xr.DataArray(
                     site['location']['adhoc'], coords=[('xy', COORDS['xy'])]
                 ) * 1e3  # km to m
+        self.site_parcels = site['parcels']
         # Process parcels
-        if 'parcels' in site:
-            self.parcels = create_site.parcels(
-                site['parcels'], self.rotor_radius / self.site_radius)
+        self.parcels = create_site.parcels(
+            self.site_parcels, self.rotor_radius / self.site_radius)
         # create function that reports whether a turbine is inside the site
         self.inside = create_constraint.inside_site(self.parcels)
         # create function to generate site constraint violation fixup steps

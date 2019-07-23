@@ -46,7 +46,7 @@ def boundaries(boundaries_list):
     return processed_boundaries
 
 
-def parcels(parcels_list, rotor_radius):
+def parcels(parcels_list, rotor_radius, rotor_constraint_override=False):
     """Return a recursive list of processed parcels
 
     The parcel list must be of the form described in the site schema.
@@ -70,7 +70,8 @@ def parcels(parcels_list, rotor_radius):
             )
             coeffs = coeffs / norms  # normalize the coefficients
             rotor_constraint = _xr.DataArray(
-                [constraint.get('rotor_constraint', False)
+                [(rotor_constraint_override
+                  or constraint.get('rotor_constraint', False))
                  for constraint in area['constraints']],
                 dims=['constraint']
             )
