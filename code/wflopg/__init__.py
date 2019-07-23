@@ -181,6 +181,14 @@ class Owflop():
     def process_site(self, site):
         self.roughness_length = site.get('roughness', None)
         self.site_radius = site['radius'] * 1e3  # km to m
+        if 'location' in site:
+            if 'utm' in site['location']:
+                self.site_location = _xr.DataArray(
+                    site['location']['utm'], coords=[('xy', COORDS['xy'])])
+            elif 'adhoc' in site['location']:
+                self.site_location = _xr.DataArray(
+                    site['location']['adhoc'], coords=[('xy', COORDS['xy'])]
+                ) * 1e3  # km to m
         # Process parcels
         if 'parcels' in site:
             self.parcels = create_site.parcels(
