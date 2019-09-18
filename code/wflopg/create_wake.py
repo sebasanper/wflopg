@@ -96,7 +96,11 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
 
     """
     induction_factor = 1 - _np.sqrt(1 - thrust_curve)
-    if frandsen:  # use (adim.) stream tube radius instead or rotor radius
+    if frandsen: 
+        # use (adim.) stream tube radius instead or rotor radius
+        # [Frandsen, S. (1992) On the wind speed reduction in the center of
+        #  large clusters of wind turbines. Journal of Wind Engineering and
+        #  Industrial Aerodynamics 39:251–265. Section 2.2]
         stream_tube_radius = _np.sqrt(1 + 0.5 / (1 / induction_factor - 1))
             # TODO: in case thrust_curve == 1, we get divide by zero!
     else:
