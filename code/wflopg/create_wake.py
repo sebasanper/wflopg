@@ -97,11 +97,25 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
     """
     induction_factor = 1 - _np.sqrt(1 - thrust_curve)
     if frandsen:  # use (adim.) stream tube radius instead or rotor radius
-        stream_tube_radius = _np.sqrt((1 - induction_factor / 2)
-                                     / (1 - induction_factor))
-            # TODO: in case thrust_curve == 0, we get divide by zero!
+        stream_tube_radius = _np.sqrt(1 + 0.5 / (1 / induction_factor - 1))
+            # TODO: in case thrust_curve == 1, we get divide by zero!
     else:
         stream_tube_radius = 1
+
+    if averaging:
+        def relative_area(is_downwind, crosswind, wake_radius):
+            waked = is_downwind & (crosswind < 1 + wake_radius)
+            partial = waked & (crosswind > wake_radius - 1)
+            return _xr.where(
+                partial,
+                _lens_area(partial * crosswind, partial, partial * wake_radius)
+                / _np.pi,
+                waked.astype(_np.float64)
+            )
+    else:
+        def relative_area(is_downwind, crosswind, wake_radius):
+            return (
+                is_downwind & (crosswind <= wake_radius)).astype(_np.float64)
 
     def wake_model(dc_vector):
         """Return wind speed deficit due to wake
@@ -112,20 +126,8 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
         """
         downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
         wake_radius = 1 + expansion_coeff * downwind / stream_tube_radius
-        if averaging:
-            waked = is_downwind & (crosswind < 1 + wake_radius)
-            relative_area = waked.astype(_np.float64)
-            partial = waked & (crosswind > wake_radius - 1)
-            relative_area = _xr.where(
-                partial,
-                _lens_area(partial * crosswind, partial, partial * wake_radius)
-                / _np.pi,
-                relative_area
-            )
-        else:
-            relative_area = (
-                is_downwind & (crosswind <= wake_radius)).astype(_np.float64)
-        return relative_area * induction_factor / _np.square(wake_radius)
+        return (relative_area(is_downwind, crosswind, wake_radius)
+                * induction_factor / _np.square(wake_radius))
 
     return wake_model
 
