@@ -104,8 +104,9 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
 
     if averaging:
         def relative_area(is_downwind, crosswind, wake_radius):
-            waked = is_downwind & (crosswind < 1 + wake_radius)
-            partial = waked & (crosswind > wake_radius - 1)
+            rel_crosswind = crosswind - wake_radius
+            waked = is_downwind & (rel_crosswind < 1)
+            partial = waked & (rel_crosswind > - 1)
             return _xr.where(
                 partial,
                 _lens_area(partial * crosswind, partial, partial * wake_radius)
