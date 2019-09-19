@@ -138,9 +138,10 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
 
         """
         downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
-        wake_radius = 1 + expansion_coeff * downwind / stream_tube_radius
+        wake_radius = stream_tube_radius + expansion_coeff * downwind
         return (relative_area(is_downwind, crosswind, wake_radius)
-                * induction_factor / _np.square(wake_radius))
+                * induction_factor
+                * _np.square(stream_tube_radius / wake_radius))
 
     return wake_model
 
