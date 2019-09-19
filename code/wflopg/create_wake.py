@@ -33,6 +33,27 @@ def _lens_area(d, r, R):
     )
 
 
+def _relative_area_function(averaging):
+    """Return the function that computes the relative waked area"""
+    def hub_waked(is_downwind, crosswind, wake_radius):
+        """Calculate whether the hub is waked"""
+        return (is_downwind & (crosswind <= wake_radius)).astype(_np.float64)
+    
+    def relative_waked_area(is_downwind, crosswind, wake_radius):
+        """Calculate the relative waked area"""
+        rel_crosswind = crosswind - wake_radius
+        waked = is_downwind & (rel_crosswind < 1)
+        partial = waked & (rel_crosswind > - 1)
+        return _xr.where(
+            partial,
+            _lens_area(partial * crosswind, partial, partial * wake_radius)
+            / _np.pi,
+            waked.astype(_np.float64)
+        )
+
+    return relative_waked_area if averaging else hub_waked
+
+
 def rss_combination():
     """Return the root-sum-square wake deficit combination rule"""
     def combination_rule(deficit):
@@ -101,26 +122,13 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
         # [Frandsen, S. (1992) On the wind speed reduction in the center of
         #  large clusters of wind turbines. Journal of Wind Engineering and
         #  Industrial Aerodynamics 39:251–265. Section 2.2]
-        stream_tube_radius = _np.sqrt(1 + 0.5 / (1 / induction_factor - 1))
-            # TODO: in case thrust_curve == 1, we get divide by zero!
+        stream_tube_radius = _np.sqrt(
+            (1 - 0.5 * induction_factor) / (1 - induction_factor))
+            # TODO: deal with case induction_factor == 1 
     else:
         stream_tube_radius = 1
 
-    if averaging:
-        def relative_area(is_downwind, crosswind, wake_radius):
-            rel_crosswind = crosswind - wake_radius
-            waked = is_downwind & (rel_crosswind < 1)
-            partial = waked & (rel_crosswind > - 1)
-            return _xr.where(
-                partial,
-                _lens_area(partial * crosswind, partial, partial * wake_radius)
-                / _np.pi,
-                waked.astype(_np.float64)
-            )
-    else:
-        def relative_area(is_downwind, crosswind, wake_radius):
-            return (
-                is_downwind & (crosswind <= wake_radius)).astype(_np.float64)
+    relative_area = _relative_area_function(averaging)
 
     def wake_model(dc_vector):
         """Return wind speed deficit due to wake
@@ -201,3 +209,32 @@ def jensen_frandsen_averaged(thrust_curve, rotor_radius, expansion_coeff):
     return _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
                            frandsen=True, averaging=True)
 
+
+def entrainment(thrust_curve, rotor_radius, entrainment_coeff=0.15,
+                averaging=False):
+    """Return an entrainment wake model function
+    
+    The thrust_curve must be an xarray DataArray with as a single dimension the
+    wind speed, whose coordinate values must be those free stream wind speeds
+    for which the wake deficit must be calculated. The other arguments are
+    scalar values for the quantities described by their name.
+    
+    This implements doi:10.1088/1742-6596/1037/7/072019 (25) with x_i=0.
+    
+    """
+    # TODO: deal with case thrust_curve == 0
+    offset =  (
+        (1 - thrust_curve) ** .75 / (1 - _np.sqrt(1 - thrust_curve)) ** 1.5)
+    scaler = _np.sqrt(0.5 * thrust_curve)
+    
+    relative_area = _relative_area_function(averaging)
+    
+    def wake_model(dc_vector):
+        downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
+        downwind_factor = _np.cbrt(
+            6 * entrainment_coeff / scaler * downwind + offset)
+        wake_radius = scaler * (downwind_factor + 1 / downwind_factor)
+        return (relative_area(is_downwind, crosswind, wake_radius)
+                / (1 + _np.square(downwind_factor)))
+    
+    return wake_model
