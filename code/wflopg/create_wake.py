@@ -54,58 +54,6 @@ def _relative_area_function(averaging):
     return relative_waked_area if averaging else hub_waked
 
 
-def rss_combination():
-    """Return the root-sum-square wake deficit combination rule"""
-    def combination_rule(deficit):
-        """Return combined and relative wake deficits
-
-        deficit must be an xarray DataArray of individual deficits with
-        'source' as one dimension.
-
-        """
-        squared = _np.square(deficit)
-        squared_combined = squared.sum(dim='source')
-        relative = squared / (squared_combined + (squared_combined == 0))
-            # we add 1 where the denominator (and numerator) would be 0
-        squared_combined_saturated = _np.minimum(squared_combined, 1)
-            # RSS does not guarantee <= 1
-        return _np.sqrt(squared_combined_saturated), relative
-
-    return combination_rule
-
-
-def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
-    """Return an IEA37-variant Bastankhah–Porté-Agel wake model function
-
-    The thrust_curve must be an xarray DataArray with as a single dimension the
-    wind speed, whose coordinate values must be those free stream wind speeds
-    for which the wake deficit must be calculated. The other arguments are
-    scalar values for the quantities described by their name.
-
-    The value of the deficit at the turbine hub is used, so there is no rotor
-    plane averaging.
-
-    """
-    expansion_coeff = 0.3837 * turbulence_intensity + 0.003678
-    sigma_at_source = 1 / _np.sqrt(2)
-
-    def wake_model(dc_vector):
-        """Return wind speed deficit due to wake
-
-        The argument must be an xarray DataArray of dimensional
-        downwind-crosswind coordinate pairs.
-
-        """
-        downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
-        sigma = sigma_at_source + expansion_coeff * downwind * is_downwind
-            # multiplication with is_downwind to avoid negative radical later
-        exponent = -(crosswind / sigma) ** 2 / 2
-        radical = 1 - thrust_curve / (2 * sigma ** 2)
-        return is_downwind * (1. - _np.sqrt(radical)) * _np.exp(exponent)
-
-    return wake_model
-
-
 def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
                     frandsen=False, averaging=False):
     """Return a Jensen wake model function
@@ -284,3 +232,55 @@ def entrainment(thrust_curve, rotor_radius, entrainment_coeff=0.15,
         return rel_waked_area / (1 + _np.square(downwind_factor))
     
     return wake_model
+
+
+def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
+    """Return an IEA37-variant Bastankhah–Porté-Agel wake model function
+
+    The thrust_curve must be an xarray DataArray with as a single dimension the
+    wind speed, whose coordinate values must be those free stream wind speeds
+    for which the wake deficit must be calculated. The other arguments are
+    scalar values for the quantities described by their name.
+
+    The value of the deficit at the turbine hub is used, so there is no rotor
+    plane averaging.
+
+    """
+    expansion_coeff = 0.3837 * turbulence_intensity + 0.003678
+    sigma_at_source = 1 / _np.sqrt(2)
+
+    def wake_model(dc_vector):
+        """Return wind speed deficit due to wake
+
+        The argument must be an xarray DataArray of dimensional
+        downwind-crosswind coordinate pairs.
+
+        """
+        downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
+        sigma = sigma_at_source + expansion_coeff * downwind * is_downwind
+            # multiplication with is_downwind to avoid negative radical later
+        exponent = -(crosswind / sigma) ** 2 / 2
+        radical = 1 - thrust_curve / (2 * sigma ** 2)
+        return is_downwind * (1. - _np.sqrt(radical)) * _np.exp(exponent)
+
+    return wake_model
+
+
+def rss_combination():
+    """Return the root-sum-square wake deficit combination rule"""
+    def combination_rule(deficit):
+        """Return combined and relative wake deficits
+
+        deficit must be an xarray DataArray of individual deficits with
+        'source' as one dimension.
+
+        """
+        squared = _np.square(deficit)
+        squared_combined = squared.sum(dim='source')
+        relative = squared / (squared_combined + (squared_combined == 0))
+            # we add 1 where the denominator (and numerator) would be 0
+        squared_combined_saturated = _np.minimum(squared_combined, 1)
+            # RSS does not guarantee <= 1
+        return _np.sqrt(squared_combined_saturated), relative
+
+    return combination_rule
