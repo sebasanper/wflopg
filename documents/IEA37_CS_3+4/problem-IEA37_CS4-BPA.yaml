@@ -1,0 +1,11 @@
+uuid: c202d4f7-1f74-4074-9a26-3e0f9d649180
+name: Problem for the IEA 37 Case Study 4
+site: "site-IEA37_CS4.yaml"
+wind_resource: "wind_resource-IEA37_CS.yaml"
+turbine: "turbine-IEA37_CS_10_MW.yaml"
+turbine_distance: 2
+turbines: 81
+layout: "layout-IEA37_CS4.yaml"
+objective: "maximize expected power"
+wake_model: "BPA (IEA37)"
+wake_combination: "RSS"

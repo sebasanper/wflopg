@@ -1,0 +1,11 @@
+uuid: a21bb76a-cb56-4083-b1bf-7579f23921d1
+name: Problem for the IEA 37 Case Study 4
+site: "site-IEA37_CS4.yaml"
+wind_resource: "wind_resource-IEA37_CS.yaml"
+turbine: "turbine-IEA37_CS_10_MW.yaml"
+turbine_distance: 2
+turbines: 81
+layout: "layout-IEA37_CS4.yaml"
+objective: "maximize expected power"
+wake_model: "Jensen with partial wake"
+wake_combination: "RSS"
