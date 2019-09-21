@@ -1,0 +1,21 @@
+uuid: 945defe6-a1e9-4417-8880-82c2ba2e8d36
+name: IEA Wind Task 37 offshore reference optimization (test detail)
+particulars:
+  - >-
+    We follow Sebastian Sanchez Perez-Moreno's as of yet unpublished report.
+
+site: "site-IEA37_reference.yaml"
+wind_resource: "wind_resource-IEA37_reference.yaml"
+wind_speeds: [ 4.,  7., 10., 13., 16., 19., 22., 25.]
+turbine: "turbine-IEA37_10MW-reference.yaml"
+turbine_distance: 3
+turbines: 74
+layout: "layout-IEA37_reference.yaml"
+objective: "maximize expected power"
+wake_model:
+  wake_type: "linear top hat"
+  stream_tube_assumption: "rotor"
+  deficit_type: "Jensen"
+  averaging: false
+expansion_coefficient: 0.04
+wake_combination: "RSS"
