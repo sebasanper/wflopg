@@ -23,5 +23,9 @@ turbine_distance: 5
 turbines: [1, 100]
 layout: "layout-Mosetti_et_al.yaml"
 objective: "minimize cost of energy (Mosetti)"
-wake_model: "Jensen according to Frandsen"
+wake_model:
+  wake_type: "linear top hat"
+  stream_tube_assumption: "Frandsen"
+  deficit_type: "Jensen"
+  averaging: true
 wake_combination: "RSS"

@@ -7,5 +7,6 @@ turbine_distance: 2
 turbines: 3660
 layout: "layout-BWFS-IV-site_constraint_test.yaml"
 objective: "maximize expected power"
-wake_model: "BPA (IEA37)"
+wake_model:
+  wake_type: "BPA (IEA37)"
 wake_combination: "RSS"

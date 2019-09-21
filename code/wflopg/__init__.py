@@ -63,10 +63,7 @@ class Owflop():
 
         # process information for wake model-related properties
         self.process_wake_model(
-            problem['wake_model'],
-            problem.get('expansion_coefficient', None),
-            problem['wake_combination']
-        )
+            problem['wake_model'], problem['wake_combination'])
         self.process_objective(problem['objective'])
 
         # Store downwind and crosswind unit vectors
@@ -280,40 +277,39 @@ class Owflop():
         # NOTE: currently, these are the same as the ones affected
         self._ds['context'] = self._ds.layout.rename(target='source')
 
-    def process_wake_model(self,
-                           model, expansion_coefficient, combination_rule):
+    def process_wake_model(self, model, combination_rule):
         thrusts = self.thrust_curve(self._ds.speed)
+        
         # preliminaries for wake model definition
-        if model.startswith("Jensen"):
-            if not expansion_coefficient:
-                expansion_coefficient = (
-                    0.5 / _np.log(self.hub_height / self.roughness_length))
-        # define wake model
-        if model == "BPA (IEA37)":
-            self.wake_model = create_wake.bpa_iea37(
-                thrusts,
-                self.rotor_radius,
-                self.turbulence_intensity
+        wake_type = model.get('wake_type', "linear top hat")
+        expansion_coeff = model.get('expansion_coefficient', None)
+        stream_tube_assumption = model.get('stream_tube_assumption', "rotor")
+        deficit_type = model.get('deficit_type', "Jensen")
+        averaging = model.get('averaging', False)
+
+        # define wake model        
+        if wake_type == "linear top hat":
+            if not expansion_coeff:
+                if deficit_type == "Jensen":
+                    expansion_coeff = (
+                        0.5 / _np.log(self.hub_height / self.roughness_length))
+                if deficit_type == "Frandsen":
+                    expansion_coeff = 0.027
+                    # From doi:10.1088/1742-6596/1037/7/072019 caption of Fig.3
+            self.wake_model = create_wake.linear_top_hat(
+                thrusts, self.rotor_radius, expansion_coefficient,
+                deficit_type, stream_tube_assumption, averaging
             )
-        elif model == "Jensen":
-            self.wake_model = create_wake.jensen(
-                thrusts, self.rotor_radius, expansion_coefficient)
-        elif model == "Jensen according to Frandsen":
-            self.wake_model = create_wake.jensen_frandsen(
-                thrusts, self.rotor_radius, expansion_coefficient)
-        elif model == "Jensen with partial wake":
-            self.wake_model = create_wake.jensen_averaged(
-                thrusts, self.rotor_radius, expansion_coefficient)
-        elif model == "Jensen according to Frandsen with partial wake":
-            self.wake_model = create_wake.jensen_frandsen_averaged(
-                thrusts, self.rotor_radius, expansion_coefficient)
-        else:
-            raise ValueError("Unkown wake model specified.")
+        if wake_type == "entrainment":
+            self.wake_model = create_wake.entrainment(
+                thrusts, self.rotor_radius, averaging)
+        if wake_type == "BPA (IEA37)":
+            self.wake_model = create_wake.bpa_iea37(
+                thrusts, self.rotor_radius, self.turbulence_intensity)
+            
         # define combination rule
         if combination_rule == "RSS":
             self.combination_rule = create_wake.rss_combination()
-        else:
-            raise ValueError("Unknown wake combination rule specified.")
 
     def process_objective(self, objective):
         # we always minimize!

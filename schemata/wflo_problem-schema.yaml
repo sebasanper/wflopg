@@ -18,7 +18,6 @@ required:
   - objective
   - wake_model
   - wake_combination
-  - partial_wake
 additionalProperties: false
 
 # PROPERTIES
@@ -124,22 +123,46 @@ properties:
   #~
   wake_model:
     title: Single wake model
-    description: The textual description of a coded single wake model.
-    type: string
-    enum:  # TODO: add more
-      - "BPA (IEA37)"
-      - "Jensen"
-      - "Jensen according to Frandsen"
-      - "Jensen with partial wake"
-      - "Jensen according to Frandsen with partial wake"
-  #~
-  expansion_coefficient:
-    title: Jensen expansion coefficient
-    description: >-
-      In case a Jensen model is used, the expansion coefficient can either be
-      calculated based on roughness length or given here directly.
-    type: number
-    exclusiveMinimum: 0
+    description: The description of a coded single wake model.
+    type: object
+    properties:
+      wake_type:
+        title: Type of the single wake model
+        type: string
+        enum:
+          - "linear top hat"
+          - "entrainment"
+          - "BPA (IEA37)"
+        default: "linear top hat"
+      expansion_coefficient:  # TODO: not relevant for ‘entrainment’
+        title: Wake expansion coefficient
+        description: >-
+          In case a linear top hat model is used, the expansion coefficient
+          can either be calculated based on roughness length or given here
+          directly.
+        type: number
+        exclusiveMinimum: 0
+      stream_tube_assumption:  # TODO: only relevant for ‘linear top hat’
+        title: Assumption about stream tube (size)
+        type: string
+        enum:
+          - "rotor"
+          - "Frandsen"
+        default: "rotor"
+      deficit_type:  # TODO: only relevant for ‘linear top hat’
+        title: Deficit type of the single wake model
+        type: string
+        enum:
+          - "Jensen"
+          - "Frandsen"
+        default: "Jensen"
+      averaging:  # TODO: currently not relevant for ‘BPA (IEA37)’
+        title: Rotor plane averaging
+        description: >-
+          If this is ‘false’, the hub wake value will be used; if ‘true’,
+          an average will be taken over the rotor plane.
+        type: bool
+        default: False
   #~
   wake_combination:
     title: Single wake combination rule
@@ -148,3 +171,4 @@ properties:
     type: string
     enum:  # TODO: add more?
       - "RSS"
+    default: "RSS"

@@ -7,5 +7,9 @@ turbine_distance: 2
 turbines: 81
 layout: "layout-IEA37_CS4.yaml"
 objective: "maximize expected power"
-wake_model: "Jensen according to Frandsen with partial wake"
+wake_model:
+  wake_type: "linear top hat"
+  stream_tube_assumption: "Frandsen"
+  deficit_type: "Jensen"
+  averaging: true
 wake_combination: "RSS"

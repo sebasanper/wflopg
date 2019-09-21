@@ -13,6 +13,10 @@ turbine_distance: 3
 turbines: 74
 layout: "layout-IEA37_reference.yaml"
 objective: "maximize expected power"
-wake_model: "Jensen with partial wake"
+wake_model:
+  wake_type: "linear top hat"
+  stream_tube_assumption: "rotor"
+  deficit_type: "Jensen"
+  averaging: true
 expansion_coefficient: 0.04
 wake_combination: "RSS"
