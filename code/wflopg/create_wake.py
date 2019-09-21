@@ -40,7 +40,7 @@ def _relative_area_function(averaging):
         return (is_downwind & (crosswind <= wake_radius)).astype(_np.float64)
     
     def relative_waked_area(is_downwind, crosswind, wake_radius):
-        """Calculate the relative waked area"""
+        """Calculate the relative waked rotor area"""
         rel_crosswind = crosswind - wake_radius
         waked = is_downwind & (rel_crosswind < 1)
         partial = waked & (rel_crosswind > - 1)
