@@ -139,9 +139,12 @@ def _jensen_generic(thrust_curve, rotor_radius, expansion_coeff,
         """
         downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
         wake_radius = stream_tube_radius + expansion_coeff * downwind
-        return (relative_area(is_downwind, crosswind, wake_radius)
-                * induction_factor
-                * _np.square(stream_tube_radius / wake_radius))
+        del downwind
+        rel_waked_area = relative_area(is_downwind, crosswind, wake_radius)
+        del is_downwind, crosswind
+        inv_rel_wake_area = _np.square(stream_tube_radius / wake_radius)
+        del wake_radius
+        return rel_waked_area * induction_factor * inv_rel_wake_area
 
     return wake_model
 
@@ -234,8 +237,10 @@ def entrainment(thrust_curve, rotor_radius, entrainment_coeff=0.15,
         downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
         downwind_factor = _np.cbrt(
             6 * entrainment_coeff / scaler * downwind + offset)
+        del downwind
         wake_radius = scaler * (downwind_factor + 1 / downwind_factor)
-        return (relative_area(is_downwind, crosswind, wake_radius)
-                / (1 + _np.square(downwind_factor)))
+        rel_waked_area = relative_area(is_downwind, crosswind, wake_radius)
+        del crosswind, is_downwind, wake_radius
+        return rel_waked_area / (1 + _np.square(downwind_factor))
     
     return wake_model
