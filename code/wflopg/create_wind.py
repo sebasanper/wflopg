@@ -22,34 +22,18 @@ def logarithmic_wind_shear(reference_height, roughness_length):
     return wind_shear
 
 
-def sort_directions(dirs, dir_weights):
-    """Return sorted wind direction and mass arrays"""
-    dirs = _np.array(dirs)
-    dir_weights = _np.array(dir_weights)
-    # we do not assume the wind directions are sorted in the data file and
-    # therefore sort them here
-    dir_sort_index = dirs.argsort()
-    dirs = dirs[dir_sort_index]
-    dir_weights = dir_weights[dir_sort_index]
-    return dirs, dir_weights
-
-
-def discretize_weibull(weibull, speeds, cut_in, cut_out):
+def discretize_weibull(cweibull, cut_in, cut_out, speeds):
     """Return relevant speeds and wind speed probabilities"""
     # prepare the data structures used to discretize the Weibull
     # distribution
-    speeds = speeds[(speeds >= cut_in) & (speeds <= cut_out)]
+    wc = (speeds >= cut_in) & (speeds <= cut_out)  # within cut
+    speeds = speeds[wc]
     speed_borders = _np.concatenate(([cut_in],
-                                    (speeds[:-1] + speeds[1:]) / 2,
-                                    [cut_out]))
+                                     (speeds[:-1] + speeds[1:]) / 2,
+                                     [cut_out]))
     speed_bins = _xr.DataArray(
         _np.vstack((speed_borders[:-1], speed_borders[1:])).T,
         coords=[('speed', speeds), ('interval', COORDS['interval'])]
-    )
-    cweibull = _xr.DataArray(
-        weibull,
-        dims=['direction', 'weibull_param'],
-        coords={'weibull_param': COORDS['weibull_param']}
     )
     # Weibull CDF: 1 - exp(-(x/scale)**shape), so the probability for
     # an interval is
@@ -59,20 +43,18 @@ def discretize_weibull(weibull, speeds, cut_in, cut_out):
         - speed_bins ** cweibull.sel(weibull_param='shape', drop=True))
     speed_cpmf = (terms.sel(interval='lower', drop=True) -
                   terms.sel(interval='upper', drop=True))
-    return speeds, speed_cpmf.values.T
+    return speed_cpmf
 
 
-def conformize_cpmf(speed_weights, speeds, cut_in, cut_out):
+def conformize_cpmf(speed_weights, cut_in, cut_out, speeds):
     """Return relevant speeds and wind speed probabilities"""
-    speed_weights = _xr.DataArray(
-        speed_weights, dims=['direction', 'speed'])
     speed_probs = speed_weights / speed_weights.sum(dim='speed')
     wc = (speeds >= cut_in) & (speeds <= cut_out)  # within cut
     speeds = speeds[wc]
-    return speeds, speed_probs.sel(speed=wc).values
+    return speed_probs.sel(speed=wc)
 
 
-def subdivide(dirs, speeds, dir_weights, speed_probs, dir_subs,
+def subdivide(dir_weights, speed_probs, dir_subs,
               interpolation_method='linear'):
     """Return the subdivided wind direction and wind speed distributions
 
@@ -82,19 +64,19 @@ def subdivide(dirs, speeds, dir_weights, speed_probs, dir_subs,
     in our tests.
 
     """
-    dirs_cyc = _np.concatenate((dirs, 360 + dirs[:1]))
-    dir_weights_cyc = _xr.DataArray(
-        _np.concatenate((dir_weights, dir_weights[:1])),
-        coords=[('direction', dirs_cyc)]
-    )
-    speed_probs_cyc = _xr.DataArray(
-        _np.concatenate((speed_probs, speed_probs[:1])),
-        coords=[('direction', dirs_cyc), ('speed', speeds)]
-    )
+    dirs = list(dir_weights.coords['direction'].values)
+    speeds = list(speed_probs.coords['speed'].values)
+    
+    dirs_cyc = dirs + [dirs[0]]
+    direction_replace = dirs + [dirs[0]+360]
+    dir_weights_cyc = dir_weights.sel(direction=dirs_cyc)
+    dir_weights_cyc.coords['direction'] = direction_replace
+    speed_probs_cyc = speed_probs.sel(direction=dirs_cyc)
+    speed_probs_cyc.coords['direction'] = direction_replace
     dirs_cyc = _xr.DataArray(
         dirs_cyc,
         coords=[('rel', _np.linspace(0, 1, len(dirs) + 1))]
-        # 'rel' is an ad-hoc dimension for ‘local’ relative direction
+        # 'rel' is an ad hoc dimension for ‘local’ relative direction
     )
     dirs_interp = dirs_cyc.interp(
         rel=_np.linspace(0, 1, dir_subs * len(dirs) + 1)

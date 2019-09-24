@@ -10,7 +10,7 @@ for subdivisions in results.subdivisions.values:
     for layout in results.layout.values:
         o = wflopg.Owflop()
         o.load_problem('problem-IEA37_CS3-sub{}.yaml'.format(subdivisions),
-                       layout_filename='layout-IEA37_CS3-sub{}.yaml'.format(layout))
+                       layout='layout-IEA37_CS3-sub{}.yaml'.format(layout))
         o.calculate_geometry()
         o.calculate_wakeless_power()
         o.calculate_deficit()

@@ -213,3 +213,18 @@ def rss_combination():
         return _np.sqrt(squared_combined_saturated), relative
 
     return combination_rule
+
+
+def no_combination():
+    """Return the combination rule for cases where combination is unneeded"""
+    def combination_rule(deficit):
+        """Return combined and relative wake deficits
+
+        deficit must be an xarray DataArray of individual deficits with
+        'source' as one dimension, where its length is 1.
+
+        """
+        squeezed = deficit.squeeze('source')
+        return squeezed, _xr.ones_like(squeezed)
+
+    return combination_rule

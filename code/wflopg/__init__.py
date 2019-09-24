@@ -29,10 +29,7 @@ class Owflop():
         # history of layouts and friends as a list of _xr.DataSets
         self.history = []
 
-    def load_problem(self, filename,
-                     wind_resource_filename=None,
-                     layout_filename=None,
-                     hex_layout=False, hex_site_violation_factor=1):
+    def load_problem(self, filename, wind_resource=None, layout=None):
         """Load wind farm layout optimization problem file
 
         The file is assumed to be a YAML file in the format described by the
@@ -48,21 +45,16 @@ class Owflop():
 
         # extract and process information and data from linked documents
         self.load_turbine(problem['turbine'])
-        self.load_site(problem['site'])
-        if wind_resource_filename is None:
-            wind_resource_filename = problem['wind_resource']
-        with open(wind_resource_filename) as f:
-            self.process_wind_resource(
-                _yaml_load(f),
-                self.roughness_length,
-                problem.get('wind_direction_subdivisions', None),
-                problem.get('wind_speeds', None),
-                self.cut_in, self.cut_out
-            )
-
-        # calculate power information for which no wake calculations are needed
-        self.calculate_wakeless_power()
-
+        self.load_site(problem['site'], self.rotor_radius)
+        if wind_resource is None:
+            wind_resource = problem['wind_resource']
+        self.load_wind_resource(wind_resource, self.roughness_length)
+        self.process_wind_resource(
+            self.hub_height, self.cut_in, self.cut_out,               
+            problem.get('wind_direction_subdivisions', None),
+            problem.get('wind_speeds', None)
+        )
+        
         # process information for wake model-related properties
         self.process_wake_model(
             problem['wake_model'], problem['wake_combination'])
@@ -81,71 +73,24 @@ class Owflop():
             create_constraint.distance(self.minimal_proximity))
 
         # deal with initial layout
-        if layout_filename is not None:
-            with open(layout_filename) as f:
-                initial_layout = _yaml_load(f)['layout']
-        elif ('layout' in problem) and not hex_layout:
-            with open(problem['layout']) as f:
-                initial_layout = _yaml_load(f)['layout']
-        else: # hex layout
-            if (isinstance(hex_layout, int)
-                  and not isinstance(hex_layout, bool)):
-                turbines = hex_layout
-            elif isinstance(self.turbines, list):
-                turbines = _np.random.randint(*self.turbines)
+        if layout is None:
+            self.load_layout(problem['layout'])
+        elif isinstance(layout, str):
+            self.load_layout(layout)
+        elif isinstance(layout, dict):
+            if 'type' not in layout:
+                raise ValueError("Layout type has not been specified!")
             else:
-                turbines = self.turbines
-            initial_layout = self.create_hex_layout(
-                turbines, hex_site_violation_factor)
-        self.process_initial_layout(initial_layout)
-
-    def create_hex_layout(self, turbines, hex_site_violation_factor):
-        # create squarish hexagonal—so densest—packing to cover site
-        max_turbines = 0
-        factor = 1
-        # Process parcels
-        hex_parcels = create_site.parcels(
-            self.site_parcels,
-            -self.minimal_proximity * hex_site_violation_factor,
-            rotor_constraint_override=True
-        )
-        # create function that reports whether a turbine is inside the site
-        hex_inside = create_constraint.inside_site(hex_parcels)
-        while max_turbines != turbines:
-            x_step = _np.sqrt(factor / turbines) * 2
-            y_step = x_step * _np.sqrt(3) / 2
-            n = _np.ceil(1 / x_step)
-            m = _np.ceil(1 / y_step)
-            xs = _np.arange(-n, n+1) * x_step
-            ys = _np.arange(-m, m+1) * y_step
-            mg = _np.meshgrid(xs, ys)
-            mg[0] = (mg[0].T + (_np.arange(-m, m+1) % 2) * x_step / 2).T
-            covering_layout = _xr.DataArray(
-                _np.stack([mg[0].ravel(), mg[1].ravel()], axis=-1),
-                dims=['target', 'uv'], coords={'uv': ['u', 'v']}
-            )
-            # add random offset
-            offset = _xr.DataArray(
-                _np.random.random(2) * _np.array([x_step, y_step]),
-                coords=[('uv', ['u', 'v'])]
-            )
-            covering_layout += offset
-            # rotate over random angle
-            angle = _np.random.random() * _np.pi / 3  # hexgrid is π/3-symmetric
-            cos_angle = _np.cos(angle)
-            sin_angle = _np.sin(angle)
-            rotation_matrix = _xr.DataArray(
-                _np.array([[cos_angle, -sin_angle], [sin_angle, cos_angle]]),
-                coords=[('uv', ['u', 'v']), ('xy', COORDS['xy'])]
-            )
-            rotated_covering_layout = covering_layout.dot(rotation_matrix)
-            # only keep turbines inside
-            inside = hex_inside(rotated_covering_layout)
-            dense_layout = rotated_covering_layout[inside['in_site']]
-            dense_layout.attrs['hex_distance'] = x_step
-            max_turbines = len(dense_layout)
-            factor *= max_turbines / turbines
-        return dense_layout + self.to_border(dense_layout)
+                if layout['type'] == 'hex':
+                    turbines = layout.get('turbines', self.turbines)
+                    if isinstance(turbines, list):
+                        turbines = _np.random.randint(*self.turbines)
+                    self.process_initial_layout(
+                        self.create_hex_layout(
+                            turbines, layout.get('site_violation_factor', 0)))
+                else:
+                    raise ValueError("Unknown layout type: "
+                                     "‘{}’".format(layout['type']))
 
     def load_turbine(self, filename):
         with open(filename) as f:
@@ -189,7 +134,7 @@ class Owflop():
             self.thrust_curve = create_turbine.constant_thrust_curve(
                 self.cut_in, self.cut_out, self.thrust_coefficient)
 
-    def load_site(self, filename):
+    def load_site(self, filename, rotor_radius):
         with open(filename) as f:
             site = _yaml_load(f)
         self.roughness_length = site.get('roughness', None)
@@ -205,7 +150,7 @@ class Owflop():
         self.site_parcels = site['parcels']
         # Process parcels
         self.parcels = create_site.parcels(
-            self.site_parcels, self.rotor_radius / self.site_radius)
+            self.site_parcels, rotor_radius / self.site_radius)
         # create function that reports whether a turbine is inside the site
         self.inside = create_constraint.inside_site(self.parcels)
         # create function to generate site constraint violation fixup steps
@@ -214,8 +159,9 @@ class Owflop():
         if 'boundaries' in site:
             self.boundaries = create_site.boundaries(site['boundaries'])
 
-    def process_wind_resource(self, wind_resource, roughness_length,
-                              dir_subs, speeds, cut_in, cut_out):
+    def load_wind_resource(self, filename, roughness_length):
+        with open(filename) as f:
+            wind_resource = _yaml_load(f)
         self.reference_height = wind_resource['reference_height']
         self.air_density = wind_resource.get('air_density', 1.2041)
         self.atmospheric_stability = wind_resource.get(
@@ -223,16 +169,42 @@ class Owflop():
         self.turbulence_intensity = wind_resource.get(
             'turbulence_intensity', None)
 
+        wind_rose = wind_resource['wind_rose']
+        dirs = _np.array(wind_rose['directions'])
+        # we do not assume the wind directions are sorted in the data file and
+        # therefore sort them here
+        order = dirs.argsort()
+        dirs_sorted = dirs[order]
+        self.wind_rose = _xr.Dataset()
+        self.wind_rose['dir_weights'] = _xr.DataArray(
+            _np.array(wind_rose['direction_pmf'])[order],
+            coords=[('direction', dirs_sorted)]
+        )
+        if 'speed_cweibull' in wind_rose:
+            self.wind_rose['speed_cweibull'] = _xr.DataArray(
+                _np.array(wind_rose['speed_cweibull'])[order, :],
+                coords=[('direction', dirs_sorted),
+                        ('weibull_param', COORDS['weibull_param'])]
+            )
+        elif 'speed_cpmf' in wind_rose and 'speeds' in wind_rose:
+            speeds = _np.array(wind_rose['speeds'])
+            self.wind_rose['speed_cpmf'] = xr.DataArray(
+                _np.array(wind_rose['speed_cpmf'])[order, :],
+                coords=[('direction', dirs_sorted),
+                        ('speed', wind_rose['speeds'])]
+            )
+        else:
+            raise ValueError(
+                "A conditional wind speed probability distribution "
+                "should be given either as parameters for conditional Weibull "
+                "distributions or as a conditional probability mass function.")
+        
         # Create the wind shear function
         self.wind_shear = create_wind.logarithmic_wind_shear(
                                        self.reference_height, roughness_length)
 
-        wind_rose = wind_resource['wind_rose']
-
-        # Sort wind direction and mass function
-        dirs, dir_weights = create_wind.sort_directions(
-            wind_rose['directions'], wind_rose['direction_pmf'])
-
+    def process_wind_resource(self, hub_height, cut_in, cut_out,
+                              dir_subs=None, speeds=None):
         # Create the conditional wind speed probability mass function
         #
         # NOTE: Of the conditional wind speed probability mass function, only
@@ -240,55 +212,34 @@ class Owflop():
         #       self._ds['wind_speed_cpmf'] (defined below), as the others give
         #       no contribution to the power production.
         #
-        if 'speed_cweibull' in wind_rose:
-            if not speeds:
+        # take wind shear into account
+        speeds = self.wind_shear(hub_height, _np.array(speeds))
+        if 'speed_cweibull' in self.wind_rose:
+            if speeds is None:
                 raise ValueError(
                     "An array of wind speeds must be specified in case the "
                     "wind resource is formulated in terms of Weibull "
                     "distributions")
+            speed_probs = create_wind.discretize_weibull(
+                self.wind_rose['speed_cweibull'], cut_in, cut_out, speeds)
+        elif 'speed_cpmf' in self.wind_rose:
             # take wind shear into account
-            speeds = self.wind_shear(self.hub_height, _np.array(speeds))
-            speeds, speed_probs = create_wind.discretize_weibull(
-                wind_rose['speed_cweibull'], speeds, cut_in, cut_out)
-        elif 'speed_cpmf' in wind_rose and 'speeds' in wind_rose:
-            # take wind shear into account
-            speeds = self.wind_shear(self.hub_height,
-                                     _np.array(wind_rose['speeds']))
-            speeds, speed_probs = create_wind.conformize_cpmf(
-                wind_rose['speed_cpmf'], speeds, cut_in, cut_out)
-        else:
-            raise ValueError(
-                "A conditional wind speed probability distribution "
-                "should be given either as parameters for conditional Weibull "
-                "distributions or as a conditional probability mass function.")
+            if not speeds:
+                speeds = self.wind_shear(
+                    hub_height, self.wind_rose['speed_cpmf'].coords['speed'].values
+                )
+            speed_probs = create_wind.conformize_cpmf(
+                self.wind_rose['speed_cpmf'], cut_in, cut_out, speeds)
 
         # Subdivide wind direction and speed pmfs if needed
+        dir_weights = self.wind_rose['dir_weights']
         if dir_subs:
             dir_weights, speed_probs = create_wind.subdivide(
-                dirs, speeds, dir_weights, speed_probs, dir_subs)
-        else:
-            dir_weights = _xr.DataArray(dir_weights,
-                                        coords=[('direction', dirs)])
-            speed_probs = _xr.DataArray(
-                speed_probs, coords=[('direction', dirs), ('speed', speeds)])
-
-        # normalize direction pmf
-        dir_probs = dir_weights / dir_weights.sum()
+                dir_weights, speed_probs, dir_subs)
 
         # Store pmfs
-        self._ds['direction_pmf'] = dir_probs
+        self._ds['direction_pmf'] = dir_weights / dir_weights.sum()
         self._ds['wind_speed_cpmf'] = speed_probs
-
-    def process_initial_layout(self, initial_layout):
-        # turbines affected by the wake
-        self._ds['layout'] = _xr.DataArray(
-            initial_layout,
-            dims=['target', 'xy'],
-            coords={'target': range(len(initial_layout))}
-        )
-        # turbines causing the wakes
-        # NOTE: currently, these are the same as the ones affected
-        self._ds['context'] = self._ds.layout.rename(target='source')
 
     def process_wake_model(self, model, combination_rule):
         thrusts = self.thrust_curve(self._ds.speed)
@@ -313,16 +264,24 @@ class Owflop():
                 thrusts, self.rotor_radius, expansion_coeff,
                 deficit_type, stream_tube_assumption, averaging
             )
-        if wake_type == "entrainment":
+        elif wake_type == "entrainment":
             self.wake_model = create_wake.entrainment(
                 thrusts, self.rotor_radius, averaging)
-        if wake_type == "BPA (IEA37)":
+        elif wake_type == "BPA (IEA37)":
             self.wake_model = create_wake.bpa_iea37(
                 thrusts, self.rotor_radius, self.turbulence_intensity)
-            
+        else:
+            raise ValueError(
+                "Unknown wake type specified: ‘{}’.".format(wake_type))
+        
         # define combination rule
         if combination_rule == "RSS":
             self.combination_rule = create_wake.rss_combination()
+        elif combination_rule == "NO":
+            self.combination_rule = create_wake.no_combination()
+        else:
+            raise ValueError("Unknown combination rule specified: "
+                             "‘{}’.".format(combination_rule))
 
     def process_objective(self, objective):
         # we always minimize!
@@ -339,6 +298,69 @@ class Owflop():
             )
         else:
             raise ValueError("Unknown objective specified.")
+
+    def load_layout(self, filename):
+        with open(filename) as f:
+            self.process_layout(_yaml_load(f)['layout'])
+
+    def process_initial_layout(self, initial_layout):
+        # turbines affected by the wake
+        self._ds['layout'] = _xr.DataArray(
+            initial_layout,
+            dims=['target', 'xy'],
+            coords={'target': range(len(initial_layout))}
+        )
+        # turbines causing the wakes
+        # NOTE: currently, these are the same as the ones affected
+        self._ds['context'] = self._ds.layout.rename(target='source')
+
+    def create_hex_layout(self, turbines, site_violation_factor):
+        # create squarish hexagonal—so densest—packing to cover site
+        max_turbines = 0
+        factor = 1
+        # Process parcels
+        hex_parcels = create_site.parcels(
+            self.site_parcels,
+            -self.minimal_proximity * site_violation_factor,
+            rotor_constraint_override=True
+        )
+        # create function that reports whether a turbine is inside the site
+        hex_inside = create_constraint.inside_site(hex_parcels)
+        while max_turbines != turbines:
+            x_step = _np.sqrt(factor / turbines) * 2
+            y_step = x_step * _np.sqrt(3) / 2
+            n = _np.ceil(1 / x_step)
+            m = _np.ceil(1 / y_step)
+            xs = _np.arange(-n, n+1) * x_step
+            ys = _np.arange(-m, m+1) * y_step
+            mg = _np.meshgrid(xs, ys)
+            mg[0] = (mg[0].T + (_np.arange(-m, m+1) % 2) * x_step / 2).T
+            covering_layout = _xr.DataArray(
+                _np.stack([mg[0].ravel(), mg[1].ravel()], axis=-1),
+                dims=['target', 'uv'], coords={'uv': ['u', 'v']}
+            )
+            # add random offset
+            offset = _xr.DataArray(
+                _np.random.random(2) * _np.array([x_step, y_step]),
+                coords=[('uv', ['u', 'v'])]
+            )
+            covering_layout += offset
+            # rotate over random angle
+            angle = _np.random.random() * _np.pi / 3 # hexgrid is π/3-symmetric
+            cos_angle = _np.cos(angle)
+            sin_angle = _np.sin(angle)
+            rotation_matrix = _xr.DataArray(
+                _np.array([[cos_angle, -sin_angle], [sin_angle, cos_angle]]),
+                coords=[('uv', ['u', 'v']), ('xy', COORDS['xy'])]
+            )
+            rotated_covering_layout = covering_layout.dot(rotation_matrix)
+            # only keep turbines inside
+            inside = hex_inside(rotated_covering_layout)
+            dense_layout = rotated_covering_layout[inside['in_site']]
+            dense_layout.attrs['hex_distance'] = x_step
+            max_turbines = len(dense_layout)
+            factor *= max_turbines / turbines
+        return dense_layout + self.to_border(dense_layout)
 
     def calculate_geometry(self):
         # standard coordinates for vectors
