@@ -11,6 +11,10 @@ from wflopg import layout_geometry
 from wflopg import create_constraint
 
 
+def _yaml_load(f):
+    return _yaml(typ='safe').load(f)
+
+
 class Owflop():
     """The main wind farm layout optimization problem object
 
@@ -37,21 +41,19 @@ class Owflop():
 
         """
         with open(filename) as f:
-            problem = _yaml(typ='safe').load(f)
+            problem = _yaml_load(f)
         # extract required parameters directly contained in problem document
         self.problem_uuid = problem['uuid']
         self.turbines = problem['turbines']
 
         # extract and process information and data from linked documents
-        with open(problem['turbine']) as f:
-            self.process_turbine(_yaml(typ='safe').load(f))
-        with open(problem['site']) as f:
-            self.process_site(_yaml(typ='safe').load(f))
+        self.load_turbine(problem['turbine'])
+        self.load_site(problem['site'])
         if wind_resource_filename is None:
             wind_resource_filename = problem['wind_resource']
         with open(wind_resource_filename) as f:
             self.process_wind_resource(
-                _yaml(typ='safe').load(f),
+                _yaml_load(f),
                 self.roughness_length,
                 problem.get('wind_direction_subdivisions', None),
                 problem.get('wind_speeds', None),
@@ -81,10 +83,10 @@ class Owflop():
         # deal with initial layout
         if layout_filename is not None:
             with open(layout_filename) as f:
-                initial_layout = _yaml(typ='safe').load(f)['layout']
+                initial_layout = _yaml_load(f)['layout']
         elif ('layout' in problem) and not hex_layout:
             with open(problem['layout']) as f:
-                initial_layout = _yaml(typ='safe').load(f)['layout']
+                initial_layout = _yaml_load(f)['layout']
         else: # hex layout
             if (isinstance(hex_layout, int)
                   and not isinstance(hex_layout, bool)):
@@ -145,37 +147,51 @@ class Owflop():
             factor *= max_turbines / turbines
         return dense_layout + self.to_border(dense_layout)
 
-    def process_turbine(self, turbine):
+    def load_turbine(self, filename):
+        with open(filename) as f:
+            turbine = _yaml_load(f)
         self.rotor_radius = turbine['rotor_radius']
         self.hub_height = turbine['hub_height']
         self.rated_power = turbine['rated_power']
-        self.rated_speed = turbine['rated_wind_speed']
+        self.rated_speed = turbine.get('rated_wind_speed', _np.nan)
         self.cut_in = turbine.get('cut_in', 0.0)
         self.cut_out = turbine.get('cut_out', _np.inf)
-        # define power curve
         if 'power_curve' in turbine:
             pc = _np.array(turbine['power_curve'])
-            self.power_curve = create_turbine.interpolated_power_curve(
-                self.rated_power, self.rated_speed, self.cut_in, self.cut_out,
-                pc
-            )
-        else:
-            self.power_curve = create_turbine.cubic_power_curve(
-                 self.rated_power, self.rated_speed, self.cut_in, self.cut_out)
-        # define thrust curve
+            order = pc[:, 0].argsort()
+            self.power_curve_data = _xr.DataArray(
+                pc[order, 1], coords=[('speed', pc[order, 0])])
         if 'thrust_coefficient' in turbine:
-            self.thrust_curve = create_turbine.constant_thrust_curve(
-                self.cut_in, self.cut_out, turbine['thrust_coefficient'])
+            self.thrust_coefficient = turbine['thrust_coefficient']
         elif 'thrust_curve' in turbine:
             tc = _np.array(turbine['thrust_curve'])
-            self.thrust_curve = create_turbine.interpolated_thrust_curve(
-                                                 self.cut_in, self.cut_out, tc)
+            order = tc[:, 0].argsort()
+            self.thrust_curve_data = _xr.DataArray(
+                tc[order, 1], coords=[('speed', tc[order, 0])])
         else:
             raise ValueError("Turbine document should contain either "
                              "a 'thrust_curve' or "
                              "a constant 'thrust_coefficient'")
+        # define power curve
+        if 'power_curve' in turbine:
+            self.power_curve = create_turbine.interpolated_power_curve(
+                self.rated_power, self.rated_speed, self.cut_in, self.cut_out,
+                self.power_curve_data
+            )
+        else:  # cubic power curve
+            self.power_curve = create_turbine.cubic_power_curve(
+                 self.rated_power, self.rated_speed, self.cut_in, self.cut_out)
+        # define thrust curve
+        if 'thrust_curve' in turbine:
+            self.thrust_curve = create_turbine.interpolated_thrust_curve(
+                self.cut_in, self.cut_out, self.thrust_curve_data)
+        else:  # constant thrust curve 
+            self.thrust_curve = create_turbine.constant_thrust_curve(
+                self.cut_in, self.cut_out, self.thrust_coefficient)
 
-    def process_site(self, site):
+    def load_site(self, filename):
+        with open(filename) as f:
+            site = _yaml_load(f)
         self.roughness_length = site.get('roughness', None)
         self.site_radius = site['radius'] * 1e3  # km to m
         if 'location' in site:
@@ -252,16 +268,14 @@ class Owflop():
                 dirs, speeds, dir_weights, speed_probs, dir_subs)
         else:
             dir_weights = _xr.DataArray(dir_weights,
-                                       coords=[('direction', dirs)])
+                                        coords=[('direction', dirs)])
             speed_probs = _xr.DataArray(
-                speed_probs,
-                coords=[('direction', dirs), ('speed', speeds)]
-            )
+                speed_probs, coords=[('direction', dirs), ('speed', speeds)])
 
         # normalize direction pmf
         dir_probs = dir_weights / dir_weights.sum()
 
-        # Store pmfs; obtain them from the weight arrays by normalization
+        # Store pmfs
         self._ds['direction_pmf'] = dir_probs
         self._ds['wind_speed_cpmf'] = speed_probs
 

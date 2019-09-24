@@ -11,10 +11,13 @@ def _check_start(interpolation_data, start_speed, start_value):
     interpolation_data coordinate value.
 
     """
-    min_interpolation_speed = _np.min(interpolation_data[:, 0])
+    min_interpolation_speed = interpolation_data.coords['speed'].min().item()
     if start_speed < min_interpolation_speed:
-        interpolation_data = _np.concatenate(([[start_speed, start_value]],
-                                             interpolation_data))
+        interpolation_data = _xr.concat(
+            [_xr.DataArray([start_value], coords=[('speed', [start_speed])]), 
+             interpolation_data],
+            'speed'
+        )
     else:
         start_speed = min_interpolation_speed
     return interpolation_data, start_speed
@@ -29,26 +32,16 @@ def _check_end(interpolation_data, end_speed, end_value):
     interpolation_data coordinate value.
 
     """
-    max_interpolation_speed = _np.max(interpolation_data[:, 0])
+    max_interpolation_speed = interpolation_data.coords['speed'].max().item()
     if end_speed > max_interpolation_speed:
-        interpolation_data = _np.concatenate((interpolation_data,
-                                             [[end_speed, end_value]]))
+        interpolation_data = _xr.concat(
+            [interpolation_data,
+             _xr.DataArray([end_value], coords=[('speed', [end_speed])])],
+            'speed'
+        )
     else:
         end_speed = max_interpolation_speed
     return interpolation_data, end_speed
-
-
-def _create_interpolator(coord_name, interpolation_data):
-    """Put interpolation_data into an xarray DataArray
-
-    The DataArray supplies interpolation functionality. It is assumed that
-    interpolation data is a two-column numpy array in which the first column
-    contains the coordinate values and the second the function values to be
-    interpolated.
-
-    """
-    return _xr.DataArray(interpolation_data[:, 1],
-                        [(coord_name, interpolation_data[:, 0])])
 
 
 def _within_cut(speeds, cut_in, cut_out):
@@ -62,7 +55,7 @@ def cubic_power_curve(rated_power, rated_speed, cut_in, cut_out):
     def power_curve(speeds):
         """Return turbine power for the given (wind) speeds
 
-        speeds is assumed to be a xarray DataArray.
+        speeds is assumed to be an xarray DataArray.
 
         """
         wc = _within_cut(speeds, cut_in, cut_out)
@@ -79,31 +72,25 @@ def interpolated_power_curve(rated_power, rated_speed, cut_in, cut_out,
                              interpolation_data):
     """Return an interpolated power curve function
 
-    Interpolation data is assumed to be authorative over other specified
+    Interpolation data, a one-dimensional DataArray with 'speed' coordinate
+    (assumed ordered)is assumed to be authorative over other specified
     parameters.
 
     """
-    interpolation_data = interpolation_data[interpolation_data[:, 0].argsort()]
     interpolation_data, cut_in = _check_start(interpolation_data, cut_in, 0)
     interpolation_data, end_speed = _check_end(interpolation_data,
                                                rated_speed, rated_power)
     interpolation_data, cut_out = _check_end(interpolation_data,
                                              cut_out, rated_power)
-    interpolator = _create_interpolator('speed', interpolation_data)
 
     def power_curve(speeds):
         """Return turbine power for the given (wind) speeds
 
-        speeds is assumed to be a xarray DataArray.
+        speeds is assumed to be an xarray DataArray.
 
         """
-        # only 1D-arrays can be interpolated
-        speeds_flat = speeds.values.flatten()
-        return _xr.DataArray(
-                interpolator.interp(
-                        speed=speeds_flat, kwargs={'fill_value': 0.0}
-                ).values.reshape(speeds.shape),
-                dims=speeds.dims, coords=speeds.coords)
+        return interpolation_data.interp(
+            speed=speeds, kwargs={'fill_value': 0.0}).drop('speed')
 
     return power_curve
 
@@ -113,7 +100,7 @@ def constant_thrust_curve(cut_in, cut_out, thrust_coefficient):
     def thrust_curve(speeds):
         """Return turbine thrust for the given (wind) speeds
 
-        speeds is assumed to be a xarray DataArray.
+        speeds is assumed to be an xarray DataArray.
 
         """
         wc = _within_cut(speeds, cut_in, cut_out)  # within cut
@@ -125,27 +112,22 @@ def constant_thrust_curve(cut_in, cut_out, thrust_coefficient):
 def interpolated_thrust_curve(cut_in, cut_out, interpolation_data):
     """Return an interpolated thrust curve function
 
-    Interpolation data is assumed to be authorative over other specified
+    Interpolation data, a one-dimensional DataArray with 'speed' coordinate
+    (assumed ordered), is assumed to be authorative over other specified
     parameters.
 
     """
-    interpolation_data = interpolation_data[interpolation_data[:, 0].argsort()]
     interpolation_data, cut_in = _check_start(interpolation_data, cut_in, 0.)
     interpolation_data, cut_out = _check_end(interpolation_data, cut_out, 0.)
-    interpolator = _create_interpolator('speed', interpolation_data)
 
     def thrust_curve(speeds):
         """Return turbine thrust for the given (wind) speeds
 
-        speeds is assumed to be a xarray DataArray.
+        speeds is assumed to be an xarray DataArray.
 
         """
         # only 1D-arrays can be interpolated
-        speeds_flat = speeds.values.flatten()
-        return _xr.DataArray(
-                interpolator.interp(
-                        speed=speeds_flat, kwargs={'fill_value': 0.0}
-                ).values.reshape(speeds.shape),
-                dims=speeds.dims, coords=speeds.coords)
+        return interpolation_data.interp(
+            speed=speeds, kwargs={'fill_value': 0.0}).drop('speed')
 
     return thrust_curve
