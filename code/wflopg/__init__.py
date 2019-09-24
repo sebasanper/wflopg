@@ -297,7 +297,7 @@ class Owflop():
                     expansion_coeff = 0.027
                     # From doi:10.1088/1742-6596/1037/7/072019 caption of Fig.3
             self.wake_model = create_wake.linear_top_hat(
-                thrusts, self.rotor_radius, expansion_coefficient,
+                thrusts, self.rotor_radius, expansion_coeff,
                 deficit_type, stream_tube_assumption, averaging
             )
         if wake_type == "entrainment":
