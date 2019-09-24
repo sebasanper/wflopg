@@ -96,7 +96,6 @@ class Owflop():
             initial_layout = self.create_hex_layout(
                 turbines, hex_site_violation_factor)
         self.process_initial_layout(initial_layout)
-        self.calculate_geometry()
 
     def create_hex_layout(self, turbines, hex_site_violation_factor):
         # create squarish hexagonal—so densest—packing to cover site

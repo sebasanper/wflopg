@@ -24,6 +24,7 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
                 > (start - best) / _np.log2(len(owflop.history) + 2)):
                 break
         print('(', iterations, sep='', end=':')
+        owflop.calculate_geometry()
         owflop.calculate_deficit()
         owflop.calculate_power()
         owflop.history.append(_xr.Dataset())
