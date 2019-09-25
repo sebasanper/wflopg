@@ -9,6 +9,7 @@ from wflopg import create_wind
 from wflopg import create_wake
 from wflopg import layout_geometry
 from wflopg import create_constraint
+from wflopg import create_pam
 
 
 def _yaml_load(f):
@@ -82,6 +83,13 @@ class Owflop():
                     self.process_initial_layout(
                         self.create_hex_layout(
                             turbines, layout.get('site_violation_factor', 0)))
+                elif layout['type'] == 'pam':
+                    self._ds['layout'] = create_pam.layout(
+                        self.rotor_radius / self.site_radius,
+                        layout.get('num_dists', 100),
+                        layout.get('num_dirs', 360)
+                    )
+                    self._ds['context'] = create_pam.context()
                 else:
                     raise ValueError("Unknown layout type: "
                                      "‘{}’".format(layout['type']))
