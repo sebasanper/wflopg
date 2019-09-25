@@ -2,6 +2,7 @@ import numpy as _np
 import xarray as _xr
 
 from wflopg.constants import COORDS
+from wflopg.helpers import cyclic_extension as _cycext
 
 
 def logarithmic_wind_shear(reference_height, roughness_length):
@@ -64,24 +65,14 @@ def subdivide(dir_weights, speed_probs, dir_subs,
     in our tests.
 
     """
-    dirs = list(dir_weights.coords['direction'].values)
-    speeds = list(speed_probs.coords['speed'].values)
-    
-    dirs_cyc = dirs + [dirs[0]]
-    direction_replace = dirs + [dirs[0]+360]
-    dir_weights_cyc = dir_weights.sel(direction=dirs_cyc)
-    dir_weights_cyc.coords['direction'] = direction_replace
-    speed_probs_cyc = speed_probs.sel(direction=dirs_cyc)
-    speed_probs_cyc.coords['direction'] = direction_replace
-    dirs_cyc = _xr.DataArray(
-        dirs_cyc,
-        coords=[('rel', _np.linspace(0, 1, len(dirs) + 1))]
+    n = len(dir_weights.coords['direction'])
+    dir_weights_cyc = _cycext(dir_weights, 'direction', 360)
+    speed_probs_cyc = _cycext(speed_probs, 'direction', 360)
+    dirs_cyc = dir_weights_cyc.coords['direction'].rename(direction='rel')
+    dirs_cyc.coords['rel'] = _np.linspace(0, 1, n + 1)
         # 'rel' is an ad hoc dimension for ‘local’ relative direction
-    )
     dirs_interp = dirs_cyc.interp(
-        rel=_np.linspace(0, 1, dir_subs * len(dirs) + 1)
-    ).values
-    dirs_interp = dirs_interp[:-1]  # drop the last, cyclical value
+        rel=_np.linspace(0, 1, dir_subs * n, endpoint=False)).values
 
     #
     dir_weights = dir_weights_cyc.interp(direction=dirs_interp,
