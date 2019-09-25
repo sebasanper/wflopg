@@ -60,12 +60,6 @@ class Owflop():
             problem['wake_model'], problem['wake_combination'])
         self.process_objective(problem['objective'])
 
-        # Store downwind and crosswind unit vectors
-        self._ds['downwind'] = layout_geometry.generate_downwind(
-            self._ds.direction)
-        self._ds['crosswind'] = layout_geometry.generate_crosswind(
-            self._ds.downwind)
-
         # create function to generate turbine constraint violation fixup steps
         self.minimal_proximity = (problem.get('turbine_distance', 1)
                                   * (2 * self.rotor_radius) / self.site_radius)
@@ -188,7 +182,7 @@ class Owflop():
             )
         elif 'speed_cpmf' in wind_rose and 'speeds' in wind_rose:
             speeds = _np.array(wind_rose['speeds'])
-            self.wind_rose['speed_cpmf'] = xr.DataArray(
+            self.wind_rose['speed_cpmf'] = _xr.DataArray(
                 _np.array(wind_rose['speed_cpmf'])[order, :],
                 coords=[('direction', dirs_sorted),
                         ('speed', wind_rose['speeds'])]
@@ -212,19 +206,19 @@ class Owflop():
         #       self._ds['wind_speed_cpmf'] (defined below), as the others give
         #       no contribution to the power production.
         #
-        # take wind shear into account
-        speeds = self.wind_shear(hub_height, _np.array(speeds))
         if 'speed_cweibull' in self.wind_rose:
             if speeds is None:
                 raise ValueError(
                     "An array of wind speeds must be specified in case the "
                     "wind resource is formulated in terms of Weibull "
                     "distributions")
+            # take wind shear into account
+            speeds = self.wind_shear(hub_height, _np.array(speeds))
             speed_probs = create_wind.discretize_weibull(
                 self.wind_rose['speed_cweibull'], cut_in, cut_out, speeds)
         elif 'speed_cpmf' in self.wind_rose:
             # take wind shear into account
-            if not speeds:
+            if speeds is None:
                 speeds = self.wind_shear(
                     hub_height, self.wind_rose['speed_cpmf'].coords['speed'].values
                 )
@@ -241,6 +235,12 @@ class Owflop():
         self._ds['direction_pmf'] = dir_weights / dir_weights.sum()
         self._ds['wind_speed_cpmf'] = speed_probs
 
+        # Store downwind and crosswind unit vectors
+        self._ds['downwind'] = layout_geometry.generate_downwind(
+            self._ds.direction)
+        self._ds['crosswind'] = layout_geometry.generate_crosswind(
+            self._ds.downwind)
+
     def process_wake_model(self, model, combination_rule):
         thrusts = self.thrust_curve(self._ds.speed)
         
@@ -255,8 +255,14 @@ class Owflop():
         if wake_type == "linear top hat":
             if not expansion_coeff:
                 if deficit_type == "Jensen":
-                    expansion_coeff = (
-                        0.5 / _np.log(self.hub_height / self.roughness_length))
+                    if self.roughness_length is None:
+                        expansion_coeff = 0.067
+                        # From doi:10.1088/1742-6596/1037/7/072019
+                        # caption of Fig.3
+                    else:
+                        expansion_coeff = (
+                            0.5 / _np.log(self.hub_height
+                                          / self.roughness_length))
                 if deficit_type == "Frandsen":
                     expansion_coeff = 0.027
                     # From doi:10.1088/1742-6596/1037/7/072019 caption of Fig.3

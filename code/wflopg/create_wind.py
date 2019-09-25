@@ -51,7 +51,7 @@ def conformize_cpmf(speed_weights, cut_in, cut_out, speeds):
     speed_probs = speed_weights / speed_weights.sum(dim='speed')
     wc = (speeds >= cut_in) & (speeds <= cut_out)  # within cut
     speeds = speeds[wc]
-    return speed_probs.sel(speed=wc)
+    return speed_probs.sel(speed=speeds)
 
 
 def subdivide(dir_weights, speed_probs, dir_subs,
