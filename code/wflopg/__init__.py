@@ -47,14 +47,22 @@ class Owflop():
         # extract and process information and data from linked documents
         self.load_turbine(problem['turbine'])
         self.load_site(problem['site'], self.rotor_radius)
+        dir_subs = problem.get('wind_direction_subdivisions', None),
+        speeds = problem.get('wind_speeds', None)
         if wind_resource is None:
-            wind_resource = problem['wind_resource']
-        self.load_wind_resource(wind_resource, self.roughness_length)
+            wind_resource_file = problem['wind_resource']
+        elif isinstance(wind_resource, dict):
+            wind_resource_file = wind_resource.get('filename', 
+                                                   problem['wind_resource'])
+            if 'dir_subs' in wind_resource:
+                dir_subs = wind_resource['dir_subs']
+            if 'speeds' in wind_resource:
+                speeds = wind_resource['speeds']            
+        elif isinstance(wind_resource, str):
+            wind_resource_file = wind_resource
+        self.load_wind_resource(wind_resource_file, self.roughness_length)
         self.process_wind_resource(
-            self.hub_height, self.cut_in, self.cut_out,               
-            problem.get('wind_direction_subdivisions', None),
-            problem.get('wind_speeds', None)
-        )
+            self.hub_height, self.cut_in, self.cut_out, dir_subs, speeds)
         
         # process information for wake model-related properties
         self.process_wake_model(
