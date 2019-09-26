@@ -315,7 +315,7 @@ class Owflop():
 
     def load_layout(self, filename):
         with open(filename) as f:
-            self.process_layout(_yaml_load(f)['layout'])
+            self.process_initial_layout(_yaml_load(f)['layout'])
 
     def process_initial_layout(self, initial_layout):
         # turbines affected by the wake
