@@ -151,6 +151,7 @@ def entrainment(thrust_curve, rotor_radius, entrainment_coeff=0.15,
     relative_area = _relative_area_function(averaging)
     
     def wake_model(dc_vector):
+        # TODO: verify that the code produces the right geometry & deficit!
         downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
         downwind_factor = _np.cbrt(
             6 * entrainment_coeff / scaler * downwind + offset)
