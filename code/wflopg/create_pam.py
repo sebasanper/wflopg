@@ -22,5 +22,25 @@ def layout(rotor_radius, num_dists, num_dirs):
     
     
 def context():
+    """Create the context to calculate the pre-averaged model
+    
+    This returns a context with a single turbine at the origin.
+    
+    """
     return _xr.DataArray([[0, 0]],
                          dims=['source', 'xy'], coords={'xy': COORDS['xy']})
+
+
+def compute(owflop):
+    """Compute the pre-averaged model
+    
+    It is assumed that the provided problem object has been created with the
+    pam layout type specified.
+    
+    """
+    owflop.calculate_wakeless_power()
+    owflop.calculate_geometry()
+    owflop.calculate_deficit()
+    owflop.calculate_power()
+    return owflop._ds.expected_wake_loss_factor.unstack('target')
+    
