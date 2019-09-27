@@ -122,8 +122,8 @@ properties:
                                              # second term
   #~
   wake_model:
-    title: Single wake model
-    description: The description of a coded single wake model.
+    title: Wake model
+    description: The description of a coded wake model.
     type: object
     properties:
       wake_type:
@@ -163,12 +163,12 @@ properties:
           an average will be taken over the rotor plane.
         type: bool
         default: False
-  #~
-  wake_combination:
-    title: Single wake combination rule
-    description: >-
-      The textual description of a coded single wake combination rule.
-    type: string
-    enum:  # TODO: add more?
-      - "RSS"
-    default: "RSS"
+      combination:
+        title: Rule for combining single wakes
+        description: >-
+          The textual description of a coded single wake combination rule.
+        type: string
+        enum:  # TODO: add more?
+          - "RSS"  # root-sum-square
+          - "NO"   # no combination; for when there is only one wake source
+        default: "RSS"

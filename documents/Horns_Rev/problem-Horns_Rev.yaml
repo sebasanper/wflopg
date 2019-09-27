@@ -27,4 +27,3 @@ wake_model:
   wake_type: "linear top hat"
   deficit_type: "Jensen"
   averaging: true
-wake_combination: "RSS"

@@ -18,4 +18,3 @@ wake_model:
   deficit_type: "Jensen"
   averaging: false
 expansion_coefficient: 0.04
-wake_combination: "RSS"

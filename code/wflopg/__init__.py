@@ -30,12 +30,17 @@ class Owflop():
         # history of layouts and friends as a list of _xr.DataSets
         self.history = []
 
-    def load_problem(self, filename, wind_resource=None, layout=None):
+    def load_problem(self, filename,
+                     wind_resource=None, layout=None, wake_model=None):
         """Load wind farm layout optimization problem file
 
         The file is assumed to be a YAML file in the format described by the
         schema https://bitbucket.org/equaeghe/pseudo_gradients-code/\
         src/master/schemata/wflo_problem-schema.yaml#.
+        
+        The keyword arguments make it possible to override problem aspects by 
+        specifying a file (for `wind_resource` and `layout`) or a `dict` with
+        appropriate information (all; see code for what can be done).
 
         """
         with open(filename) as f:
@@ -65,8 +70,9 @@ class Owflop():
             self.hub_height, self.cut_in, self.cut_out, dir_subs, speeds)
         
         # process information for wake model-related properties
-        self.process_wake_model(
-            problem['wake_model'], problem['wake_combination'])
+        if wake_model is None:
+            wake_model = problem['wake_model']
+        self.process_wake_model(wake_model)
         self.process_objective(problem['objective'])
 
         # create function to generate turbine constraint violation fixup steps
@@ -257,7 +263,7 @@ class Owflop():
         self._ds['crosswind'] = layout_geometry.generate_crosswind(
             self._ds.downwind)
 
-    def process_wake_model(self, model, combination_rule):
+    def process_wake_model(self, model):
         thrusts = self.thrust_curve(self._ds.speed)
         
         # preliminaries for wake model definition
@@ -297,6 +303,7 @@ class Owflop():
                 "Unknown wake type specified: ‘{}’.".format(wake_type))
         
         # define combination rule
+        combination_rule = model.get('combination', "RSS")
         if combination_rule == "RSS":
             self.combination_rule = create_wake.rss_combination()
         elif combination_rule == "NO":

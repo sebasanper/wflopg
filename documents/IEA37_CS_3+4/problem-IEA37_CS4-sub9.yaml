@@ -13,4 +13,3 @@ wake_model:
   stream_tube_assumption: "Frandsen"
   deficit_type: "Jensen"
   averaging: true
-wake_combination: "RSS"

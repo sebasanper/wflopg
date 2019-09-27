@@ -25,4 +25,3 @@ layout: "layout-Horns_Rev.yaml"
 objective: "maximize expected power"
 wake_model:
   wake_type: "BPA (IEA37)"
-wake_combination: "RSS"

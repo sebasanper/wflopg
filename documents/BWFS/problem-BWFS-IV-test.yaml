@@ -9,4 +9,3 @@ layout: "layout-BWFS-IV-site_constraint_test.yaml"
 objective: "maximize expected power"
 wake_model:
   wake_type: "BPA (IEA37)"
-wake_combination: "RSS"
