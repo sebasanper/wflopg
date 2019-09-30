@@ -120,6 +120,13 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
         owflop.calculate_power()
         objectives = owflop.objective()
         i = objectives.argmin()
+        # we continue from best layout
+        owflop._ds['layout'] = (
+            owflop._ds.layout.isel(scale=i, drop=True)
+            * _xr.DataArray([1, 1], coords=[scale_coord])
+        )
+        owflop._ds['context'] = owflop._ds.layout.rename(target='source')
+        # update history
         owflop.history.append(_xr.Dataset())
         owflop.history[-1]['layout'] = (
             owflop._ds.layout.isel(scale=i, drop=True))
@@ -329,6 +336,14 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
         objectives = owflop.objective()
         i = objectives.argmin(dim='scale')
         j = objectives.min(dim='scale').argmin('method').values.item()
+        # we continue from best layout
+        owflop._ds['layout'] = (
+            owflop._ds.layout.isel(scale=i, drop=True)
+                             .isel(method=j, drop=True) * _xr.DataArray(
+            [[1, 1], [1, 1], [1, 1]], coords=[method_coord, scale_coord])
+        )
+        owflop._ds['context'] = owflop._ds.layout.rename(target='source')
+        # update history
         owflop.history.append(_xr.Dataset())
         owflop.history[-1]['layout'] = (
             owflop._ds.layout.isel(scale=i, drop=True)
@@ -447,6 +462,13 @@ def method_chooser(owflop, max_iterations=_np.inf):
         owflop.calculate_power()
         objectives = owflop.objective()
         j = objectives.argmin('method').values.item()
+        # we continue from best layout
+        owflop._ds['layout'] = (
+            owflop._ds.layout.isel(method=j, drop=True)
+            * _xr.DataArray([1, 1, 1], coords=[method_coord])
+        )
+        owflop._ds['context'] = owflop._ds.layout.rename(target='source')
+        # update history
         owflop.history.append(_xr.Dataset())
         owflop.history[-1]['layout'] = (
             owflop._ds.layout.isel(method=j, drop=True))
@@ -545,6 +567,14 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=_np.inf,
         objectives = owflop.objective()
         i = objectives.argmin(dim='scale')
         j = objectives.min(dim='scale').argmin('method').values.item()
+        # we continue from best layout
+        owflop._ds['layout'] = (
+            owflop._ds.layout.isel(scale=i, drop=True)
+                             .isel(method=j, drop=True) * _xr.DataArray(
+            [[1, 1], [1, 1], [1, 1]], coords=[method_coord, scale_coord])
+        )
+        owflop._ds['context'] = owflop._ds.layout.rename(target='source')
+        # update history
         owflop.history.append(_xr.Dataset())
         owflop.history[-1]['layout'] = (
             owflop._ds.layout.isel(scale=i, drop=True)
