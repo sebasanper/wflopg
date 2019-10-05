@@ -52,7 +52,7 @@ class Owflop():
         # extract and process information and data from linked documents
         self.load_turbine(problem['turbine'])
         self.load_site(problem['site'], self.rotor_radius)
-        dir_subs = problem.get('wind_direction_subdivisions', None),
+        dir_subs = problem.get('wind_direction_subdivisions', None)
         speeds = problem.get('wind_speeds', None)
         if wind_resource is None:
             wind_resource_file = problem['wind_resource']

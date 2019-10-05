@@ -87,7 +87,7 @@ def linear_top_hat(thrust_curve, rotor_radius, expansion_coeff=None,
         #  Industrial Aerodynamics 39:251–265. Section 2.2]
         stream_tube_radius = _np.sqrt(
             (1 - 0.5 * induction_factor) / (1 - induction_factor))
-            # TODO: deal with case induction_factor == 1 
+            # TODO: deal with case induction_factor == 1
     else: 
         raise ValueError("Not a valid stream tube assumption: "
                          " ‘{}’.".format(stream_tube_assumption))
@@ -108,7 +108,8 @@ def linear_top_hat(thrust_curve, rotor_radius, expansion_coeff=None,
             return (
                 0.5 * (1 - _np.sqrt(1 - 2 * thrust_curve * inv_rel_wake_area)))
     else:
-     raise ValueError("Not a valid deficit type: ‘{}’.".format(deficit_type))
+        raise ValueError(
+            "Not a valid deficit type: ‘{}’.".format(deficit_type))
     
     relative_area = _relative_area_function(averaging)
 
