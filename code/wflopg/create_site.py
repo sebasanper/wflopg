@@ -106,7 +106,8 @@ def parcels(parcels_list, rotor_radius, rotor_constraint_override=False):
             processed_area['circle'] = _xr.DataArray(
                 area['circle']['center'], coords=[('xy', COORDS['xy'])])
             dist = area['circle']['radius']
-            if area['circle'].get('rotor_constraint', False):
+            if (rotor_constraint_override
+                or area['circle'].get('rotor_constraint', False)):
                 dist += -sign * rotor_radius
             processed_area['circle'].attrs['radius'] = dist
             previous_coeffs = None
