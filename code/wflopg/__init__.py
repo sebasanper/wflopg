@@ -7,6 +7,7 @@ from wflopg import create_turbine
 from wflopg import create_site
 from wflopg import create_wind
 from wflopg import create_wake
+from wflopg import create_layout
 from wflopg import layout_geometry
 from wflopg import create_constraint
 from wflopg import create_pam
@@ -95,8 +96,13 @@ class Owflop():
                     if isinstance(turbines, list):
                         turbines = _np.random.randint(*self.turbines)
                     self.process_initial_layout(
-                        self.create_hex_layout(
-                            turbines, layout.get('site_violation_factor', 0)))
+                        create_layout.hexagonal(
+                            turbines,
+                            self.site_parcels,
+                            layout.get('site_violation_distance', 0),
+                            self.to_border
+                        )
+                    )
                 elif layout['type'] == 'pam':
                     self._ds['layout'] = create_pam.layout(
                         self.rotor_radius / self.site_radius,
@@ -342,54 +348,6 @@ class Owflop():
         # turbines causing the wakes
         # NOTE: currently, these are the same as the ones affected
         self._ds['context'] = self._ds.layout.rename(target='source')
-
-    def create_hex_layout(self, turbines, site_violation_factor):
-        # create squarish hexagonal—so densest—packing to cover site
-        max_turbines = 0
-        factor = 1
-        # Process parcels
-        hex_parcels = create_site.parcels(
-            self.site_parcels,
-            -self.minimal_proximity * site_violation_factor,
-            rotor_constraint_override=True
-        )
-        # create function that reports whether a turbine is inside the site
-        hex_inside = create_constraint.inside_site(hex_parcels)
-        while max_turbines != turbines:
-            x_step = _np.sqrt(factor / turbines) * 2
-            y_step = x_step * _np.sqrt(3) / 2
-            n = _np.ceil(1 / x_step)
-            m = _np.ceil(1 / y_step)
-            xs = _np.arange(-n, n+1) * x_step
-            ys = _np.arange(-m, m+1) * y_step
-            mg = _np.meshgrid(xs, ys)
-            mg[0] = (mg[0].T + (_np.arange(-m, m+1) % 2) * x_step / 2).T
-            covering_layout = _xr.DataArray(
-                _np.stack([mg[0].ravel(), mg[1].ravel()], axis=-1),
-                dims=['target', 'uv'], coords={'uv': ['u', 'v']}
-            )
-            # add random offset
-            offset = _xr.DataArray(
-                _np.random.random(2) * _np.array([x_step, y_step]),
-                coords=[('uv', ['u', 'v'])]
-            )
-            covering_layout += offset
-            # rotate over random angle
-            angle = _np.random.random() * _np.pi / 3 # hexgrid is π/3-symmetric
-            cos_angle = _np.cos(angle)
-            sin_angle = _np.sin(angle)
-            rotation_matrix = _xr.DataArray(
-                _np.array([[cos_angle, -sin_angle], [sin_angle, cos_angle]]),
-                coords=[('uv', ['u', 'v']), ('xy', COORDS['xy'])]
-            )
-            rotated_covering_layout = covering_layout.dot(rotation_matrix)
-            # only keep turbines inside
-            inside = hex_inside(rotated_covering_layout)
-            dense_layout = rotated_covering_layout[inside['in_site']]
-            dense_layout.attrs['hex_distance'] = x_step
-            max_turbines = len(dense_layout)
-            factor *= max_turbines / turbines
-        return dense_layout + self.to_border(dense_layout)
 
     def calculate_geometry(self):
         # standard coordinates for vectors
