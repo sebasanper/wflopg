@@ -44,3 +44,7 @@ def compute(owflop):
     owflop.calculate_power()
     return owflop._ds.expected_wake_loss_factor.unstack('target')
     
+
+def deficits(pam, positions):
+    """Compute the reciprocal deficits for a given sets of positions"""
+    raise NotImplementedError()
