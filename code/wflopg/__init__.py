@@ -87,6 +87,8 @@ class Owflop():
             self.load_layout(problem['layout'])
         elif isinstance(layout, str):
             self.load_layout(layout)
+        elif isinstance(layout, _xr.DataArray):
+            self.process_initial_layout(layout)
         elif isinstance(layout, dict):
             if 'type' not in layout:
                 raise ValueError("Layout type has not been specified!")
