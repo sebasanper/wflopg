@@ -105,7 +105,7 @@ class Owflop():
                     )
                 elif layout['type'] == 'pam':
                     self._ds['layout'] = create_pam.layout(
-                        self.rotor_radius / self.site_radius,
+                        self.minimal_proximity,
                         layout.get('num_dists', 100),
                         layout.get('num_dirs', 360)
                     )
