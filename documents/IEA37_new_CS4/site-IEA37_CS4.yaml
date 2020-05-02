@@ -1,0 +1,120 @@
+uuid: afec279f-aa1e-4e46-adfa-cbedebade64a
+name: IEA37 Case Study 4 site
+radius: 6.691185051754095 # in km
+location:
+  adhoc: [5.986162430932659, 5.904360834281788] # in km
+roughness: 0.0001 # not given in case study documentation
+parcels:
+  - constraints: # IIIa
+      - {"x": -0.69685741, "y": -0.7172097 , "1": -0.2677436 , rotor_constraint: false}
+      - {"x":  0.98782142, "y": -0.15559188, "1": -0.6326468 , rotor_constraint: false}
+      - {"x": -0.80198875, "y":  0.59733914, "1":  0.24616164, rotor_constraint: false}
+      - {"x":  0.4255255 , "y":  0.90494643, "1": -0.35764068, rotor_constraint: false}
+      - {"x": -0.09363484, "y":  0.99560661, "1": -0.04749377, rotor_constraint: false}
+    exclusions:
+      - constraints: # exclusion North
+          - {"x": -0.26450578, "y": -0.9643841 , "1":  0.15654209, rotor_constraint: false}
+          - {"x":  0.68280238, "y": -0.73060311, "1": -0.35382266, rotor_constraint: false}
+          - {"x":  0.06842956, "y": -0.99765595, "1": -0.009141  , rotor_constraint: false}
+          - {"x":  0.39636392, "y": -0.91809348, "1": -0.18569298, rotor_constraint: false}
+          - {"x": -0.51380907, "y": -0.85790457, "1":  0.25985673, rotor_constraint: false}
+          - {"x": -0.42527611, "y": -0.90506366, "1":  0.23017439, rotor_constraint: false}
+          - {"x":  0.8578805 , "y": -0.51384924, "1": -0.47404802, rotor_constraint: false}
+          - {"x":  0.79967398, "y": -0.60043444, "1": -0.43012008, rotor_constraint: false}
+      - constraints: # exclusion East
+          - {"x": -0.9999955 , "y": -0.00300055, "1":  0.50185233, rotor_constraint: false}
+          - {"x": -0.98296018, "y":  0.18381864, "1":  0.62699459, rotor_constraint: false}
+          - {"x": -0.99346146, "y":  0.11416799, "1":  0.5876478 , rotor_constraint: false}
+          - {"x": -0.99986867, "y":  0.01620603, "1":  0.51770249, rotor_constraint: false}
+          - {"x": -0.99871216, "y":  0.05073481, "1":  0.54435919, rotor_constraint: false}
+      - constraints: # exclusion South
+          - {"x":  0.69572353, "y":  0.71830966, "1":  0.26819114, rotor_constraint: false}
+          - {"x":  0.99980782, "y":  0.01960407, "1": -0.48742145, rotor_constraint: false}
+        exclusion:
+          - constraints:
+              - {"x": -0.69572755, "y": -0.71830577, "1": -0.26818956, rotor_constraint: false}
+              - {"x": -0.69571794, "y": -0.71831508, "1": -0.26819863, rotor_constraint: false}
+  - constraints: # IIIb
+      - {"x": -0.69574603, "y": -0.71828787, "1": -0.26819279, rotor_constraint: false}
+      - {"x":  0.79968068, "y": -0.60042552, "1": -0.14207539, rotor_constraint: false}
+      - {"x": -0.78136888, "y":  0.62406945, "1": -0.03943996, rotor_constraint: false}
+      - {"x":  0.47265392, "y":  0.88124813, "1": -0.36007576, rotor_constraint: false}
+      - {"x":  0.42497066, "y":  0.90520712, "1": -0.357347  , rotor_constraint: false}
+    exclusions:
+      - constraints: 
+          - {"x": -0.79562741, "y": -0.60578629, "1":  0.34486692, rotor_constraint: false}
+          - {"x": -0.41401149, "y": -0.91027166, "1":  0.34630507, rotor_constraint: false}
+          - {"x": -0.42605606, "y": -0.90469676, "1":  0.34771489, rotor_constraint: false}
+        exclusion:
+          - constraints:
+              - {"x":  0.1405654 , "y":  0.9900714 , "1": -0.30165737, rotor_constraint: false}
+              - {"x":  0.42552556, "y":  0.9049464 , "1": -0.34909225, rotor_constraint: false}
+  - constraints: # IVa
+      - {"x": -0.69572291, "y": -0.71831027, "1": -0.26819304, rotor_constraint: false}
+      - {"x":  0.24194817, "y": -0.97028917, "1":  0.43558832, rotor_constraint: false}
+      - {"x": -0.30189946, "y":  0.95333977, "1": -0.72054876, rotor_constraint: false}
+      - {"x":  0.42535394, "y":  0.90502709, "1": -0.41295891, rotor_constraint: false}
+      - {"x":  0.38383615, "y":  0.92340122, "1": -0.42311457, rotor_constraint: false}
+    exclusions:
+      - constraints: 
+          - {"x": -0.49718025, "y": -0.86764728, "1":  0.34209058, rotor_constraint: false}
+          - {"x": -0.31052116, "y": -0.95056647, "1":  0.43855074, rotor_constraint: false}
+  - constraints: # IVb
+      - {"x": -0.24248239, "y":  0.97015581, "1": -0.33357882, rotor_constraint: false}
+      - {"x": -0.69573103, "y": -0.7183024 , "1": -0.26819036, rotor_constraint: false}
+      - {"x":  0.78143067, "y": -0.62399208, "1":  0.14176001, rotor_constraint: false}
+  - constraints: # IVc
+      - {"x": -0.30190996, "y":  0.95333644, "1": -0.7205543 , rotor_constraint: false}
+      - {"x":  0.77935866, "y": -0.62657807, "1":  0.21594078, rotor_constraint: false}
+      - {"x": -0.53056302, "y": -0.84764549, "1":  0.46608405, rotor_constraint: false}
+      - {"x": -0.35347126, "y": -0.93544538, "1":  0.56319257, rotor_constraint: false}
+    exclusions:
+      - constraints:
+          - {"x":  0.30829752, "y":  0.95128999, "1": -0.583498  , rotor_constraint: false}
+          - {"x":  0.42416669, "y":  0.90558413, "1": -0.55822744, rotor_constraint: false}
+boundaries:
+  - polygon: # IIIa
+      - [ 0.6158457 ,  0.10562242]  # vertex + N exclusion vertex
+      - [ 0.6106    ,  0.09686463]  # N exclusion vertex
+      - [ 0.58416223,  0.06165413]  # N exclusion vertex
+      - [ 0.56086292,  0.03987921]  # N exclusion vertex
+      - [ 0.53174999,  0.02731043]  # N exclusion vertex
+      - [ 0.50015618,  0.0251434 ]  # N exclusion vertex
+      - [ 0.470296  ,  0.03333328]  # N exclusion vertex
+      - [ 0.37650096,  0.07740619]  # N exclusion vertex
+      - [ 0.36826624,  0.08233806]  # vertex + N exclusion vertex
+      - [ 0.016759  , -0.38959628]  # vertex + S exclusion vertex + S inclusion vertex
+      - [ 0.30061006, -0.66452516]  # S inclusion vertex
+      - [ 0.50441552, -0.8619192 ]  # S exclusion vertex + S inclusion vertex
+      - [ 0.50444541, -0.86344359]  # vertex + E exclusion vertex + S exclusion vertex
+      - [ 0.50434079, -0.82857682]  # E exclusion vertex
+      - [ 0.50498343, -0.78892764]  # E exclusion vertex
+      - [ 0.50825639, -0.72449959]  # E exclusion vertex
+      - [ 0.51762693, -0.64295948]  # E exclusion vertex
+      - [ 0.6542395 ,  0.08756882]  # vertex + E exclusion vertex
+  - polygon: # IIIb
+      - [ 0.34537045,  0.22335941]  # vertex + exclusion vertex + inclusion vertex
+      - [ 0.24700222,  0.2696143 ]  # inclusion vertex
+      - [ 0.24216003,  0.27030177]  # exclusion vertex + inclusion vertex
+      - [ 0.21953325,  0.28095758]  # exclusion vertex
+      - [ 0.20680007,  0.29768108]  # vertex + exclusion vertex
+      - [ 0.19260229,  0.30434656]  # vertex
+      - [-0.19659633, -0.18295127]  # vertex
+      - [-0.05944574, -0.3157977 ]  # vertex
+  - polygon: # IVa
+      - [-0.87858315,  0.47758942]  # vertex
+      - [-0.67516627,  0.28056901]  # vertex
+      - [ 0.01024296,  0.45148044]  # vertex
+      - [-0.03532445,  0.47289668]  # vertex + exclusion vertex
+      - [-0.27230788,  0.55031196]  # exclusion vertex
+      - [-0.40636485,  0.62712944]  # vertex + exclusion vertex
+  - polygon: # IVb
+      - [-0.58858967,  0.19672736]  # vertex
+      - [-0.27040986, -0.11145422]  # vertex
+      - [ 0.11638261,  0.37292933]  # vertex
+  - polygon: # IVc
+      - [-0.21850575,  0.68662563]  # vertex
+      - [-0.21043543,  0.68157421]  # vertex + exclusion vertex
+      - [ 0.02115284,  0.60652024]  # exclusion vertex
+      - [ 0.15873684,  0.54207725]  # vertex + exclusion vertex
+      - [ 0.44349955,  0.89627459]  # vertex
