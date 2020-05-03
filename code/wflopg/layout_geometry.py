@@ -27,11 +27,8 @@ def generate_crosswind(downwind):
     right-hand coordinate system (positive rotation is counterclockwise).
 
     """
-    crosswind = downwind.roll(xy=1)
-    crosswind.coords['xy'] = downwind.xy
-        # workaround for bug in roll that also rolls coordinates;
-        # fixed in xarray 0.10.9
-    return crosswind * _xr.DataArray([-1, 1], coords=[('xy', COORDS['xy'])])
+    return (downwind.roll(xy=1, roll_coords=False)
+            * _xr.DataArray([-1, 1], coords=[('xy', COORDS['xy'])]))
 
 
 def generate_vector(context, layout):
