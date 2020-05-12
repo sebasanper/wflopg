@@ -77,7 +77,7 @@ def draw_boundaries(axes, owflop):
         if 'circle' in boundary:
             axes.add_patch(
                 _plt.Circle(boundary['circle'], boundary['circle'].radius,
-                           edgecolor='k', fill=False))
+                            edgecolor='k', fill=False))
         if 'exclusions' in boundary:
             for exclusion_boundary in boundary['exclusions']:
                 draw_boundary(exclusion_boundary)
@@ -102,10 +102,10 @@ def draw_zones(axes, owflop):
         l = '--' if exclusion else '-'
         if 'vertices' in zone:
             axes.add_patch(_plt.Polygon(zone['vertices'],
-                                       edgecolor=c, linestyle=l, fill=False))
+                                        edgecolor=c, linestyle=l, fill=False))
         if 'circle' in zone:
             axes.add_patch(_plt.Circle(zone['circle'], zone['circle'].radius,
-                                      edgecolor=c, linestyle=l, fill=False))
+                                       edgecolor=c, linestyle=l, fill=False))
         if 'exclusions' in zone:
             for exclusion_zone in zone['exclusions']:
                 draw_zone(exclusion_zone, not exclusion)
@@ -143,8 +143,9 @@ def draw_turbines(axes, owflop, layout=None, proximity=False, in_or_out=False):
         if proximity:
             axes.add_patch(
                 _plt.Circle(position, owflop.minimal_proximity / 2,
-                           color='r', linestyle=':', fill=False))
-        axes.add_patch(_plt.Circle(position, turbine_size, color=turbine_color))
+                            color='r', linestyle=':', fill=False))
+        axes.add_patch(
+            _plt.Circle(position, turbine_size, color=turbine_color))
 
 
 def draw_step(axes, owflop, layout, step):
@@ -237,12 +238,12 @@ def draw_scaling(axes, history, max_length=None):
     axes.set_xlim(-1, max_length)
     scales = _np.array([ds.scale for ds in history])
     if len(scales) > 0:
-        min_scale = scales.min() * 0.9
+        min_scales = scales.min() * 0.9
         max_scales = scales.max() / 0.9
     else:
         min_scales = 0.5
         max_scales = 2
-    axes.set_ylim(min_scale, max_scales)
+    axes.set_ylim(min_scales, max_scales)
     if 'method' in history[-1].attrs:
         methods = _np.array([ds.method for ds in history])
         down = methods == 'down'

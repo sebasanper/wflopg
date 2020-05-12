@@ -8,9 +8,9 @@ from wflopg import create_constraint
 
 def hexagonal(turbines, site_parcels, site_violation_distance, to_border):
     """Create hexagonal—so densest—packing to cover site
-    
+
     The `to_border` function must be the one applicable for the site.
-    
+
     """
     max_turbines = 0
     factor = 1
@@ -39,7 +39,7 @@ def hexagonal(turbines, site_parcels, site_violation_distance, to_border):
         )
         covering_layout += offset
         # rotate over random angle
-        angle = _np.random.random() * _np.pi / 3 # hexgrid is π/3-symmetric
+        angle = _np.random.random() * _np.pi / 3  # hexgrid is π/3-symmetric
         cos_angle = _np.cos(angle)
         sin_angle = _np.sin(angle)
         rotation_matrix = _xr.DataArray(

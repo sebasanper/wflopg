@@ -20,8 +20,10 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
-            if (last - best
-                > (start - best) / _np.log2(len(owflop.history) + 2)):
+            if (
+                last - best
+                > (start - best) / _np.log2(len(owflop.history) + 2)
+            ):
                 break
         print('(', iterations, sep='', end=':')
         owflop.calculate_geometry()
@@ -112,8 +114,10 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
-            if (last - best
-                > (start - best) / _np.log2(len(owflop.history) + 2)):
+            if (
+                last - best
+                > (start - best) / _np.log2(len(owflop.history) + 2)
+            ):
                 break
         print('(', iterations, sep='', end=':')
         owflop.calculate_deficit()
@@ -327,8 +331,10 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
-            if (last - best
-                > (start - best) / _np.log2(len(owflop.history) + 2)):
+            if (
+                last - best
+                > (start - best) / _np.log2(len(owflop.history) + 2)
+            ):
                 break
         print('(', iterations, sep='', end=':')
         owflop.calculate_deficit()
@@ -339,8 +345,9 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
         # we continue from best layout
         owflop._ds['layout'] = (
             owflop._ds.layout.isel(scale=i, drop=True)
-                             .isel(method=j, drop=True) * _xr.DataArray(
-            [[1, 1], [1, 1], [1, 1]], coords=[method_coord, scale_coord])
+                             .isel(method=j, drop=True)
+            * _xr.DataArray(
+                [[1, 1], [1, 1], [1, 1]], coords=[method_coord, scale_coord])
         )
         owflop._ds['context'] = owflop._ds.layout.rename(target='source')
         # update history
@@ -454,8 +461,10 @@ def method_chooser(owflop, max_iterations=_np.inf):
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
-            if (last - best
-                > (start - best) / _np.log2(len(owflop.history) + 2)):
+            if (
+                last - best
+                > (start - best) / _np.log2(len(owflop.history) + 2)
+            ):
                 break
         print('(', iterations, sep='', end=':')
         owflop.calculate_deficit()
@@ -558,8 +567,10 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=_np.inf,
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
-            if (last - best
-                > (start - best) / _np.log2(len(owflop.history) + 2)):
+            if (
+                last - best
+                > (start - best) / _np.log2(len(owflop.history) + 2)
+            ):
                 break
         print('(', iterations, sep='', end=':')
         owflop.calculate_deficit()
@@ -570,8 +581,9 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=_np.inf,
         # we continue from best layout
         owflop._ds['layout'] = (
             owflop._ds.layout.isel(scale=i, drop=True)
-                             .isel(method=j, drop=True) * _xr.DataArray(
-            [[1, 1], [1, 1], [1, 1]], coords=[method_coord, scale_coord])
+                             .isel(method=j, drop=True)
+            * _xr.DataArray(
+                [[1, 1], [1, 1], [1, 1]], coords=[method_coord, scale_coord])
         )
         owflop._ds['context'] = owflop._ds.layout.rename(target='source')
         # update history

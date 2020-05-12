@@ -27,7 +27,7 @@ class Owflop():
     def __init__(self):
         # _ds is the main working Dataset
         self._ds = _xr.Dataset(coords={dim: COORDS[dim]
-                                      for dim in {'xy', 'dc'}})
+                                       for dim in {'xy', 'dc'}})
         # history of layouts and friends as a list of _xr.DataSets
         self.history = []
 
@@ -38,8 +38,8 @@ class Owflop():
         The file is assumed to be a YAML file in the format described by the
         schema https://bitbucket.org/equaeghe/pseudo_gradients-code/\
         src/master/schemata/wflo_problem-schema.yaml#.
-        
-        The keyword arguments make it possible to override problem aspects by 
+
+        The keyword arguments make it possible to override problem aspects by
         specifying a file (for `wind_resource` and `layout`) or a `dict` with
         appropriate information (all; see code for what can be done).
 
@@ -58,18 +58,18 @@ class Owflop():
         if wind_resource is None:
             wind_resource_file = problem['wind_resource']
         elif isinstance(wind_resource, dict):
-            wind_resource_file = wind_resource.get('filename', 
+            wind_resource_file = wind_resource.get('filename',
                                                    problem['wind_resource'])
             if 'dir_subs' in wind_resource:
                 dir_subs = wind_resource['dir_subs']
             if 'speeds' in wind_resource:
-                speeds = wind_resource['speeds']            
+                speeds = wind_resource['speeds']
         elif isinstance(wind_resource, str):
             wind_resource_file = wind_resource
         self.load_wind_resource(wind_resource_file, self.roughness_length)
         self.process_wind_resource(
             self.hub_height, self.cut_in, self.cut_out, dir_subs, speeds)
-        
+
         # process information for wake model-related properties
         if wake_model is None:
             wake_model = problem['wake_model']
@@ -154,7 +154,7 @@ class Owflop():
         if 'thrust_curve' in turbine:
             self.thrust_curve = create_turbine.interpolated_thrust_curve(
                 self.cut_in, self.cut_out, self.thrust_curve_data)
-        else:  # constant thrust curve 
+        else:  # constant thrust curve
             self.thrust_curve = create_turbine.constant_thrust_curve(
                 self.cut_in, self.cut_out, self.thrust_coefficient)
 
@@ -211,7 +211,6 @@ class Owflop():
                         ('weibull_param', COORDS['weibull_param'])]
             )
         elif 'speed_cpmf' in wind_rose and 'speeds' in wind_rose:
-            speeds = _np.array(wind_rose['speeds'])
             self.wind_rose['speed_cpmf'] = _xr.DataArray(
                 _np.array(wind_rose['speed_cpmf'])[order, :],
                 coords=[('direction', dirs_sorted),
@@ -222,7 +221,7 @@ class Owflop():
                 "A conditional wind speed probability distribution "
                 "should be given either as parameters for conditional Weibull "
                 "distributions or as a conditional probability mass function.")
-        
+
         # Create the wind shear function
         self.wind_shear = create_wind.logarithmic_wind_shear(
                                        self.reference_height, roughness_length)
@@ -250,7 +249,8 @@ class Owflop():
             # take wind shear into account
             if speeds is None:
                 speeds = self.wind_shear(
-                    hub_height, self.wind_rose['speed_cpmf'].coords['speed'].values
+                    hub_height,
+                    self.wind_rose['speed_cpmf'].coords['speed'].values
                 )
             speed_probs = create_wind.conformize_cpmf(
                 self.wind_rose['speed_cpmf'], cut_in, cut_out, speeds)
@@ -273,7 +273,7 @@ class Owflop():
 
     def process_wake_model(self, model):
         thrusts = self.thrust_curve(self._ds.speed)
-        
+
         # preliminaries for wake model definition
         wake_type = model.get('wake_type', "linear top hat")
         expansion_coeff = model.get('expansion_coefficient', None)
@@ -281,7 +281,7 @@ class Owflop():
         deficit_type = model.get('deficit_type', "Jensen")
         averaging = model.get('averaging', False)
 
-        # define wake model        
+        # define wake model
         if wake_type == "linear top hat":
             if not expansion_coeff:
                 if deficit_type == "Jensen":
@@ -309,7 +309,7 @@ class Owflop():
         else:
             raise ValueError(
                 "Unknown wake type specified: ‘{}’.".format(wake_type))
-        
+
         # define combination rule
         combination_rule = model.get('combination', "RSS")
         if combination_rule == "RSS":

@@ -14,7 +14,7 @@ def _check_start(interpolation_data, start_speed, start_value):
     min_interpolation_speed = interpolation_data.coords['speed'].min().item()
     if start_speed < min_interpolation_speed:
         interpolation_data = _xr.concat(
-            [_xr.DataArray([start_value], coords=[('speed', [start_speed])]), 
+            [_xr.DataArray([start_value], coords=[('speed', [start_speed])]),
              interpolation_data],
             'speed'
         )

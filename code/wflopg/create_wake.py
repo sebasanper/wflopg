@@ -37,18 +37,18 @@ def _relative_area_function(averaging):
     """Return the function that computes the relative waked area"""
     def hub_waked(is_downwind, crosswind, wake_radius):
         """Calculate whether the hub is waked
-        
+
         This will result in no rotor plane averaging to be done.
-        
+
         """
         return (is_downwind & (crosswind <= wake_radius)).astype(_np.float64)
-    
+
     def relative_waked_area(is_downwind, crosswind, wake_radius):
         """Calculate the relative waked rotor area
-        
+
         This will result in rotor plane averaging to be done
         to take into account partial waking.
-        
+
         """
         rel_crosswind = crosswind - wake_radius
         waked = is_downwind & (rel_crosswind < 1)
@@ -75,23 +75,23 @@ def linear_top_hat(thrust_curve, rotor_radius, expansion_coeff=None,
 
     """
     induction_factor = 1 - _np.sqrt(1 - thrust_curve)
-    
+
     # Deal with stream tube assumption
     if stream_tube_assumption == 'rotor':
         stream_tube_radius = 1
-    elif stream_tube_assumption == 'Frandsen': 
+    elif stream_tube_assumption == 'Frandsen':
         # Use (adim.) stream tube radius downwind of the rotor
         # instead of the rotor radius itself.
         # [Frandsen, S. (1992) On the wind speed reduction in the center of
         #  large clusters of wind turbines. Journal of Wind Engineering and
         #  Industrial Aerodynamics 39:251–265. Section 2.2]
         stream_tube_radius = _np.sqrt(
-            (1 - 0.5 * induction_factor) / (1 - induction_factor))
             # TODO: deal with case induction_factor == 1
-    else: 
+            (1 - 0.5 * induction_factor) / (1 - induction_factor))
+    else:
         raise ValueError("Not a valid stream tube assumption: "
                          " ‘{}’.".format(stream_tube_assumption))
-    
+
     # Deal with deficit type
     if deficit_type == 'Jensen':
         def deficit(inv_rel_wake_area):
@@ -100,17 +100,17 @@ def linear_top_hat(thrust_curve, rotor_radius, expansion_coeff=None,
     elif deficit_type == 'Frandsen':
         def deficit(inv_rel_wake_area):
             """Return Frandsen et al. wake model deficit
-            
+
             This implements doi:10.1002/we.189 (11).
             (But still assumes linear expansion, i.e., k=1 for (13)!)
-            
+
             """
             return (
                 0.5 * (1 - _np.sqrt(1 - 2 * thrust_curve * inv_rel_wake_area)))
     else:
         raise ValueError(
             "Not a valid deficit type: ‘{}’.".format(deficit_type))
-    
+
     relative_area = _relative_area_function(averaging)
 
     def wake_model(dc_vector):
@@ -135,22 +135,22 @@ def linear_top_hat(thrust_curve, rotor_radius, expansion_coeff=None,
 def entrainment(thrust_curve, rotor_radius, entrainment_coeff=0.15,
                 averaging=False):
     """Return an entrainment wake model function
-    
+
     The thrust_curve must be an xarray DataArray with as a single dimension the
     wind speed, whose coordinate values must be those free stream wind speeds
     for which the wake deficit must be calculated. The other arguments are
     scalar values for the quantities described by their name.
-    
+
     This implements doi:10.1088/1742-6596/1037/7/072019 (25) with x_i=0.
-    
+
     """
     # TODO: deal with case thrust_curve == 0
-    offset =  (
+    offset = (
         (1 - thrust_curve) ** .75 / (1 - _np.sqrt(1 - thrust_curve)) ** 1.5)
     scaler = _np.sqrt(0.5 * thrust_curve)
-    
+
     relative_area = _relative_area_function(averaging)
-    
+
     def wake_model(dc_vector):
         # TODO: verify that the code produces the right geometry & deficit!
         downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
@@ -161,7 +161,7 @@ def entrainment(thrust_curve, rotor_radius, entrainment_coeff=0.15,
         rel_waked_area = relative_area(is_downwind, crosswind, wake_radius)
         del crosswind, is_downwind, wake_radius
         return rel_waked_area / (1 + _np.square(downwind_factor))
-    
+
     return wake_model
 
 
@@ -188,8 +188,8 @@ def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
 
         """
         downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
+        # multiplication with is_downwind to avoid negative radical later
         sigma = sigma_at_source + expansion_coeff * downwind * is_downwind
-            # multiplication with is_downwind to avoid negative radical later
         exponent = -(crosswind / sigma) ** 2 / 2
         radical = 1 - thrust_curve / (2 * sigma ** 2)
         return is_downwind * (1. - _np.sqrt(radical)) * _np.exp(exponent)
@@ -208,10 +208,10 @@ def rss_combination():
         """
         squared = _np.square(deficit)
         squared_combined = squared.sum(dim='source')
+        # we add 1 where the denominator (and numerator) would be 0
         relative = squared / (squared_combined + (squared_combined == 0))
-            # we add 1 where the denominator (and numerator) would be 0
+        # RSS does not guarantee <= 1
         squared_combined_saturated = _np.minimum(squared_combined, 1)
-            # RSS does not guarantee <= 1
         return _np.sqrt(squared_combined_saturated), relative
 
     return combination_rule

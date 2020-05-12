@@ -45,8 +45,8 @@ def distance(turbine_distance):
             collisions = collision.sum().values.item()
             if collisions:
                 random_angle = _np.random.uniform(0, 2 * _np.pi, collisions)
-                unit_vector_flat[collision] = (
-                    _np.vstack([_np.cos(random_angle), _np.sin(random_angle)]).T)
+                unit_vector_flat[collision] = _np.vstack(
+                    [_np.cos(random_angle), _np.sin(random_angle)]).T
             # Now that we have appropriate unit vectors everywhere, we can
             # correct. We take twice the minimally required step, as in case a
             # turbine is pushed outside of the site, half the step can be
@@ -155,8 +155,8 @@ def site(parcels):
     def _constraint_common(e_clave, layout, scrutinize):
         layout_mon = xy_to_monomial(layout)
         # calculate signed distance
+        # TODO: is a value of 0 for unscrutinized turbines safe here?
         distance = scrutinize * e_clave['constraints'].dot(layout_mon)
-            # TODO: is a value of 0 for unscrutinized turbines safe here?
         # turbines with a nonpositive constraint evaluation value
         # satisfy that constraint
         satisfies = scrutinize & (distance <= 0)
@@ -179,7 +179,7 @@ def site(parcels):
             inside = scrutinize & satisfies.all(dim='constraint')
             steps = (
                 ~satisfies * enclave['border_seeker']
-                * (distance * (1 + ε) + ε) # …+ε to avoid round-off ‘outsides’
+                * (distance * (1 + ε) + ε)  # …+ε to avoid round-off ‘outsides’
             )
             step = steps.isel(constraint=distance.argmax(dim='constraint'))
             # now check if correction lies on the border;
@@ -223,11 +223,11 @@ def site(parcels):
             # turbines are inside the exclave if all of the constraints are
             # satisfied
             inside = scrutinize & satisfies.all(dim='constraint')
+            # NOTE: argmin decides ties by picking first of minima
+            # TODO: we're choosing the closest too soon here; it must be done
+            #       after discarding the ones that do not lie inside the
+            #       enclosing enclave (if any)
             closest = (-distance).argmin(dim='constraint')
-                    # NOTE: argmin decides ties by picking first of minima
-                    # TODO: we're choosing the closest too soon here;
-                    #       it must be done after discarding the ones that do
-                    #       not lie inside the enclosing enclave (if any)
             step = (
                 exclave['border_seeker'].isel(constraint=closest)
                 * inside * (  # …+ε to avoid round-off ‘outsides’
@@ -258,7 +258,8 @@ def site(parcels):
                 exclave, layout_flat, scrutinize)
             step = _xr.where(
                 dist_sqr > 0,
-                layout_centered * inside * (_np.sqrt(radius_sqr / dist_sqr) - 1)
+                layout_centered * inside
+                * (_np.sqrt(radius_sqr / dist_sqr) - 1)
                 * (1 + ε),  # …+ε to avoid round-off ‘outsides’
                 [_np.sqrt(radius_sqr), 0]  # arbitrarily break symmetry
             )
@@ -273,8 +274,8 @@ def site(parcels):
             )
             steps = _xr.concat([step] + list(steps), 'border')
             dists_sqr = _np.square(steps).sum(dim='xy')
+            # NOTE: argmin decides ties by picking first of minima
             borders = dists_sqr.argmin(dim='border')
-                # NOTE: argmin decides ties by picking first of minima
             step = _xr.where(scrutinize, steps.isel(border=borders), step)
             # update scrutinize in exclaves depending on chosen border
             borders -= 1  # we want indices for enclaves only
