@@ -32,7 +32,8 @@ class Owflop():
         self.history = []
 
     def load_problem(self, filename,
-                     wind_resource=None, layout=None, wake_model=None):
+                     wind_resource=None, layout=None, wake_model=None,
+                     turbine_distance=None):
         """Load wind farm layout optimization problem file
 
         The file is assumed to be a YAML file in the format described by the
@@ -77,7 +78,9 @@ class Owflop():
         self.process_objective(problem['objective'])
 
         # create function to generate turbine constraint violation fixup steps
-        self.minimal_proximity = (problem.get('turbine_distance', 1)
+        if turbine_distance is None:
+            turbine_distance = problem.get('turbine_distance', 1)
+        self.minimal_proximity = (turbine_distance
                                   * (2 * self.rotor_radius) / self.site_radius)
         self.proximity_repulsion = (
             create_constraint.distance(self.minimal_proximity))
