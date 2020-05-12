@@ -4,13 +4,7 @@ import matplotlib.pyplot as _plt
 import matplotlib.gridspec as _gs
 
 import wflopg.visualization as vis
-
-
-def _take_step(owflop, step):
-    owflop._ds['layout'] = owflop._ds['context'] = (
-        owflop._ds['layout'] + step)
-    owflop._ds['context'] = owflop._ds.context.rename(target='source')
-    owflop.calculate_geometry()
+from wflopg.create_layout import _take_step, fix_constraints
 
 
 def _iterate(step_generator, owflop, max_iterations, step_normalizer):
@@ -57,29 +51,7 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
         step -= step.mean(dim='target')
         step *= step_normalizer
         _take_step(owflop, step)
-        # deal with any constraint violations in layout
-        corrections = ''
-        maybe_violations = True
-        while maybe_violations:
-            outside = ~owflop.inside(owflop._ds.layout)['in_site']
-            any_outside = outside.any()
-            if any_outside:
-                print('s', outside.values.sum(), sep='', end='')
-                _take_step(owflop, owflop.to_border(owflop._ds.layout))
-                corrections += 's'
-            proximity_repulsion_step = (
-                owflop.proximity_repulsion(
-                    owflop._ds.distance, owflop._ds.unit_vector)
-            )
-            too_close = proximity_repulsion_step is not None
-            if too_close:
-                print('p', proximity_repulsion_step.attrs['violations'],
-                      sep='', end='')
-                _take_step(owflop, proximity_repulsion_step)
-                corrections += 'p'
-            print(',', end='')
-            maybe_violations = too_close
-        print(')', end=' ')
+        corrections = fix_constraints(owflop)
         iterations += 1
 
 
@@ -183,29 +155,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
         step *= step_normalizer
         step = step * scaling  # generate the different step variants
         _take_step(owflop, step)
-        # deal with any constraint violations in layout
-        corrections = ''
-        maybe_violations = True
-        while maybe_violations:
-            outside = ~owflop.inside(owflop._ds.layout)['in_site']
-            any_outside = outside.any()
-            if any_outside:
-                print('s', outside.values.sum(), sep='', end='')
-                _take_step(owflop, owflop.to_border(owflop._ds.layout))
-                corrections += 's'
-            proximity_repulsion_step = (
-                owflop.proximity_repulsion(
-                    owflop._ds.distance, owflop._ds.unit_vector)
-            )
-            too_close = proximity_repulsion_step is not None
-            if too_close:
-                print('p', proximity_repulsion_step.attrs['violations'],
-                      sep='', end='')
-                _take_step(owflop, proximity_repulsion_step)
-                corrections += 'p'
-            print(',', end='')
-            maybe_violations = too_close
-        print(')', end=' ')
+        corrections = fix_constraints(owflop)
         iterations += 1
 
 
@@ -423,29 +373,7 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
         step = step * site_rotor_diameter * multiplier * scaling
         # take the step
         _take_step(owflop, step)
-        # deal with any constraint violations in layout
-        corrections = ''
-        maybe_violations = True
-        while maybe_violations:
-            outside = ~owflop.inside(owflop._ds.layout)['in_site']
-            any_outside = outside.any()
-            if any_outside:
-                print('s', outside.values.sum(), sep='', end='')
-                _take_step(owflop, owflop.to_border(owflop._ds.layout))
-                corrections += 's'
-            proximity_repulsion_step = (
-                owflop.proximity_repulsion(
-                    owflop._ds.distance, owflop._ds.unit_vector)
-            )
-            too_close = proximity_repulsion_step is not None
-            if too_close:
-                print('p', proximity_repulsion_step.attrs['violations'],
-                      sep='', end='')
-                _take_step(owflop, proximity_repulsion_step)
-                corrections += 'p'
-            print(',', end='')
-            maybe_violations = too_close
-        print(')', end=' ')
+        corrections = fix_constraints(owflop)
         iterations += 1
 
 
@@ -519,29 +447,7 @@ def method_chooser(owflop, max_iterations=_np.inf):
         step -= step.mean(dim='target')
         # take the step, one rotor diameter for the largest pseudo-gradient
         _take_step(owflop, step * site_rotor_diameter)
-        # deal with any constraint violations in layout
-        corrections = ''
-        maybe_violations = True
-        while maybe_violations:
-            outside = ~owflop.inside(owflop._ds.layout)['in_site']
-            any_outside = outside.any()
-            if any_outside:
-                print('s', outside.values.sum(), sep='', end='')
-                _take_step(owflop, owflop.to_border(owflop._ds.layout))
-                corrections += 's'
-            proximity_repulsion_step = (
-                owflop.proximity_repulsion(
-                    owflop._ds.distance, owflop._ds.unit_vector)
-            )
-            too_close = proximity_repulsion_step is not None
-            if too_close:
-                print('p', proximity_repulsion_step.attrs['violations'],
-                      sep='', end='')
-                _take_step(owflop, proximity_repulsion_step)
-                corrections += 'p'
-            print(',', end='')
-            maybe_violations = too_close
-        print(')', end=' ')
+        corrections = fix_constraints(owflop)
         iterations += 1
 
 
@@ -647,29 +553,7 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=_np.inf,
         step = step * site_rotor_diameter * multiplier * scaling
         # take the step
         _take_step(owflop, step)
-        # deal with any constraint violations in layout
-        corrections = ''
-        maybe_violations = True
-        while maybe_violations:
-            outside = ~owflop.inside(owflop._ds.layout)['in_site']
-            any_outside = outside.any()
-            if any_outside:
-                print('s', outside.values.sum(), sep='', end='')
-                _take_step(owflop, owflop.to_border(owflop._ds.layout))
-                corrections += 's'
-            proximity_repulsion_step = (
-                owflop.proximity_repulsion(
-                    owflop._ds.distance, owflop._ds.unit_vector)
-            )
-            too_close = proximity_repulsion_step is not None
-            if too_close:
-                print('p', proximity_repulsion_step.attrs['violations'],
-                      sep='', end='')
-                _take_step(owflop, proximity_repulsion_step)
-                corrections += 'p'
-            print(',', end='')
-            maybe_violations = too_close
-        print(')', end=' ')
+        corrections = fix_constraints(owflop)
         iterations += 1
         # swap in objective wind resource again
         owflop._ds['direction_pmf'] = wind_resource.direction_pmf
