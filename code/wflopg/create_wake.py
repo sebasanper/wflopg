@@ -208,10 +208,9 @@ def rss_combination():
         """
         squared = _np.square(deficit)
         squared_combined = squared.sum(dim='source')
-        # we add 1 where the denominator (and numerator) would be 0
-        relative = squared / (squared_combined + (squared_combined == 0))
-        # RSS does not guarantee <= 1
-        squared_combined_saturated = _np.minimum(squared_combined, 1)
+        relative = squared / squared_combined.where(squared_combined != 0, 1)
+        squared_combined_saturated = (  # RSS does not guarantee <= 1
+            squared_combined.where(squared_combined <= 1, 1))
         return _np.sqrt(squared_combined_saturated), relative
 
     return combination_rule
