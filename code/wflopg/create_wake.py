@@ -4,7 +4,7 @@ import xarray as _xr
 
 def _common(dc_vector_adim):
     downwind = dc_vector_adim.sel(dc='d', drop=True)
-    crosswind = _np.abs(dc_vector_adim.sel(dc='c', drop=True))
+    crosswind = dc_vector_adim.sel(dc='c', drop=True)
     is_downwind = downwind > 0
     return downwind, crosswind, is_downwind
 
@@ -123,7 +123,8 @@ def linear_top_hat(thrust_curve, rotor_radius, expansion_coeff=None,
         downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
         wake_radius = stream_tube_radius + expansion_coeff * downwind
         del downwind
-        rel_waked_area = relative_area(is_downwind, crosswind, wake_radius)
+        rel_waked_area = (
+            relative_area(is_downwind, _np.abs(crosswind), wake_radius))
         del is_downwind, crosswind
         inv_rel_wake_area = _np.square(stream_tube_radius / wake_radius)
         del wake_radius
@@ -158,7 +159,8 @@ def entrainment(thrust_curve, rotor_radius, entrainment_coeff=0.15,
             6 * entrainment_coeff / scaler * downwind + offset)
         del downwind
         wake_radius = scaler * (downwind_factor + 1 / downwind_factor)
-        rel_waked_area = relative_area(is_downwind, crosswind, wake_radius)
+        rel_waked_area = (
+            relative_area(is_downwind, _np.abs(crosswind), wake_radius))
         del crosswind, is_downwind, wake_radius
         return rel_waked_area / (1 + _np.square(downwind_factor))
 
@@ -177,8 +179,8 @@ def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
     plane averaging.
 
     """
-    expansion_coeff = 0.3837 * turbulence_intensity + 0.003678
-    sigma_at_source = 1 / _np.sqrt(2)
+    expansion_coeff_sqrt2 = (
+        _np.sqrt(2) * (0.3837 * turbulence_intensity + 0.003678))
 
     def wake_model(dc_vector):
         """Return wind speed deficit due to wake
@@ -188,11 +190,13 @@ def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
 
         """
         downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
-        # multiplication with is_downwind to avoid negative radical later
-        sigma = sigma_at_source + expansion_coeff * downwind * is_downwind
-        exponent = -(crosswind / sigma) ** 2 / 2
-        radical = 1 - thrust_curve / (2 * sigma ** 2)
-        return is_downwind * (1. - _np.sqrt(radical)) * _np.exp(exponent)
+        # infinite sigma for upwind ensures zero deficit there
+        two_sigma_sqr = (
+            1. + expansion_coeff_sqrt2 * downwind.where(is_downwind, _np.inf)
+        ) ** 2
+        exponent = - crosswind ** 2 / two_sigma_sqr
+        radical = 1 - thrust_curve / two_sigma_sqr
+        return (1. - _np.sqrt(radical)) * _np.exp(exponent)
 
     return wake_model
 
