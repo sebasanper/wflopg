@@ -10,6 +10,7 @@ from wflopg.create_layout import _take_step, fix_constraints
 def _iterate(step_generator, owflop, max_iterations, step_normalizer):
     site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     iterations = 0
+    best = last = start = 0
     corrections = ''
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
@@ -75,6 +76,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
         _plt.pause(.10)
     scale_coord = ('scale', ['-', '+'])
     iterations = 0
+    best = last = start = 0
     corrections = ''
     owflop._ds['layout'] = (
         owflop._ds.layout * _xr.DataArray([1, 1], coords=[scale_coord])
@@ -269,6 +271,7 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
     scale_coord = ('scale', ['-', '+'])
     method_coord = ('method', ['down', 'back', 'cross'])
     iterations = 0
+    best = last = start = 0
     corrections = ''
     owflop._ds['layout'] = (
         owflop._ds.layout * _xr.DataArray(
@@ -381,6 +384,7 @@ def method_chooser(owflop, max_iterations=_np.inf):
     site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     method_coord = ('method', ['down', 'back', 'cross'])
     iterations = 0
+    best = last = start = 0
     corrections = ''
     owflop._ds['layout'] = (
         owflop._ds.layout * _xr.DataArray([1, 1, 1], coords=[method_coord]))
@@ -461,6 +465,7 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=_np.inf,
     wind_resource['direction_pmf'] = owflop._ds.direction_pmf
     wind_resource['wind_speed_cpmf'] = owflop._ds.wind_speed_cpmf
     iterations = 0
+    best = last = start = 0
     corrections = ''
     owflop._ds['layout'] = (
         owflop._ds.layout * _xr.DataArray(
