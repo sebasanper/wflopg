@@ -3,6 +3,7 @@ import xarray as _xr
 import collections as _cl
 
 from wflopg.create_site import xy_to_monomial
+from wflopg.constants import COORDS
 
 
 # NOTE: We work with double and need this to deal with round-off issues.
@@ -32,33 +33,30 @@ def distance(turbine_distance):
             & (distance.target != distance.source)
         )
         if violation.any():
-            dims_to_stack = list(distance.dims)
-            distance_flat = distance.stack(pair=dims_to_stack)
-            violation_flat = violation.stack(pair=dims_to_stack)
-            unit_vector_flat = (
-                unit_vector.stack(pair=dims_to_stack).transpose('pair', 'xy'))
-            # before we can correct the proximity violations, we need to make
+            # Before we can correct the proximity violations, we need to make
             # sure that for any pair of nonidentical turbines there is a
             # nonzero unit vector; this may happen, e.g., if site constraint
             # correction places more than one turbine at the same parcel vertex
-            collision = violation_flat & (distance_flat == 0)
-            collisions = collision.sum().values.item()
-            if collisions:
-                random_angle = _np.random.uniform(0, 2 * _np.pi, collisions)
-                unit_vector_flat[collision] = _np.vstack(
-                    [_np.cos(random_angle), _np.sin(random_angle)]).T
-            # Now that we have appropriate unit vectors everywhere, we can
-            # correct. We take twice the minimally required step, as in case a
-            # turbine is pushed outside of the site, half the step can be
-            # undone by the site constraint correction procedure. Furthermore,
-            # we add a constant extra distance of 1/8 (chosen from experience)
-            # the turbine distance to reduce the probability immediate later
+            collision = violation & (distance == 0)
+            if collision.any():
+                random_angle = _np.random.uniform(0, 2 * _np.pi)
+                unit_vector = unit_vector.where(
+                    ~collision,
+                    _xr.DataArray(
+                        [_np.cos(random_angle), _np.sin(random_angle)],
+                        coords=[('xy', COORDS['xy'])]
+                    )
+                )
+            # Now that we have nonzero unit vectors everywhere, we can correct.
+            # We take twice the minimally required step, as in case a turbine
+            # is pushed outside of the site, half the step can be undone by the
+            # site constraint correction procedure. Furthermore, we add a
+            # constant extra distance of one eight (chosen from experience) the
+            # turbine distance to reduce the probability of immediate later
             # conflict
-            step_flat = _xr.zeros_like(unit_vector_flat)
-            step_flat = violation_flat * (
-                (1.125 * turbine_distance - distance_flat) * unit_vector_flat)
-            step = step_flat.unstack('pair').sum(dim='source')
-            step.attrs['violations'] = violation_flat.sum().values.item()
+            step = ((1.125 * turbine_distance - distance)
+                    * unit_vector.where(violation, 0)).sum(dim='source')
+            step.attrs['violations'] = violation.sum().values.item()
             return step
         else:
             return None
