@@ -84,6 +84,9 @@ def fix_constraints(owflop, output=True):
                       sep='', end='')
             _take_step(owflop, proximity_repulsion_step)
             corrections += 'p'
-        print(',', end='')
+        if output:
+            print(' ', end='')
         maybe_violations = too_close
+    if output:
+        print('\n', end='')
     return corrections

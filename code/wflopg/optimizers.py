@@ -20,7 +20,7 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
                 > (start - best) / _np.log2(len(owflop.history) + 2)
             ):
                 break
-        print('(', iterations, sep='', end=':')
+        print(iterations, end=': ')
         owflop.calculate_geometry()
         owflop.calculate_deficit()
         owflop.calculate_power()
@@ -93,7 +93,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
                 > (start - best) / _np.log2(len(owflop.history) + 2)
             ):
                 break
-        print('(', iterations, sep='', end=':')
+        print(iterations, end=': ')
         owflop.calculate_deficit()
         owflop.calculate_power()
         objectives = owflop.objective()
@@ -289,7 +289,7 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
                 > (start - best) / _np.log2(len(owflop.history) + 2)
             ):
                 break
-        print('(', iterations, sep='', end=':')
+        print(iterations, end=': ')
         owflop.calculate_deficit()
         owflop.calculate_power()
         objectives = owflop.objective()
@@ -398,7 +398,7 @@ def method_chooser(owflop, max_iterations=_np.inf):
                 > (start - best) / _np.log2(len(owflop.history) + 2)
             ):
                 break
-        print('(', iterations, sep='', end=':')
+        print(iterations, end=': ')
         owflop.calculate_deficit()
         owflop.calculate_power()
         objectives = owflop.objective()
@@ -483,7 +483,7 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=_np.inf,
                 > (start - best) / _np.log2(len(owflop.history) + 2)
             ):
                 break
-        print('(', iterations, sep='', end=':')
+        print(iterations, end=': ')
         owflop.calculate_deficit()
         owflop.calculate_power()
         objectives = owflop.objective()
