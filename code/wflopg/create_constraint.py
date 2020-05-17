@@ -40,12 +40,18 @@ def distance(turbine_distance):
             collision = violation & (distance == 0)
             if collision.any():
                 random_angle = _np.random.uniform(0, 2 * _np.pi)
-                unit_vector = unit_vector.where(
-                    ~collision,
-                    _xr.DataArray(
+                random_unit_vector = _xr.DataArray(
                         [_np.cos(random_angle), _np.sin(random_angle)],
                         coords=[('xy', COORDS['xy'])]
-                    )
+                )
+                antisymmetric_matrix = (
+                        (distance.source < distance.target).astype(_np.float64)
+                        -
+                        (distance.source > distance.target).astype(_np.float64)
+                )
+                unit_vector = unit_vector.where(
+                    ~collision,
+                    random_unit_vector * antisymmetric_matrix
                 )
             # Now that we have nonzero unit vectors everywhere, we can correct.
             # We take twice the minimally required step, as in case a turbine
