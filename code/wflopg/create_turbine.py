@@ -11,7 +11,7 @@ def _check_start(interpolation_data, start_speed, start_value):
     interpolation_data coordinate value.
 
     """
-    min_interpolation_speed = interpolation_data.coords['speed'].min().item()
+    min_interpolation_speed = interpolation_data.speed.min().item()
     if start_speed < min_interpolation_speed:
         interpolation_data = _xr.concat(
             [_xr.DataArray([start_value], coords=[('speed', [start_speed])]),
@@ -32,7 +32,7 @@ def _check_end(interpolation_data, end_speed, end_value):
     interpolation_data coordinate value.
 
     """
-    max_interpolation_speed = interpolation_data.coords['speed'].max().item()
+    max_interpolation_speed = interpolation_data.speed.max().item()
     if end_speed > max_interpolation_speed:
         interpolation_data = _xr.concat(
             [interpolation_data,

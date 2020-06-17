@@ -132,7 +132,7 @@ def draw_turbines(axes, owflop, layout=None, proximity=False, in_or_out=False):
 
     """
     if layout is None:
-        layout = owflop.history[-1]['layout']
+        layout = owflop.history[-1].layout
     turbine_size = owflop.rotor_radius / owflop.site_radius
     turbine_color = 'k'
     if in_or_out:

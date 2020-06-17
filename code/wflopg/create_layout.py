@@ -57,7 +57,7 @@ def hexagonal(turbines, site_parcels, site_violation_distance, to_border):
 
 
 def _take_step(owflop, step):
-    owflop._ds['layout'] = owflop._ds['layout'] + step
+    owflop._ds['layout'] = owflop._ds.layout + step
     owflop._ds['context'] = owflop._ds.layout.rename(target='source')
     owflop.calculate_geometry()
 

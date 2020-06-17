@@ -29,9 +29,9 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
         owflop.history[-1]['objective'] = owflop.objective()
         owflop.history[-1].attrs['corrections'] = corrections
         if len(owflop.history) == 1:  # first run
-            best = last = start = owflop.history[0]['objective']
+            best = last = start = owflop.history[0].objective
         else:
-            last = owflop.history[-1]['objective']
+            last = owflop.history[-1].objective
             if last < best:
                 best = last
             distance_from_previous = _np.sqrt(
@@ -126,9 +126,9 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
             vis.draw_boundaries(ax_layout, owflop)
             _plt.pause(0.1)
         if len(owflop.history) == 1:
-            best = last = start = owflop.history[0]['objective']
+            best = last = start = owflop.history[0].objective
         else:
-            last = owflop.history[-1]['objective']
+            last = owflop.history[-1].objective
             if last < best:
                 best = last
             distance_from_previous = _np.sqrt(
@@ -332,9 +332,9 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
             vis.draw_boundaries(ax_layout, owflop)
             _plt.pause(0.1)
         if len(owflop.history) == 1:
-            best = last = start = owflop.history[0]['objective']
+            best = last = start = owflop.history[0].objective
         else:
-            last = owflop.history[-1]['objective']
+            last = owflop.history[-1].objective
             if last < best:
                 best = last
             distance_from_previous = _np.sqrt(
@@ -417,9 +417,9 @@ def method_chooser(owflop, max_iterations=_np.inf):
         owflop.history[-1].attrs['corrections'] = corrections
         owflop.history[-1].attrs['method'] = method_coord[1][j]
         if len(owflop.history) == 1:
-            best = last = start = owflop.history[0]['objective']
+            best = last = start = owflop.history[0].objective
         else:
-            last = owflop.history[-1]['objective']
+            last = owflop.history[-1].objective
             if last < best:
                 best = last
             distance_from_previous = _np.sqrt(
@@ -512,9 +512,9 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=_np.inf,
                    .isel(method=j, drop=True).values.item()
         )
         if len(owflop.history) == 1:
-            best = last = start = owflop.history[0]['objective']
+            best = last = start = owflop.history[0].objective
         else:
-            last = owflop.history[-1]['objective']
+            last = owflop.history[-1].objective
             if last < best:
                 best = last
             distance_from_previous = _np.sqrt(

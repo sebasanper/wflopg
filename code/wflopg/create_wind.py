@@ -65,10 +65,10 @@ def subdivide(dir_weights, speed_probs, dir_subs,
     in our tests.
 
     """
-    n = len(dir_weights.coords['direction'])
+    n = len(dir_weights.direction)
     dir_weights_cyc = _cycext(dir_weights, 'direction', 360)
     speed_probs_cyc = _cycext(speed_probs, 'direction', 360)
-    dirs_cyc = dir_weights_cyc.coords['direction'].rename(direction='rel')
+    dirs_cyc = dir_weights_cyc.direction.rename(direction='rel')
     # 'rel' is an ad hoc dimension for ‘local’ relative direction
     dirs_cyc.coords['rel'] = _np.linspace(0, 1, n + 1)
     dirs_interp = dirs_cyc.interp(
