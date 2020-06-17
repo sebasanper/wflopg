@@ -45,8 +45,6 @@ def _check_end(interpolation_data, end_speed, end_value):
 
 
 def _within_cut(speeds, cut_in, cut_out):
-    if _np.any(speeds < 0):
-        raise ValueError("Wind speeds may not be negative.")
     return (speeds >= cut_in) & (speeds <= cut_out)  # within cut
 
 
