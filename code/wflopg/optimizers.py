@@ -110,7 +110,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
             owflop._ds.layout.isel(scale=i, drop=True))
         owflop.history[-1]['objective'] = objectives.isel(scale=i, drop=True)
         owflop.history[-1].attrs['corrections'] = corrections
-        owflop.history[-1].attrs['scale'] = scaling[i].values.item()
+        owflop.history[-1].attrs['scale'] = scaling[i].item()
         if visualize:
             ax_convergence.clear()
             vis.draw_convergence(ax_convergence, owflop.history)
@@ -294,7 +294,7 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
         owflop.calculate_power()
         objectives = owflop.objective()
         i = objectives.argmin(dim='scale')
-        j = objectives.min(dim='scale').argmin('method').values.item()
+        j = objectives.min(dim='scale').argmin('method').item()
         # we continue from best layout
         owflop._ds['layout'] = (
             owflop._ds.layout.isel(scale=i, drop=True)
@@ -314,9 +314,7 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
         owflop.history[-1].attrs['corrections'] = corrections
         owflop.history[-1].attrs['method'] = method_coord[1][j]
         owflop.history[-1].attrs['scale'] = (
-            scaling.isel(scale=i, drop=True)
-                   .isel(method=j, drop=True).values.item()
-        )
+            scaling.isel(scale=i, drop=True).isel(method=j, drop=True).item())
         if visualize:
             ax_convergence.clear()
             vis.draw_convergence(ax_convergence, owflop.history)
@@ -508,9 +506,7 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=_np.inf,
         owflop.history[-1].attrs['corrections'] = corrections
         owflop.history[-1].attrs['method'] = method_coord[1][j]
         owflop.history[-1].attrs['scale'] = (
-            scaling.isel(scale=i, drop=True)
-                   .isel(method=j, drop=True).values.item()
-        )
+            scaling.isel(scale=i, drop=True).isel(method=j, drop=True).item())
         if len(owflop.history) == 1:
             best = last = start = owflop.history[0].objective
         else:

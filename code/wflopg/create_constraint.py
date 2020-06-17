@@ -62,7 +62,7 @@ def distance(turbine_distance):
             # conflict
             step = ((1.125 * turbine_distance - distance)
                     * unit_vector.where(violation, 0)).sum(dim='source')
-            step.attrs['violations'] = violation.sum().values.item()
+            step.attrs['violations'] = violation.sum().item()
             return step
         else:
             return None

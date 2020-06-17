@@ -36,7 +36,7 @@ def draw_windrose(axes, wind_direction_pmf, color='b'):
     axes.set_aspect(1.0)
     axes.set_theta_zero_location("N")
     axes.set_theta_direction(-1)
-    axes.set_ylim(0, 1.1 * wind_direction_pmf.max().values.item())
+    axes.set_ylim(0, 1.1 * wind_direction_pmf.max().item())
     axes.bar(
         wind_direction_pmf.direction / 360 * 2 * _np.pi, wind_direction_pmf,
         width=2 * _np.pi / len(wind_direction_pmf),
