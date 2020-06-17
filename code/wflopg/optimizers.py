@@ -5,6 +5,7 @@ import matplotlib.gridspec as _gs
 
 import wflopg.visualization as vis
 from wflopg.create_layout import _take_step, fix_constraints
+from wflopg.helpers import rss
 
 
 def _iterate(step_generator, owflop, max_iterations, step_normalizer):
@@ -34,10 +35,9 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
             last = owflop.history[-1].objective
             if last < best:
                 best = last
-            distance_from_previous = _np.sqrt(
-                _np.square(
-                    owflop.history[-1].layout - owflop.history[-2].layout
-                ).sum(dim='xy')
+            distance_from_previous = rss(
+                owflop.history[-1].layout - owflop.history[-2].layout,
+                dim='xy'
             )
             # stop iterating if the largest step is smaller than D/10
             if distance_from_previous.max() < site_rotor_diameter / 10:
@@ -46,7 +46,7 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
         owflop.calculate_relative_wake_loss_vector()
         step = step_generator()
         # normalize the step to the largest pseudo-gradient
-        distance = _np.sqrt(_np.square(step).sum(dim='xy'))
+        distance = rss(step, dim='xy')
         step /= distance.max('target')
         # remove any global shift
         step -= step.mean(dim='target')
@@ -131,10 +131,9 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
             last = owflop.history[-1].objective
             if last < best:
                 best = last
-            distance_from_previous = _np.sqrt(
-                _np.square(
-                    owflop.history[-1].layout - owflop.history[-2].layout
-                ).sum(dim='xy')
+            distance_from_previous = rss(
+                owflop.history[-1].layout - owflop.history[-2].layout,
+                dim='xy'
             )
             # stop iterating if the largest step is smaller than D/10
             if distance_from_previous.max() < site_rotor_diameter / 10:
@@ -150,7 +149,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
         owflop.calculate_relative_wake_loss_vector()
         step = step_generator()
         # normalize the step to the largest pseudo-gradient
-        distance = _np.sqrt(_np.square(step).sum(dim='xy'))
+        distance = rss(step, dim='xy')
         step /= distance.max('target')
         # remove any global shift
         step -= step.mean(dim='target')
@@ -335,10 +334,9 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
             last = owflop.history[-1].objective
             if last < best:
                 best = last
-            distance_from_previous = _np.sqrt(
-                _np.square(
-                    owflop.history[-1].layout - owflop.history[-2].layout
-                ).sum(dim='xy')
+            distance_from_previous = rss(
+                owflop.history[-1].layout - owflop.history[-2].layout,
+                dim='xy'
             )
             # stop iterating if the largest step is smaller than D/10
             if distance_from_previous.max() < site_rotor_diameter / 10:
@@ -362,7 +360,7 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
         # throw steps in one big DataArray
         step = _xr.concat([down_step, back_step, cross_step], 'method')
         # normalize the step to the largest pseudo-gradient
-        distance = _np.sqrt(_np.square(step).sum(dim='xy'))
+        distance = rss(step, dim='xy')
         step /= distance.max('target')
         # remove any global shift
         step -= step.mean(dim='target')
@@ -420,10 +418,9 @@ def method_chooser(owflop, max_iterations=_np.inf):
             last = owflop.history[-1].objective
             if last < best:
                 best = last
-            distance_from_previous = _np.sqrt(
-                _np.square(
-                    owflop.history[-1].layout - owflop.history[-2].layout
-                ).sum(dim='xy')
+            distance_from_previous = rss(
+                owflop.history[-1].layout - owflop.history[-2].layout,
+                dim='xy'
             )
             # stop iterating if the largest step is smaller than D/10
             if distance_from_previous.max() < site_rotor_diameter / 10:
@@ -443,7 +440,7 @@ def method_chooser(owflop, max_iterations=_np.inf):
         # throw steps in one big DataArray
         step = _xr.concat([down_step, back_step, cross_step], 'method')
         # normalize the step to the largest pseudo-gradient
-        distance = _np.sqrt(_np.square(step).sum(dim='xy'))
+        distance = rss(step, dim='xy')
         step /= distance.max('target')
         # remove any global shift
         step -= step.mean(dim='target')
@@ -513,10 +510,9 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=_np.inf,
             last = owflop.history[-1].objective
             if last < best:
                 best = last
-            distance_from_previous = _np.sqrt(
-                _np.square(
-                    owflop.history[-1].layout - owflop.history[-2].layout
-                ).sum(dim='xy')
+            distance_from_previous = rss(
+                owflop.history[-1].layout - owflop.history[-2].layout,
+                dim='xy'
             )
             # stop iterating if the largest step is smaller than D/10
             if distance_from_previous.max() < site_rotor_diameter / 10:
@@ -546,7 +542,7 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=_np.inf,
         # throw steps in one big DataArray
         step = _xr.concat([down_step, back_step, cross_step], 'method')
         # normalize the step to the largest pseudo-gradient
-        distance = _np.sqrt(_np.square(step).sum(dim='xy'))
+        distance = rss(step, dim='xy')
         step /= distance.max('target')
         # remove any global shift
         step -= step.mean(dim='target')

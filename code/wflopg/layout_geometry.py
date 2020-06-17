@@ -2,6 +2,7 @@ import numpy as _np
 import xarray as _xr
 
 from wflopg.constants import COORDS
+from wflopg.helpers import rss
 
 
 def generate_downwind(directions):
@@ -49,7 +50,7 @@ def generate_distance(vector):
     dimension, is returned.
 
     """
-    return _np.sqrt(_np.square(vector).sum(dim='xy'))
+    return rss(vector, dim='xy')
 
 
 def generate_dc_vector(vector, downwind, crosswind):

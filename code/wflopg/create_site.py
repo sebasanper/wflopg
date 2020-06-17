@@ -3,6 +3,7 @@ import xarray as _xr
 import pypoman.polygon as _ppmp
 
 from wflopg.constants import COORDS
+from wflopg.helpers import rss
 
 
 def xy_to_monomial(xy):
@@ -65,9 +66,7 @@ def parcels(parcels_list, rotor_radius, rotor_constraint_override=False):
                 dims=['constraint', 'monomial'],
                 coords={'monomial': COORDS['monomial']}
             )
-            norms = _np.sqrt(
-                _np.square(coeffs.sel(monomial=['x', 'y'])).sum(dim='monomial')
-            )
+            norms = rss(coeffs.sel(monomial=['x', 'y']), dim='monomial')
             coeffs = coeffs / norms  # normalize the coefficients
             rotor_constraint = _xr.DataArray(
                 [(rotor_constraint_override

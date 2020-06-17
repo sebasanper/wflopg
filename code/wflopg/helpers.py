@@ -1,4 +1,10 @@
+import numpy as _np
 import xarray as _xr
+
+
+def rss(array, dim):
+    """Calculate root-sum-square of array along dim."""
+    return _np.sqrt(_np.square(array).sum(dim=dim))
 
 
 def cyclic_extension(array, dim, coord_val=0, add=True):

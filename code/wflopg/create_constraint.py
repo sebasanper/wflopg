@@ -4,6 +4,7 @@ import collections as _cl
 
 from wflopg.create_site import xy_to_monomial
 from wflopg.constants import COORDS
+from wflopg.helpers import rss
 
 
 # NOTE: We work with double and need this to deal with round-off issues.
@@ -103,7 +104,7 @@ def inside_site(site):
             return {'distance': distance, 'inside': inside}
 
         def inside_disc(circle):
-            distance = _np.sqrt(_np.square(layout_flat - circle).sum(dim='xy'))
+            distance = rss(layout_flat - circle, dim='xy')
             inside = distance <= circle.radius
             return {'distance': distance, 'inside': inside}
 
