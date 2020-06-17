@@ -1,4 +1,3 @@
-import numpy as _np
 import xarray as _xr
 
 

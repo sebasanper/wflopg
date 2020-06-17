@@ -1,10 +1,9 @@
-from collections import OrderedDict as _odict
 from uuid import uuid4 as _uuid
 from ruamel.yaml import YAML as _yaml
 
 
 def layout2yaml(layout, site, name, filename):
-    output = {}  # _odict()
+    output = {}
     output['name'] = name
     output['uuid'] = str(_uuid())
     output['site'] = site
