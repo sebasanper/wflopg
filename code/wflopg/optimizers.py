@@ -1,3 +1,4 @@
+import sys as _sys
 import numpy as _np
 import xarray as _xr
 import matplotlib.pyplot as _plt
@@ -160,7 +161,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
         iterations += 1
 
 
-def pure_down(owflop, max_iterations=_np.inf,
+def pure_down(owflop, max_iterations=_sys.maxsize,
               scaling=False, scaler=[.5, 1.1], multiplier=3, visualize=False):
     """Optimize the layout using push-down only
 
@@ -181,7 +182,7 @@ def pure_down(owflop, max_iterations=_np.inf,
         )
 
 
-def pure_back(owflop, max_iterations=_np.inf,
+def pure_back(owflop, max_iterations=_sys.maxsize,
               scaling=False, scaler=[.5, 1.1], multiplier=3, visualize=False):
     """Optimize the layout using push-back only
 
@@ -202,7 +203,7 @@ def pure_back(owflop, max_iterations=_np.inf,
         )
 
 
-def mixed_down_and_back(owflop, max_iterations=_np.inf,
+def mixed_down_and_back(owflop, max_iterations=_sys.maxsize,
                         scaling=False, scaler=[.5, 1.1], multiplier=3,
                         visualize=False):
     """Optimize the layout using a mixture of push-down and push-back
@@ -226,7 +227,7 @@ def mixed_down_and_back(owflop, max_iterations=_np.inf,
                  step_normalizer * multiplier)
 
 
-def pure_cross(owflop, max_iterations=_np.inf, scaling=False,
+def pure_cross(owflop, max_iterations=_sys.maxsize, scaling=False,
                scaler=[.5, 1.1], multiplier=3, visualize=False):
     """Optimize the layout using push-back only
 
@@ -248,7 +249,7 @@ def pure_cross(owflop, max_iterations=_np.inf, scaling=False,
         )
 
 
-def multi_adaptive(owflop, max_iterations=_np.inf,
+def multi_adaptive(owflop, max_iterations=_sys.maxsize,
                    scaler=[.5, 1.1], multiplier=3,
                    only_above_average=False, visualize=False):
     if visualize:
@@ -376,7 +377,7 @@ def multi_adaptive(owflop, max_iterations=_np.inf,
         iterations += 1
 
 
-def method_chooser(owflop, max_iterations=_np.inf):
+def method_chooser(owflop, max_iterations=_sys.maxsize):
     site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     method_coord = ('method', ['down', 'back', 'cross'])
     iterations = 0
@@ -450,7 +451,7 @@ def method_chooser(owflop, max_iterations=_np.inf):
         iterations += 1
 
 
-def multi_wind_resource(owflop, wind_resources, max_iterations=_np.inf,
+def multi_wind_resource(owflop, wind_resources, max_iterations=_sys.maxsize,
                         scaler=[.5, 1.1], multiplier=3):
     site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     scale_coord = ('scale', ['-', '+'])
