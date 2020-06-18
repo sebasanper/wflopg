@@ -10,51 +10,51 @@ from wflopg.helpers import rss
 
 
 def _iterate(step_generator, owflop, max_iterations, step_normalizer):
-    site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
-    iterations = 0
-    best = last = start = 0
-    corrections = ''
-    while iterations < max_iterations:
-        # stop iterating if no real objective improvement is being made
-        if iterations > 0:
-            if (
-                last - best
-                > (start - best) / _np.log2(len(owflop.history) + 2)
-            ):
-                break
-        print(iterations, end=': ')
+
+    def layout2power(owflop):
         owflop.calculate_geometry()
         owflop.calculate_deficit()
         owflop.calculate_power()
+
+    def update_history(owflop, corrections):
         owflop.history.append(_xr.Dataset())
         owflop.history[-1]['layout'] = owflop._ds.layout
         owflop.history[-1]['objective'] = owflop.objective()
         owflop.history[-1].attrs['corrections'] = corrections
-        if len(owflop.history) == 1:  # first run
-            best = last = start = owflop.history[0].objective
-        else:
-            last = owflop.history[-1].objective
-            if last < best:
-                best = last
-            distance_from_previous = rss(
-                owflop.history[-1].layout - owflop.history[-2].layout,
-                dim='xy'
-            )
-            # stop iterating if the largest step is smaller than D/10
-            if distance_from_previous.max() < site_rotor_diameter / 10:
-                break
+
+    layout2power(owflop)
+    update_history(owflop, '')
+    best = start = owflop.history[0].objective
+    for iteration in range(1, max_iterations+1):
+        print(iteration, end=': ')
         # calculate new layout
         owflop.calculate_relative_wake_loss_vector()
         step = step_generator()
         # normalize the step to the largest pseudo-gradient
         distance = rss(step, dim='xy')
         step /= distance.max('target')
-        # remove any global shift
+        # remove any global shift # TODO: remove shift before normalization
         step -= step.mean(dim='target')
         step *= step_normalizer
+        # take step
         _take_step(owflop, step)
+        # fix any constraint violation
         corrections = fix_constraints(owflop)
-        iterations += 1
+        # evaluate new layout
+        layout2power(owflop)
+        update_history(owflop, corrections)
+        current = owflop.history[-1].objective
+        # check best layout and criteria for early termination
+        if current < best:
+            best = current
+        else:
+            if _np.log2(iteration) * (current - best) > (start - best):
+                break
+            distance_from_previous = rss(
+                owflop.history[-1].layout - owflop.history[-2].layout, dim='xy'
+            ) / (2 * owflop.rotor_radius / owflop.site_radius)
+            if distance_from_previous.max() < .1:
+                break
 
 
 def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
