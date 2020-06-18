@@ -9,7 +9,8 @@ from wflopg.create_layout import _take_step, fix_constraints
 from wflopg.helpers import rss
 
 
-def _iterate(step_generator, owflop, max_iterations, multiplier):
+def _iterate(step_generator, owflop, max_iterations, multiplier,
+             visualize=False):
 
     def layout2power(owflop):
         owflop.calculate_geometry()
@@ -21,10 +22,46 @@ def _iterate(step_generator, owflop, max_iterations, multiplier):
         owflop.history[-1]['layout'] = owflop._ds.layout
         owflop.history[-1]['objective'] = owflop.objective()
         owflop.history[-1].attrs['corrections'] = corrections
+        owflop.history[-1].attrs['scale'] = multiplier
+
+    def setup_visualization(owflop):
+        axes = {}
+        fig = _plt.figure()
+        grid = _gs.GridSpec(3, 5)
+        axes['windrose'] = fig.add_subplot(grid[0, :2], polar=True)
+        vis.draw_windrose(axes['windrose'], owflop._ds.direction_pmf)
+        axes['convergence'] = fig.add_subplot(grid[1, :2])
+        axes['scaling'] = fig.add_subplot(grid[2, :2],
+                                          sharex=axes['convergence'])
+        axes['layout'] = fig.add_subplot(grid[:, 2:])
+        vis.site_setup(axes['layout'])
+        vis.draw_turbines(axes['layout'], owflop, owflop.history[0].layout,
+                          proximity=True, in_or_out=True)
+        vis.draw_boundaries(axes['layout'], owflop)
+        grid.tight_layout(fig)
+        _plt.pause(.10)
+        return axes
+
+    def iterate_visualization(axes, owflop):
+        axes['convergence'].clear()
+        vis.draw_convergence(axes['convergence'], owflop.history)
+        axes['scaling'].clear()
+        vis.draw_scaling(axes['scaling'], owflop.history)
+        axes['layout'].clear()
+        vis.site_setup(axes['layout'])
+        vis.connect_layouts(axes['layout'],
+                            [ds.layout for ds in owflop.history])
+        vis.draw_turbines(axes['layout'], owflop, owflop.history[0].layout)
+        vis.draw_turbines(axes['layout'], owflop, owflop.history[-1].layout,
+                          proximity=True, in_or_out=True)
+        vis.draw_boundaries(axes['layout'], owflop)
+        _plt.pause(0.1)
 
     layout2power(owflop)
-    update_history(owflop, '')
+    update_history(owflop)
     best = start = owflop.history[0].objective
+    if visualize:
+        axes = setup_visualization(owflop)
     for iteration in range(1, max_iterations+1):
         print(iteration, end=': ')
         # calculate new layout
@@ -44,6 +81,8 @@ def _iterate(step_generator, owflop, max_iterations, multiplier):
         layout2power(owflop)
         update_history(owflop, corrections)
         current = owflop.history[-1].objective
+        if visualize:
+            iterate_visualization(axes, owflop)
         # check best layout and criteria for early termination
         if current < best:
             best = current
@@ -174,7 +213,8 @@ def pure_down(owflop, max_iterations=_sys.maxsize,
                           visualize=visualize)
     else:
         _iterate(owflop.calculate_push_down_vector, owflop,
-                 max_iterations, multiplier)
+                 max_iterations, multiplier,
+                 visualize=visualize)
 
 
 def pure_back(owflop, max_iterations=_sys.maxsize,
@@ -191,7 +231,8 @@ def pure_back(owflop, max_iterations=_sys.maxsize,
                           visualize=visualize)
     else:
         _iterate(owflop.calculate_push_back_vector, owflop,
-                 max_iterations, multiplier)
+                 max_iterations, multiplier,
+                 visualize=visualize)
 
 
 def mixed_down_and_back(owflop, max_iterations=_sys.maxsize,
@@ -212,7 +253,8 @@ def mixed_down_and_back(owflop, max_iterations=_sys.maxsize,
                           multiplier, scaler=scaler,
                           visualize=visualize)
     else:
-        _iterate(step_generator, owflop, max_iterations, multiplier)
+        _iterate(step_generator, owflop, max_iterations, multiplier,
+                 visualize=visualize)
 
 
 def pure_cross(owflop, max_iterations=_sys.maxsize, scaling=False,
@@ -229,7 +271,8 @@ def pure_cross(owflop, max_iterations=_sys.maxsize, scaling=False,
                           visualize=visualize)
     else:
         _iterate(owflop.calculate_push_cross_vector, owflop,
-                 max_iterations, multiplier)
+                 max_iterations, multiplier,
+                 visualize=visualize)
 
 
 def multi_adaptive(owflop, max_iterations=_sys.maxsize,
