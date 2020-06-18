@@ -207,15 +207,16 @@ def draw_convergence(axes, history, max_length=None):
     axes.xaxis.set_major_locator(_tkr.MaxNLocator(integer=True))
     max_length = len(history) if max_length is None else max_length
     loss_percentage = 100 * _np.array([ds.objective for ds in history])
-    if len(loss_percentage) > 0:
-        min_loss_percentage = loss_percentage.min()
-        max_loss_percentage = loss_percentage.max()
-    else:
-        min_loss_percentage = 0
-        max_loss_percentage = 100
+    bound_percentage = 100 * _np.array([ds.objective_bound for ds in history])
+    ymin = loss_percentage.min()
+    ymax = _np.fmax(
+        _np.where(_np.isnan(loss_percentage), ymin, loss_percentage).max(),
+        _np.where(_np.isnan(bound_percentage), ymin, bound_percentage).max()
+    )
     axes.set_xlim(-1, max_length)
-    axes.set_ylim(min_loss_percentage - 0.1, max_loss_percentage + 0.1)
+    axes.set_ylim(ymin - 0.1, ymax + 0.1)
     axes.plot(loss_percentage)
+    axes.plot(bound_percentage, c='gray', ls='--')
 
 
 def draw_scaling(axes, history, max_length=None):

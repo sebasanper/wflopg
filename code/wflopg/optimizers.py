@@ -17,10 +17,11 @@ def _iterate(step_generator, owflop, max_iterations, multiplier,
         owflop.calculate_deficit()
         owflop.calculate_power()
 
-    def update_history(owflop, corrections):
+    def update_history(owflop, corrections='', bound=_np.nan):
         owflop.history.append(_xr.Dataset())
         owflop.history[-1]['layout'] = owflop._ds.layout
         owflop.history[-1]['objective'] = owflop.objective()
+        owflop.history[-1]['objective_bound'] = bound
         owflop.history[-1].attrs['corrections'] = corrections
         owflop.history[-1].attrs['scale'] = multiplier
 
@@ -79,7 +80,8 @@ def _iterate(step_generator, owflop, max_iterations, multiplier,
         corrections = fix_constraints(owflop)
         # evaluate new layout
         layout2power(owflop)
-        update_history(owflop, corrections)
+        bound = best + (start - best) / _np.log2(iteration)
+        update_history(owflop, corrections, bound)
         current = owflop.history[-1].objective
         if visualize:
             iterate_visualization(axes, owflop)
@@ -87,7 +89,7 @@ def _iterate(step_generator, owflop, max_iterations, multiplier,
         if current < best:
             best = current
         else:
-            if _np.log2(iteration) * (current - best) > (start - best):
+            if current > bound:
                 break
             distance_from_previous = rss(
                 owflop.history[-1].layout - owflop.history[-2].layout, dim='xy'
@@ -104,7 +106,6 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, multiplier,
         ax_windrose = fig.add_subplot(grid[0, :2], polar=True)
         vis.draw_windrose(ax_windrose, owflop._ds.direction_pmf)
         ax_convergence = fig.add_subplot(grid[1, :2])
-        vis.draw_convergence(ax_convergence, owflop.history)
         ax_scaling = fig.add_subplot(grid[2, :2], sharex=ax_convergence)
         ax_layout = fig.add_subplot(grid[:, 2:])
         vis.site_setup(ax_layout)
@@ -116,6 +117,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, multiplier,
     scale_coord = ('scale', ['-', '+'])
     iterations = 0
     best = last = start = 0
+    bound = _np.nan
     corrections = ''
     owflop._ds['layout'] = (
         owflop._ds.layout * _xr.DataArray([1, 1], coords=[scale_coord])
@@ -127,10 +129,8 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, multiplier,
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
-            if (
-                last - best
-                > (start - best) / _np.log2(len(owflop.history) + 2)
-            ):
+            bound = best + (start - best) / _np.log2(len(owflop.history) + 2)
+            if last > bound:
                 break
         print(iterations, end=': ')
         owflop.calculate_deficit()
@@ -148,6 +148,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, multiplier,
         owflop.history[-1]['layout'] = (
             owflop._ds.layout.isel(scale=i, drop=True))
         owflop.history[-1]['objective'] = objectives.isel(scale=i, drop=True)
+        owflop.history[-1]['objective_bound'] = bound
         owflop.history[-1].attrs['corrections'] = corrections
         owflop.history[-1].attrs['scale'] = scaling[i].item()
         if visualize:
@@ -284,7 +285,6 @@ def multi_adaptive(owflop, max_iterations=_sys.maxsize,
         ax_windrose = fig.add_subplot(grid[0, :2], polar=True)
         vis.draw_windrose(ax_windrose, owflop._ds.direction_pmf)
         ax_convergence = fig.add_subplot(grid[1, :2])
-        vis.draw_convergence(ax_convergence, owflop.history)
         ax_scaling = fig.add_subplot(grid[2, :2], sharex=ax_convergence)
         ax_layout = fig.add_subplot(grid[:, 2:])
         vis.site_setup(ax_layout)
@@ -297,6 +297,7 @@ def multi_adaptive(owflop, max_iterations=_sys.maxsize,
     method_coord = ('method', ['down', 'back', 'cross'])
     iterations = 0
     best = last = start = 0
+    bound = _np.nan
     corrections = ''
     owflop._ds['layout'] = (
         owflop._ds.layout * _xr.DataArray(
@@ -309,10 +310,8 @@ def multi_adaptive(owflop, max_iterations=_sys.maxsize,
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
-            if (
-                last - best
-                > (start - best) / _np.log2(len(owflop.history) + 2)
-            ):
+            bound = best + (start - best) / _np.log2(len(owflop.history) + 2)
+            if last > bound:
                 break
         print(iterations, end=': ')
         owflop.calculate_deficit()
@@ -336,6 +335,7 @@ def multi_adaptive(owflop, max_iterations=_sys.maxsize,
         )
         owflop.history[-1]['objective'] = (
             objectives.isel(scale=i, drop=True).isel(method=j, drop=True))
+        owflop.history[-1]['objective_bound'] = bound
         owflop.history[-1].attrs['corrections'] = corrections
         owflop.history[-1].attrs['method'] = method_coord[1][j]
         owflop.history[-1].attrs['scale'] = (
@@ -414,10 +414,8 @@ def method_chooser(owflop, max_iterations=_sys.maxsize):
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
-            if (
-                last - best
-                > (start - best) / _np.log2(len(owflop.history) + 2)
-            ):
+            bound = best + (start - best) / _np.log2(len(owflop.history) + 2)
+            if last > bound:
                 break
         print(iterations, end=': ')
         owflop.calculate_deficit()
