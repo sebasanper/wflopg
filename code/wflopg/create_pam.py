@@ -7,7 +7,7 @@ from wflopg.constants import COORDS
 def layout(minimal_proximity, num_dists, num_dirs):
     """Create layout of points where the pre-averaged model will be calculated
 
-    The rotor radius must be the site-adimensional rotor radius.
+    minimal_proximity must be in site-adimensional units.
 
     """
     r = _np.linspace(minimal_proximity, 2, num_dists)
