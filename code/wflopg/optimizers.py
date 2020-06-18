@@ -52,14 +52,13 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
                 break
             distance_from_previous = rss(
                 owflop.history[-1].layout - owflop.history[-2].layout, dim='xy'
-            ) / (2 * owflop.rotor_radius / owflop.site_radius)
+            ) / owflop.rotor_diameter_adim
             if distance_from_previous.max() < .1:
                 break
 
 
 def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
                       scaler=[.5, 1.1], visualize=False):
-    site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     if visualize:
         fig = _plt.figure()
         grid = _gs.GridSpec(3, 5)
@@ -137,7 +136,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
                 dim='xy'
             )
             # stop iterating if the largest step is smaller than D/10
-            if distance_from_previous.max() < site_rotor_diameter / 10:
+            if distance_from_previous.max() < owflop.rotor_diameter_adim / 10:
                 break
         # calculate new layout
         scaling = scaling.isel(scale=i) * scaler
@@ -169,16 +168,16 @@ def pure_down(owflop, max_iterations=_sys.maxsize,
     necessarily have any further actions applied.
 
     """
-    step_normalizer = (owflop.rotor_radius / owflop.site_radius) * 2
     if scaling:
         _adaptive_iterate(
             owflop.calculate_push_down_vector, owflop, max_iterations,
-            step_normalizer * multiplier, scaler=scaler, visualize=visualize
+            owflop.rotor_diameter_adim * multiplier, scaler=scaler,
+            visualize=visualize
         )
     else:
         _iterate(
             owflop.calculate_push_down_vector, owflop,
-            max_iterations, step_normalizer * multiplier
+            max_iterations, owflop.rotor_diameter_adim * multiplier
         )
 
 
@@ -190,16 +189,16 @@ def pure_back(owflop, max_iterations=_sys.maxsize,
     necessarily have any further actions applied.
 
     """
-    step_normalizer = (owflop.rotor_radius / owflop.site_radius) * 2
     if scaling:
         _adaptive_iterate(
             owflop.calculate_push_back_vector, owflop, max_iterations,
-            step_normalizer * multiplier, scaler=scaler, visualize=visualize
+            owflop.rotor_diameter_adim * multiplier, scaler=scaler,
+            visualize=visualize
         )
     else:
         _iterate(
             owflop.calculate_push_back_vector, owflop,
-            max_iterations, step_normalizer * multiplier
+            max_iterations, owflop.rotor_diameter_adim * multiplier
         )
 
 
@@ -212,8 +211,6 @@ def mixed_down_and_back(owflop, max_iterations=_sys.maxsize,
     necessarily have any further actions applied.
 
     """
-    step_normalizer = (owflop.rotor_radius / owflop.site_radius) * 2
-
     def step_generator():
         return (owflop.calculate_push_down_vector()
                 + owflop.calculate_push_back_vector()) / 2
@@ -221,10 +218,11 @@ def mixed_down_and_back(owflop, max_iterations=_sys.maxsize,
     if scaling:
         _adaptive_iterate(
             step_generator, owflop, max_iterations,
-            step_normalizer * multiplier, scaler=scaler, visualize=visualize)
+            owflop.rotor_diameter_adim * multiplier, scaler=scaler,
+            visualize=visualize)
     else:
         _iterate(step_generator, owflop, max_iterations,
-                 step_normalizer * multiplier)
+                 owflop.rotor_diameter_adim * multiplier)
 
 
 def pure_cross(owflop, max_iterations=_sys.maxsize, scaling=False,
@@ -235,17 +233,16 @@ def pure_cross(owflop, max_iterations=_sys.maxsize, scaling=False,
     necessarily have any further actions applied.
 
     """
-    step_normalizer = (owflop.rotor_radius / owflop.site_radius) * 2
     if scaling:
         _adaptive_iterate(
             owflop.calculate_push_cross_vector, owflop, max_iterations,
-            step_normalizer * multiplier, scaler=scaler,
+            owflop.rotor_diameter_adim * multiplier, scaler=scaler,
             visualize=visualize
         )
     else:
         _iterate(
             owflop.calculate_push_cross_vector, owflop,
-            max_iterations, step_normalizer * multiplier
+            max_iterations, owflop.rotor_diameter_adim * multiplier
         )
 
 
@@ -267,7 +264,6 @@ def multi_adaptive(owflop, max_iterations=_sys.maxsize,
         vis.draw_boundaries(ax_layout, owflop)
         grid.tight_layout(fig)
         _plt.pause(.10)
-    site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     scale_coord = ('scale', ['-', '+'])
     method_coord = ('method', ['down', 'back', 'cross'])
     iterations = 0
@@ -340,7 +336,7 @@ def multi_adaptive(owflop, max_iterations=_sys.maxsize,
                 dim='xy'
             )
             # stop iterating if the largest step is smaller than D/10
-            if distance_from_previous.max() < site_rotor_diameter / 10:
+            if distance_from_previous.max() < owflop.rotor_diameter_adim / 10:
                 break
         # calculate new layout
         scaling = scaling.isel(scale=i, drop=True) * scaler
@@ -370,7 +366,7 @@ def multi_adaptive(owflop, max_iterations=_sys.maxsize,
             mean_distance = distance.mean(dim='target')
             step *= (distance > mean_distance)
         # generate the different step variants
-        step = step * site_rotor_diameter * multiplier * scaling
+        step = step * owflop.rotor_diameter_adim * multiplier * scaling
         # take the step
         _take_step(owflop, step)
         corrections = fix_constraints(owflop)
@@ -378,7 +374,6 @@ def multi_adaptive(owflop, max_iterations=_sys.maxsize,
 
 
 def method_chooser(owflop, max_iterations=_sys.maxsize):
-    site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     method_coord = ('method', ['down', 'back', 'cross'])
     iterations = 0
     best = last = start = 0
@@ -424,7 +419,7 @@ def method_chooser(owflop, max_iterations=_sys.maxsize):
                 dim='xy'
             )
             # stop iterating if the largest step is smaller than D/10
-            if distance_from_previous.max() < site_rotor_diameter / 10:
+            if distance_from_previous.max() < owflop.rotor_diameter_adim / 10:
                 break
         # calculate new layouts
         # first calculate relative_wake_loss_vector just once
@@ -446,14 +441,13 @@ def method_chooser(owflop, max_iterations=_sys.maxsize):
         # remove any global shift
         step -= step.mean(dim='target')
         # take the step, one rotor diameter for the largest pseudo-gradient
-        _take_step(owflop, step * site_rotor_diameter)
+        _take_step(owflop, step * owflop.rotor_diameter_adim)
         corrections = fix_constraints(owflop)
         iterations += 1
 
 
 def multi_wind_resource(owflop, wind_resources, max_iterations=_sys.maxsize,
                         scaler=[.5, 1.1], multiplier=3):
-    site_rotor_diameter = (owflop.rotor_radius / owflop.site_radius) * 2
     scale_coord = ('scale', ['-', '+'])
     method_coord = ('method', ['down', 'back', 'cross'])
     # save initial wind resource for objective evaluation
@@ -516,7 +510,7 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=_sys.maxsize,
                 dim='xy'
             )
             # stop iterating if the largest step is smaller than D/10
-            if distance_from_previous.max() < site_rotor_diameter / 10:
+            if distance_from_previous.max() < owflop.rotor_diameter_adim / 10:
                 break
         # calculate new layout
         scaling = scaling.isel(scale=i, drop=True) * scaler
@@ -548,7 +542,7 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=_sys.maxsize,
         # remove any global shift
         step -= step.mean(dim='target')
         # generate the different step variants
-        step = step * site_rotor_diameter * multiplier * scaling
+        step = step * owflop.rotor_diameter_adim * multiplier * scaling
         # take the step
         _take_step(owflop, step)
         corrections = fix_constraints(owflop)

@@ -133,7 +133,7 @@ def draw_turbines(axes, owflop, layout=None, proximity=False, in_or_out=False):
     """
     if layout is None:
         layout = owflop.history[-1].layout
-    turbine_size = owflop.rotor_radius / owflop.site_radius
+    turbine_size = owflop.rotor_radius_adim
     turbine_color = 'k'
     if in_or_out:
         inside = owflop.inside(layout)['in_site']
@@ -164,7 +164,7 @@ def draw_step(axes, owflop, layout, step):
         a layout change step; effectively a difference of two layouts
 
     """
-    turbine_size = owflop.rotor_radius / owflop.site_radius
+    turbine_size = owflop.rotor_radius_adim
     axes.quiver(layout.sel(xy='x'), layout.sel(xy='y'),
                 step.sel(xy='x'), step.sel(xy='y'),
                 angles='xy', scale_units='xy', scale=1, width=turbine_size/2)
