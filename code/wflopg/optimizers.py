@@ -80,7 +80,7 @@ def _iterate(step_generator, owflop, max_iterations, multiplier,
         corrections = fix_constraints(owflop)
         # evaluate new layout
         layout2power(owflop)
-        bound = best + (start - best) / _np.log2(iteration)
+        bound = best + (start - best) / iteration
         update_history(owflop, corrections, bound)
         current = owflop.history[-1].objective
         if visualize:
@@ -129,7 +129,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, multiplier,
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
-            bound = best + (start - best) / _np.log2(len(owflop.history) + 2)
+            bound = best + (start - best) / iterations
             if last > bound:
                 break
         print(iterations, end=': ')
@@ -310,7 +310,7 @@ def multi_adaptive(owflop, max_iterations=_sys.maxsize,
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
-            bound = best + (start - best) / _np.log2(len(owflop.history) + 2)
+            bound = best + (start - best) / iterations
             if last > bound:
                 break
         print(iterations, end=': ')
@@ -414,7 +414,7 @@ def method_chooser(owflop, max_iterations=_sys.maxsize):
     while iterations < max_iterations:
         # stop iterating if no real objective improvement is being made
         if iterations > 0:
-            bound = best + (start - best) / _np.log2(len(owflop.history) + 2)
+            bound = best + (start - best) / iterations
             if last > bound:
                 break
         print(iterations, end=': ')
