@@ -9,7 +9,7 @@ from wflopg.create_layout import _take_step, fix_constraints
 from wflopg.helpers import rss
 
 
-def _iterate(step_generator, owflop, max_iterations, step_normalizer):
+def _iterate(step_generator, owflop, max_iterations, multiplier):
 
     def layout2power(owflop):
         owflop.calculate_geometry()
@@ -35,7 +35,7 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
         step /= distance.max('target')
         # remove any global shift # TODO: remove shift before normalization
         step -= step.mean(dim='target')
-        step *= step_normalizer
+        step *= multiplier * owflop.rotor_diameter_adim
         # take step
         _take_step(owflop, step)
         # fix any constraint violation
@@ -57,7 +57,7 @@ def _iterate(step_generator, owflop, max_iterations, step_normalizer):
                 break
 
 
-def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
+def _adaptive_iterate(step_generator, owflop, max_iterations, multiplier,
                       scaler=[.5, 1.1], visualize=False):
     if visualize:
         fig = _plt.figure()
@@ -153,7 +153,7 @@ def _adaptive_iterate(step_generator, owflop, max_iterations, step_normalizer,
         step /= distance.max('target')
         # remove any global shift
         step -= step.mean(dim='target')
-        step *= step_normalizer
+        step *= multiplier * owflop.rotor_diameter_adim
         step = step * scaling  # generate the different step variants
         _take_step(owflop, step)
         corrections = fix_constraints(owflop)
@@ -169,16 +169,12 @@ def pure_down(owflop, max_iterations=_sys.maxsize,
 
     """
     if scaling:
-        _adaptive_iterate(
-            owflop.calculate_push_down_vector, owflop, max_iterations,
-            owflop.rotor_diameter_adim * multiplier, scaler=scaler,
-            visualize=visualize
-        )
+        _adaptive_iterate(owflop.calculate_push_down_vector, owflop,
+                          max_iterations, multiplier, scaler=scaler,
+                          visualize=visualize)
     else:
-        _iterate(
-            owflop.calculate_push_down_vector, owflop,
-            max_iterations, owflop.rotor_diameter_adim * multiplier
-        )
+        _iterate(owflop.calculate_push_down_vector, owflop,
+                 max_iterations, multiplier)
 
 
 def pure_back(owflop, max_iterations=_sys.maxsize,
@@ -190,16 +186,12 @@ def pure_back(owflop, max_iterations=_sys.maxsize,
 
     """
     if scaling:
-        _adaptive_iterate(
-            owflop.calculate_push_back_vector, owflop, max_iterations,
-            owflop.rotor_diameter_adim * multiplier, scaler=scaler,
-            visualize=visualize
-        )
+        _adaptive_iterate(owflop.calculate_push_back_vector, owflop,
+                          max_iterations, multiplier, scaler=scaler,
+                          visualize=visualize)
     else:
-        _iterate(
-            owflop.calculate_push_back_vector, owflop,
-            max_iterations, owflop.rotor_diameter_adim * multiplier
-        )
+        _iterate(owflop.calculate_push_back_vector, owflop,
+                 max_iterations, multiplier)
 
 
 def mixed_down_and_back(owflop, max_iterations=_sys.maxsize,
@@ -216,13 +208,11 @@ def mixed_down_and_back(owflop, max_iterations=_sys.maxsize,
                 + owflop.calculate_push_back_vector()) / 2
 
     if scaling:
-        _adaptive_iterate(
-            step_generator, owflop, max_iterations,
-            owflop.rotor_diameter_adim * multiplier, scaler=scaler,
-            visualize=visualize)
+        _adaptive_iterate(step_generator, owflop, max_iterations,
+                          multiplier, scaler=scaler,
+                          visualize=visualize)
     else:
-        _iterate(step_generator, owflop, max_iterations,
-                 owflop.rotor_diameter_adim * multiplier)
+        _iterate(step_generator, owflop, max_iterations, multiplier)
 
 
 def pure_cross(owflop, max_iterations=_sys.maxsize, scaling=False,
@@ -234,16 +224,12 @@ def pure_cross(owflop, max_iterations=_sys.maxsize, scaling=False,
 
     """
     if scaling:
-        _adaptive_iterate(
-            owflop.calculate_push_cross_vector, owflop, max_iterations,
-            owflop.rotor_diameter_adim * multiplier, scaler=scaler,
-            visualize=visualize
-        )
+        _adaptive_iterate(owflop.calculate_push_cross_vector, owflop,
+                          max_iterations, multiplier, scaler=scaler,
+                          visualize=visualize)
     else:
-        _iterate(
-            owflop.calculate_push_cross_vector, owflop,
-            max_iterations, owflop.rotor_diameter_adim * multiplier
-        )
+        _iterate(owflop.calculate_push_cross_vector, owflop,
+                 max_iterations, multiplier)
 
 
 def multi_adaptive(owflop, max_iterations=_sys.maxsize,
