@@ -13,11 +13,6 @@ def _iterate(step_generator, owflop, max_iterations=_sys.maxsize,
              multiplier=1, scaling=True,
              visualize=False):
 
-    def layout2power(owflop):
-        owflop.calculate_geometry()
-        owflop.calculate_deficit()
-        owflop.calculate_power()
-
     def update_history(owflop, layout, objective, bound=_np.nan,
                        corrections='', multiplier=multiplier):
         owflop.history.append(_xr.Dataset())
