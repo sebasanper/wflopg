@@ -9,9 +9,23 @@ from wflopg.create_layout import _take_step, fix_constraints
 from wflopg.helpers import rss
 
 
-def _iterate(step_generator, owflop, max_iterations=_sys.maxsize,
-             multiplier=1, scaling=True,
-             visualize=False):
+def _step_generator(owflop, method):
+    if method == 'away':
+        return owflop.calculate_push_away_vector()
+    elif method == 'back':
+        return owflop.calculate_push_back_vector()
+    elif method == 'cross':
+        return owflop.calculate_push_cross_vector()
+    elif method == 'away_and_back_mix':
+        return (owflop.calculate_push_away_vector()
+                + owflop.calculate_push_back_vector()) / 2
+    else:
+        raise ValueError(f"Method ‘{method}’ is unknown.")
+
+
+def step_iterator(owflop, method, max_iterations=_sys.maxsize,
+                  multiplier=1, scaling=True,
+                  visualize=False):
 
     def update_history(owflop, layout, objective, bound=_np.nan,
                        corrections='', multiplier=multiplier):
@@ -76,7 +90,7 @@ def _iterate(step_generator, owflop, max_iterations=_sys.maxsize,
         owflop.calculate_deficit()
         # calculate step
         owflop.calculate_relative_wake_loss_vector()
-        step = step_generator()
+        step = _step_generator(owflop, method)
         # normalize the step to the largest pseudo-gradient
         distance = rss(step, dim='xy')
         step /= distance.max('target')
@@ -110,65 +124,6 @@ def _iterate(step_generator, owflop, max_iterations=_sys.maxsize,
             ) / owflop.rotor_diameter_adim
             if distance_from_previous.max() < .1:
                 break
-
-def pure_away(owflop,
-              max_iterations=_sys.maxsize, scaling=[.8, 1.1], multiplier=1,
-              visualize=False):
-    """Optimize the layout using push-away only
-
-    The problem object owflop is assumed to have a problem loaded, but not
-    necessarily have any further actions applied.
-
-    """
-    _iterate(owflop.calculate_push_away_vector, owflop,
-             max_iterations, multiplier, scaling,
-             visualize)
-
-
-def pure_back(owflop,
-              max_iterations=_sys.maxsize, scaling=[.8, 1.1], multiplier=1,
-              visualize=False):
-    """Optimize the layout using push-back only
-
-    The problem object owflop is assumed to have a problem loaded, but not
-    necessarily have any further actions applied.
-
-    """
-    _iterate(owflop.calculate_push_back_vector, owflop,
-             max_iterations, multiplier, scaling,
-             visualize)
-
-
-def mixed_away_and_back(owflop,
-                        max_iterations=_sys.maxsize,
-                        scaling=[.8, 1.1], multiplier=1,
-                        visualize=False):
-    """Optimize the layout using a mixture of push-away and push-back
-
-    The problem object owflop is assumed to have a problem loaded, but not
-    necessarily have any further actions applied.
-
-    """
-    def step_generator():
-        return (owflop.calculate_push_away_vector()
-                + owflop.calculate_push_back_vector()) / 2
-    
-    _iterate(step_generator, owflop, max_iterations, multiplier, scaling,
-             visualize)
-
-
-def pure_cross(owflop,
-               max_iterations=_sys.maxsize, scaling=[.8, 1.1], multiplier=1,
-               visualize=False):
-    """Optimize the layout using push-cross only
-
-    The problem object owflop is assumed to have a problem loaded, but not
-    necessarily have any further actions applied.
-
-    """
-    _iterate(owflop.calculate_push_cross_vector, owflop,
-             max_iterations, multiplier, scaling,
-             visualize)
 
 
 def multi_adaptive(owflop, max_iterations=_sys.maxsize,
