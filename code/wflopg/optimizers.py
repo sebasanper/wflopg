@@ -9,8 +9,8 @@ from wflopg.create_layout import _take_step, fix_constraints
 from wflopg.helpers import rss
 
 
-def _iterate(step_generator, owflop, max_iterations,
-             multiplier, scaling=True,
+def _iterate(step_generator, owflop, max_iterations=_sys.maxsize,
+             multiplier=1, scaling=True,
              visualize=False):
 
     def layout2power(owflop):
@@ -117,8 +117,8 @@ def _iterate(step_generator, owflop, max_iterations,
                 break
 
 def pure_down(owflop,
-               max_iterations=_sys.maxsize, scaling=[.8, 1.1], multiplier=1,
-               visualize=False):
+              max_iterations=_sys.maxsize, scaling=[.8, 1.1], multiplier=1,
+              visualize=False):
     """Optimize the layout using push-down only
 
     The problem object owflop is assumed to have a problem loaded, but not
@@ -131,8 +131,8 @@ def pure_down(owflop,
 
 
 def pure_back(owflop,
-               max_iterations=_sys.maxsize, scaling=[.8, 1.1], multiplier=1,
-               visualize=False):
+              max_iterations=_sys.maxsize, scaling=[.8, 1.1], multiplier=1,
+              visualize=False):
     """Optimize the layout using push-back only
 
     The problem object owflop is assumed to have a problem loaded, but not
