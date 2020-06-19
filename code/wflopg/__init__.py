@@ -433,7 +433,7 @@ class Owflop():
             * self._ds.unit_vector
         )
 
-    def calculate_push_down_vector(self):
+    def calculate_push_away_vector(self):
         return self.expectation(
             self._ds.relative_wake_loss_vector.sum(dim='source')
         )

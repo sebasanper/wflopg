@@ -116,16 +116,16 @@ def _iterate(step_generator, owflop, max_iterations=_sys.maxsize,
             if distance_from_previous.max() < .1:
                 break
 
-def pure_down(owflop,
+def pure_away(owflop,
               max_iterations=_sys.maxsize, scaling=[.8, 1.1], multiplier=1,
               visualize=False):
-    """Optimize the layout using push-down only
+    """Optimize the layout using push-away only
 
     The problem object owflop is assumed to have a problem loaded, but not
     necessarily have any further actions applied.
 
     """
-    _iterate(owflop.calculate_push_down_vector, owflop,
+    _iterate(owflop.calculate_push_away_vector, owflop,
              max_iterations, multiplier, scaling,
              visualize)
 
@@ -144,18 +144,18 @@ def pure_back(owflop,
              visualize)
 
 
-def mixed_down_and_back(owflop,
+def mixed_away_and_back(owflop,
                         max_iterations=_sys.maxsize,
                         scaling=[.8, 1.1], multiplier=1,
                         visualize=False):
-    """Optimize the layout using a mixture of push-down and push-back
+    """Optimize the layout using a mixture of push-away and push-back
 
     The problem object owflop is assumed to have a problem loaded, but not
     necessarily have any further actions applied.
 
     """
     def step_generator():
-        return (owflop.calculate_push_down_vector()
+        return (owflop.calculate_push_away_vector()
                 + owflop.calculate_push_back_vector()) / 2
     
     _iterate(step_generator, owflop, max_iterations, multiplier, scaling,
@@ -194,7 +194,7 @@ def multi_adaptive(owflop, max_iterations=_sys.maxsize,
         grid.tight_layout(fig)
         _plt.pause(.10)
     scale_coord = ('scale', ['-', '+'])
-    method_coord = ('method', ['down', 'back', 'cross'])
+    method_coord = ('method', ['away', 'back', 'cross'])
     iterations = 0
     best = last = start = 0
     bound = _np.nan
@@ -280,11 +280,11 @@ def multi_adaptive(owflop, max_iterations=_sys.maxsize,
             owflop._ds.unit_vector.isel(scale=i, drop=True)
                                   .isel(method=j, drop=True))
         owflop.calculate_relative_wake_loss_vector()
-        down_step = owflop.calculate_push_down_vector()
+        away_step = owflop.calculate_push_away_vector()
         back_step = owflop.calculate_push_back_vector()
         cross_step = owflop.calculate_push_cross_vector()
         # throw steps in one big DataArray
-        step = _xr.concat([down_step, back_step, cross_step], 'method')
+        step = _xr.concat([away_step, back_step, cross_step], 'method')
         # normalize the step to the largest pseudo-gradient
         distance = rss(step, dim='xy')
         step /= distance.max('target')
@@ -303,7 +303,7 @@ def multi_adaptive(owflop, max_iterations=_sys.maxsize,
 
 
 def method_chooser(owflop, max_iterations=_sys.maxsize):
-    method_coord = ('method', ['down', 'back', 'cross'])
+    method_coord = ('method', ['away', 'back', 'cross'])
     iterations = 0
     best = last = start = 0
     corrections = ''
@@ -357,11 +357,11 @@ def method_chooser(owflop, max_iterations=_sys.maxsize):
         owflop._ds['unit_vector'] = (
             owflop._ds.unit_vector.isel(method=j, drop=True))
         owflop.calculate_relative_wake_loss_vector()
-        down_step = owflop.calculate_push_down_vector()
+        away_step = owflop.calculate_push_away_vector()
         back_step = owflop.calculate_push_back_vector()
         cross_step = owflop.calculate_push_cross_vector()
         # throw steps in one big DataArray
-        step = _xr.concat([down_step, back_step, cross_step], 'method')
+        step = _xr.concat([away_step, back_step, cross_step], 'method')
         # normalize the step to the largest pseudo-gradient
         distance = rss(step, dim='xy')
         step /= distance.max('target')
@@ -376,7 +376,7 @@ def method_chooser(owflop, max_iterations=_sys.maxsize):
 def multi_wind_resource(owflop, wind_resources, max_iterations=_sys.maxsize,
                         scaler=[.5, 1.1], multiplier=3):
     scale_coord = ('scale', ['-', '+'])
-    method_coord = ('method', ['down', 'back', 'cross'])
+    method_coord = ('method', ['away', 'back', 'cross'])
     # save initial wind resource for objective evaluation
     wind_resource = _xr.Dataset()
     wind_resource['direction_pmf'] = owflop._ds.direction_pmf
@@ -455,14 +455,14 @@ def multi_wind_resource(owflop, wind_resources, max_iterations=_sys.maxsize,
             owflop._ds.unit_vector.isel(scale=i, drop=True)
                                   .isel(method=j, drop=True))
         owflop.calculate_relative_wake_loss_vector()
-        down_step = (
-            owflop.calculate_push_down_vector().mean(dim='wind_resource'))
+        away_step = (
+            owflop.calculate_push_away_vector().mean(dim='wind_resource'))
         back_step = (
             owflop.calculate_push_back_vector().mean(dim='wind_resource'))
         cross_step = (
             owflop.calculate_push_cross_vector().mean(dim='wind_resource'))
         # throw steps in one big DataArray
-        step = _xr.concat([down_step, back_step, cross_step], 'method')
+        step = _xr.concat([away_step, back_step, cross_step], 'method')
         # normalize the step to the largest pseudo-gradient
         distance = rss(step, dim='xy')
         step /= distance.max('target')
