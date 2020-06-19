@@ -9,6 +9,46 @@ from wflopg.create_layout import _take_step, fix_constraints
 from wflopg.helpers import rss
 
 
+def _update_history(owflop, layout, objective, bound=_np.nan,
+                   corrections='', multiplier=1):
+    owflop.history.append(_xr.Dataset())
+    owflop.history[-1]['layout'] = layout
+    owflop.history[-1]['objective'] = objective
+    owflop.history[-1]['objective_bound'] = bound
+    owflop.history[-1].attrs['corrections'] = corrections
+    owflop.history[-1].attrs['scale'] = multiplier
+
+def _setup_visualization(owflop):
+    axes = {}
+    fig = _plt.figure()
+    grid = _gs.GridSpec(3, 5)
+    axes['windrose'] = fig.add_subplot(grid[0, :2], polar=True)
+    vis.draw_windrose(axes['windrose'], owflop._ds.direction_pmf)
+    axes['convergence'] = fig.add_subplot(grid[1, :2])
+    axes['scaling'] = fig.add_subplot(grid[2, :2], sharex=axes['convergence'])
+    axes['layout'] = fig.add_subplot(grid[:, 2:])
+    vis.site_setup(axes['layout'])
+    vis.draw_turbines(axes['layout'], owflop, owflop.history[0].layout,
+                        proximity=True, in_or_out=True)
+    vis.draw_boundaries(axes['layout'], owflop)
+    grid.tight_layout(fig)
+    _plt.pause(.10)
+    return axes
+
+def _iterate_visualization(axes, owflop):
+    axes['convergence'].clear()
+    vis.draw_convergence(axes['convergence'], owflop.history)
+    axes['scaling'].clear()
+    vis.draw_scaling(axes['scaling'], owflop.history)
+    axes['layout'].clear()
+    vis.site_setup(axes['layout'])
+    vis.connect_layouts(axes['layout'], [ds.layout for ds in owflop.history])
+    vis.draw_turbines(axes['layout'], owflop, owflop.history[0].layout)
+    vis.draw_turbines(axes['layout'], owflop, owflop.history[-1].layout,
+                      proximity=True, in_or_out=True)
+    vis.draw_boundaries(axes['layout'], owflop)
+    _plt.pause(0.1)
+
 def _step_generator(owflop, method):
     if method == 'away':
         return owflop.calculate_push_away_vector()
@@ -26,49 +66,6 @@ def _step_generator(owflop, method):
 def step_iterator(owflop, method, max_iterations=_sys.maxsize,
                   multiplier=1, scaling=True,
                   visualize=False):
-
-    def update_history(owflop, layout, objective, bound=_np.nan,
-                       corrections='', multiplier=multiplier):
-        owflop.history.append(_xr.Dataset())
-        owflop.history[-1]['layout'] = layout
-        owflop.history[-1]['objective'] = objective
-        owflop.history[-1]['objective_bound'] = bound
-        owflop.history[-1].attrs['corrections'] = corrections
-        owflop.history[-1].attrs['scale'] = multiplier
-
-    def setup_visualization(owflop):
-        axes = {}
-        fig = _plt.figure()
-        grid = _gs.GridSpec(3, 5)
-        axes['windrose'] = fig.add_subplot(grid[0, :2], polar=True)
-        vis.draw_windrose(axes['windrose'], owflop._ds.direction_pmf)
-        axes['convergence'] = fig.add_subplot(grid[1, :2])
-        axes['scaling'] = fig.add_subplot(grid[2, :2],
-                                          sharex=axes['convergence'])
-        axes['layout'] = fig.add_subplot(grid[:, 2:])
-        vis.site_setup(axes['layout'])
-        vis.draw_turbines(axes['layout'], owflop, owflop.history[0].layout,
-                          proximity=True, in_or_out=True)
-        vis.draw_boundaries(axes['layout'], owflop)
-        grid.tight_layout(fig)
-        _plt.pause(.10)
-        return axes
-
-    def iterate_visualization(axes, owflop):
-        axes['convergence'].clear()
-        vis.draw_convergence(axes['convergence'], owflop.history)
-        axes['scaling'].clear()
-        vis.draw_scaling(axes['scaling'], owflop.history)
-        axes['layout'].clear()
-        vis.site_setup(axes['layout'])
-        vis.connect_layouts(axes['layout'],
-                            [ds.layout for ds in owflop.history])
-        vis.draw_turbines(axes['layout'], owflop, owflop.history[0].layout)
-        vis.draw_turbines(axes['layout'], owflop, owflop.history[-1].layout,
-                          proximity=True, in_or_out=True)
-        vis.draw_boundaries(axes['layout'], owflop)
-        _plt.pause(0.1)
-
     if scaling is True:
         scaling = [.8, 1.1]
     elif scaling is False:
@@ -78,10 +75,10 @@ def step_iterator(owflop, method, max_iterations=_sys.maxsize,
     owflop.calculate_geometry()
     owflop.calculate_deficit()
     owflop.calculate_power()
-    update_history(owflop, owflop._ds.layout, owflop.objective())
+    _update_history(owflop, owflop._ds.layout, owflop.objective())
     best = start = owflop.history[0].objective
     if visualize:
-        axes = setup_visualization(owflop)
+        axes = _setup_visualization(owflop)
     for iteration in range(1, max_iterations+1):
         print(iteration, end=': ')
         owflop._ds['layout'] = owflop.history[-1].layout
@@ -110,9 +107,9 @@ def step_iterator(owflop, method, max_iterations=_sys.maxsize,
         current = owflop.objective().isel(scale=i, drop=True)
         bound = best + (start - best) / iteration
         multiplier = multiplier.isel(scale=i, drop=True)
-        update_history(owflop, layout, current, bound, corrections, multiplier)
+        _update_history(owflop, layout, current, bound, corrections, multiplier)
         if visualize:
-            iterate_visualization(axes, owflop)
+            _iterate_visualization(axes, owflop)
         # check best layout and criteria for early termination
         if current < best:
             best = current
