@@ -99,11 +99,11 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
         owflop.calculate_relative_wake_loss_vector()
         step = _xr.concat(
             [_step_generator(owflop, method) for method in methods], 'method')
+        # remove any global shift
+        step -= step.mean(dim='target')
         # normalize the step to the largest pseudo-gradient
         distance = rss(step, dim='xy')
         step /= distance.max('target')
-        # remove any global shift # TODO: remove shift before normalization
-        step -= step.mean(dim='target')
         # take step
         multiplier = scaler * multiplier
         step = step * multiplier * owflop.rotor_diameter_adim
@@ -120,7 +120,7 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
         layout = owflop._ds.layout
         current = owflop.objective()
         bound = best + (start - best) / iteration
-        multiplier = multiplier.isel(scale=i, drop=True) # drop=True needed?
+        multiplier = multiplier.isel(scale=i)
         _update_history(owflop, layout,
                         current, bound, corrections,
                         multiplier.isel(method=j), methods[j])
