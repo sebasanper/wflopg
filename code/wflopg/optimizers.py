@@ -9,14 +9,16 @@ from wflopg.create_layout import _take_step, fix_constraints
 from wflopg.helpers import rss
 
 
-def _update_history(owflop, layout, objective, bound=_np.nan,
-                   corrections='', multiplier=1):
+def _update_history(owflop, layout,
+                    objective, bound=_np.nan, corrections='',
+                    multiplier=1, method=''):
     owflop.history.append(_xr.Dataset())
     owflop.history[-1]['layout'] = layout
     owflop.history[-1]['objective'] = objective
     owflop.history[-1]['objective_bound'] = bound
     owflop.history[-1].attrs['corrections'] = corrections
     owflop.history[-1].attrs['scale'] = multiplier
+    owflop.history[-1].attrs['method'] = method
 
 def _setup_visualization(owflop):
     axes = {}
@@ -63,14 +65,22 @@ def _step_generator(owflop, method):
         raise ValueError(f"Method ‘{method}’ is unknown.")
 
 
-def step_iterator(owflop, method, max_iterations=_sys.maxsize,
+def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
                   multiplier=1, scaling=True,
                   visualize=False):
+    if methods is None:
+        methods = ['away', 'back', 'cross']
+    elif isinstance(methods, str):
+        methods = [methods]
+    
     if scaling is True:
         scaling = [.8, 1.1]
     elif scaling is False:
         scaling = [1]
-    scaler = _xr.DataArray(_np.float64(scaling), dims=('scale',))
+    scaler = (
+        _xr.DataArray(_np.float64(scaling), dims=('scale',))
+        * _xr.DataArray(_np.ones(len(methods)), coords=[('method', methods)])
+    )
     
     owflop.calculate_geometry()
     owflop.calculate_deficit()
@@ -87,7 +97,8 @@ def step_iterator(owflop, method, max_iterations=_sys.maxsize,
         owflop.calculate_deficit()
         # calculate step
         owflop.calculate_relative_wake_loss_vector()
-        step = _step_generator(owflop, method)
+        step = _xr.concat(
+            [_step_generator(owflop, method) for method in methods], 'method')
         # normalize the step to the largest pseudo-gradient
         distance = rss(step, dim='xy')
         step /= distance.max('target')
@@ -103,11 +114,16 @@ def step_iterator(owflop, method, max_iterations=_sys.maxsize,
         owflop.calculate_deficit()
         owflop.calculate_power()
         i = owflop.objective().argmin('scale')
-        layout = owflop._ds.layout.isel(scale=i, drop=True)
-        current = owflop.objective().isel(scale=i, drop=True)
+        owflop._ds = owflop._ds.isel(scale=i, drop=True)
+        j = owflop.objective().argmin('method').item()
+        owflop._ds = owflop._ds.isel(method=j, drop=True)
+        layout = owflop._ds.layout
+        current = owflop.objective()
         bound = best + (start - best) / iteration
-        multiplier = multiplier.isel(scale=i, drop=True)
-        _update_history(owflop, layout, current, bound, corrections, multiplier)
+        multiplier = multiplier.isel(scale=i, drop=True) # drop=True needed?
+        _update_history(owflop, layout,
+                        current, bound, corrections,
+                        multiplier.isel(method=j), methods[j])
         if visualize:
             _iterate_visualization(axes, owflop)
         # check best layout and criteria for early termination

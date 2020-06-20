@@ -245,13 +245,12 @@ def draw_scaling(axes, history, max_length=None):
         min_scales = 0.5
         max_scales = 2
     axes.set_ylim(min_scales, max_scales)
-    if 'method' in history[-1].attrs:
-        methods = _np.array([ds.method for ds in history])
-        away = methods == 'away'
-        axes.semilogy(_np.flatnonzero(away), scales[away], '>')
-        back = methods == 'back'
-        axes.semilogy(_np.flatnonzero(back), scales[back], '<')
-        cross = methods == 'cross'
-        axes.semilogy(_np.flatnonzero(cross), scales[cross], 'X')
-    else:
-        axes.semilogy(scales, '.')
+    methods = _np.array([ds.method for ds in history])
+    empty = methods == ''
+    axes.semilogy(_np.flatnonzero(empty), scales[empty], '.')
+    away = methods == 'away'
+    axes.semilogy(_np.flatnonzero(away), scales[away], '>')
+    back = methods == 'back'
+    axes.semilogy(_np.flatnonzero(back), scales[back], '<')
+    cross = methods == 'cross'
+    axes.semilogy(_np.flatnonzero(cross), scales[cross], 'X')
