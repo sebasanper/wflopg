@@ -11,13 +11,14 @@ from wflopg.helpers import rss
 
 def _update_history(owflop, layout,
                     objective, bound=_np.nan, corrections='',
-                    multiplier=1, method=''):
+                    multiplier=_np.nan, max_distance=_np.nan, method=''):
     owflop.history.append(_xr.Dataset())
     owflop.history[-1]['layout'] = layout
     owflop.history[-1]['objective'] = objective
     owflop.history[-1]['objective_bound'] = bound
     owflop.history[-1].attrs['corrections'] = corrections
-    owflop.history[-1].attrs['scale'] = multiplier
+    owflop.history[-1].attrs['max_step'] = multiplier
+    owflop.history[-1].attrs['actual_step'] = max_distance
     owflop.history[-1].attrs['method'] = method
 
 def _setup_visualization(owflop):
@@ -27,7 +28,8 @@ def _setup_visualization(owflop):
     axes['windrose'] = fig.add_subplot(grid[0, :2], polar=True)
     vis.draw_windrose(axes['windrose'], owflop._ds.direction_pmf)
     axes['convergence'] = fig.add_subplot(grid[1, :2])
-    axes['scaling'] = fig.add_subplot(grid[2, :2], sharex=axes['convergence'])
+    axes['step_size'] = fig.add_subplot(grid[2, :2],
+                                        sharex=axes['convergence'])
     axes['layout'] = fig.add_subplot(grid[:, 2:])
     vis.site_setup(axes['layout'])
     vis.draw_turbines(axes['layout'], owflop, owflop.history[0].layout,
@@ -40,8 +42,8 @@ def _setup_visualization(owflop):
 def _iterate_visualization(axes, owflop):
     axes['convergence'].clear()
     vis.draw_convergence(axes['convergence'], owflop.history)
-    axes['scaling'].clear()
-    vis.draw_scaling(axes['scaling'], owflop.history)
+    axes['step_size'].clear()
+    vis.draw_step_size(axes['step_size'], owflop.history)
     axes['layout'].clear()
     vis.site_setup(axes['layout'])
     vis.connect_layouts(axes['layout'], [ds.layout for ds in owflop.history])
@@ -121,19 +123,16 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
         current = owflop.objective()
         bound = best + (start - best) / iteration
         multiplier = multiplier.isel(scale=i)
-        _update_history(owflop, layout,
-                        current, bound, corrections,
-                        multiplier.isel(method=j), methods[j])
+        max_distance = (rss(layout - owflop.history[-1].layout, dim='xy').max()
+                        / owflop.rotor_diameter_adim)
+        _update_history(owflop, layout, current, bound, corrections,
+                        multiplier.isel(method=j), max_distance, methods[j])
         if visualize:
             _iterate_visualization(axes, owflop)
         # check best layout and criteria for early termination
         if current < best:
             best = current
-        else:
-            if current > bound:
-                break
-            distance_from_previous = rss(
-                owflop.history[-1].layout - owflop.history[-2].layout, dim='xy'
-            ) / owflop.rotor_diameter_adim
-            if distance_from_previous.max() < .1:
-                break
+        elif current > bound:
+            break
+        if max_distance < .01:
+            break

@@ -219,7 +219,7 @@ def draw_convergence(axes, history, max_length=None):
     axes.plot(bound_percentage, c='gray', ls='--')
 
 
-def draw_scaling(axes, history, max_length=None):
+def draw_step_size(axes, history, max_length=None):
     """Draw a relative scale factor plot.
 
     Parameters
@@ -237,20 +237,21 @@ def draw_scaling(axes, history, max_length=None):
     axes.xaxis.set_major_locator(_tkr.MaxNLocator(integer=True))
     max_length = len(history) if max_length is None else max_length
     axes.set_xlim(-1, max_length)
-    scales = _np.array([ds.scale for ds in history])
-    if len(scales) > 0:
-        min_scales = scales.min() * 0.9
-        max_scales = scales.max() / 0.9
+    max_step = _np.array([ds.max_step for ds in history])
+    actual_step = _np.array([ds.actual_step for ds in history])
+    if len(max_step) > 0:
+        min_scales = _np.nanmin(_np.fmin(max_step, actual_step)) * 0.9
+        max_scales = _np.nanmax(_np.fmax(max_step, actual_step)) / 0.9
     else:
         min_scales = 0.5
         max_scales = 2
     axes.set_ylim(min_scales, max_scales)
     methods = _np.array([ds.method for ds in history])
-    empty = methods == ''
-    axes.semilogy(_np.flatnonzero(empty), scales[empty], '.')
     away = methods == 'away'
-    axes.semilogy(_np.flatnonzero(away), scales[away], '>')
+    axes.semilogy(_np.flatnonzero(away), max_step[away], '>')
     back = methods == 'back'
-    axes.semilogy(_np.flatnonzero(back), scales[back], '<')
+    axes.semilogy(_np.flatnonzero(back), max_step[back], '<')
     cross = methods == 'cross'
-    axes.semilogy(_np.flatnonzero(cross), scales[cross], 'X')
+    axes.semilogy(_np.flatnonzero(cross), max_step[cross], 'X')
+    axes.semilogy(_np.arange(len(actual_step)), actual_step, '.', c='gray')
+    
