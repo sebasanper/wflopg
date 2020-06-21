@@ -206,10 +206,12 @@ def site(parcels):
         elif 'circle' in enclave:
             layout_centered, dist_sqr, radius_sqr, inside = _circle_common(
                 enclave, layout, scrutinize)
-            step = (
+            step = _xr.where(
+                dist_sqr > 0,
                 ~inside * layout_centered
                 * (_np.sqrt(radius_sqr / dist_sqr) - 1)
-                * (1 + ε)  # …+ε to avoid round-off ‘outsides’
+                * (1 + ε),  # …+ε to avoid round-off ‘outsides’
+                [0, 0]
             )
             enclave = None
         else:
