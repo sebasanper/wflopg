@@ -5,7 +5,7 @@ import matplotlib.pyplot as _plt
 import matplotlib.gridspec as _gs
 
 import wflopg.visualization as vis
-from wflopg.create_layout import _take_step, fix_constraints
+from wflopg.create_layout import fix_constraints
 from wflopg.helpers import rss
 
 
@@ -84,7 +84,6 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
         * _xr.DataArray(_np.ones(len(methods)), coords=[('method', methods)])
     )
     
-    owflop.calculate_geometry()
     owflop.calculate_deficit()
     owflop.calculate_power()
     _update_history(owflop, owflop._ds.layout, owflop.objective())
@@ -93,9 +92,7 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
         axes = _setup_visualization(owflop)
     for iteration in range(1, max_iterations+1):
         print(iteration, end=': ')
-        owflop._ds['layout'] = owflop.history[-1].layout
-        owflop._ds['context'] = owflop._ds.layout.rename(target='source')
-        owflop.calculate_geometry()
+        owflop.process_layout(owflop.history[-1].layout)
         owflop.calculate_deficit()
         # calculate step
         owflop.calculate_relative_wake_loss_vector()
@@ -109,7 +106,7 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
         # take step
         multiplier = scaler * multiplier
         step = step * multiplier * owflop.rotor_diameter_adim
-        _take_step(owflop, step)
+        owflop.process_layout(owflop._ds.layout + step)
         # fix any constraint violation
         corrections = fix_constraints(owflop)
         # evaluate new layout

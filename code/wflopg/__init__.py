@@ -92,11 +92,11 @@ class Owflop():
 
         # deal with initial layout
         if layout is None:
-            self.load_layout(problem['layout'])
+            self.process_layout(self.load_layout(problem['layout']))
         elif isinstance(layout, str):
-            self.load_layout(layout)
+            self.process_layout(self.load_layout(layout))
         elif isinstance(layout, _xr.DataArray):
-            self.process_initial_layout(layout)
+            self.process_layout(layout)
         elif isinstance(layout, dict):
             if 'type' not in layout:
                 raise ValueError("Layout type has not been specified!")
@@ -105,7 +105,7 @@ class Owflop():
                     turbines = layout.get('turbines', self.turbines)
                     if isinstance(turbines, list):
                         turbines = _np.random.randint(*self.turbines)
-                    self.process_initial_layout(
+                    self.process_layout(
                         create_layout.hexagonal(
                             turbines,
                             self.site_parcels,
@@ -351,18 +351,18 @@ class Owflop():
 
     def load_layout(self, filename):
         with open(filename) as f:
-            self.process_initial_layout(_yaml_load(f)['layout'])
+            layout = _yaml_load(f)['layout']
+        return _xr.DataArray(layout,
+                             dims=['target', 'xy'],
+                             coords={'target': range(len(layout))})
 
-    def process_initial_layout(self, initial_layout):
+    def process_layout(self, layout):
         # turbines affected by the wake
-        self._ds['layout'] = _xr.DataArray(
-            initial_layout,
-            dims=['target', 'xy'],
-            coords={'target': range(len(initial_layout))}
-        )
+        self._ds['layout'] = layout
         # turbines causing the wakes
         # NOTE: currently, these are the same as the ones affected
         self._ds['context'] = self._ds.layout.rename(target='source')
+        self.calculate_geometry()
 
     def calculate_geometry(self):
         # standard coordinates for vectors

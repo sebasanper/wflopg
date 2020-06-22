@@ -56,12 +56,6 @@ def hexagonal(turbines, site_parcels, site_violation_distance, to_border):
     return dense_layout + to_border(dense_layout)
 
 
-def _take_step(owflop, step):
-    owflop._ds['layout'] = owflop._ds.layout + step
-    owflop._ds['context'] = owflop._ds.layout.rename(target='source')
-    owflop.calculate_geometry()
-
-
 def fix_constraints(owflop, output=True):
     corrections = ''
     maybe_violations = True
@@ -71,7 +65,8 @@ def fix_constraints(owflop, output=True):
         if any_outside:
             if output:
                 print('s', outside.values.sum(), sep='', end='')
-            _take_step(owflop, owflop.to_border(owflop._ds.layout))
+            owflop.process_layout(
+                owflop._ds.layout + owflop.to_border(owflop._ds.layout))
             corrections += 's'
         proximity_repulsion_step = (
             owflop.proximity_repulsion(
@@ -82,7 +77,7 @@ def fix_constraints(owflop, output=True):
             if output:
                 print('p', proximity_repulsion_step.attrs['violations'],
                       sep='', end='')
-            _take_step(owflop, proximity_repulsion_step)
+            owflop.process_layout(owflop._ds.layout + proximity_repulsion_step)
             corrections += 'p'
         if output:
             print(' ', end='')
