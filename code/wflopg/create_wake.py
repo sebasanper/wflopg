@@ -113,7 +113,7 @@ def linear_top_hat(thrust_curve, rotor_radius, expansion_coeff=None,
 
     relative_area = _relative_area_function(averaging)
 
-    def wake_model(dc_vector):
+    def wake_model(dc_vector, spread_factor=1.):
         """Return wind speed deficit due to wake
 
         The argument must be an xarray DataArray of dimensional
@@ -123,8 +123,8 @@ def linear_top_hat(thrust_curve, rotor_radius, expansion_coeff=None,
         downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
         wake_radius = stream_tube_radius + expansion_coeff * downwind
         del downwind
-        rel_waked_area = (
-            relative_area(is_downwind, _np.abs(crosswind), wake_radius))
+        rel_waked_area = relative_area(
+            is_downwind, _np.abs(crosswind), spread_factor * wake_radius)
         del is_downwind, crosswind
         inv_rel_wake_area = _np.square(stream_tube_radius / wake_radius)
         del wake_radius
@@ -152,15 +152,15 @@ def entrainment(thrust_curve, rotor_radius, entrainment_coeff=0.15,
 
     relative_area = _relative_area_function(averaging)
 
-    def wake_model(dc_vector):
+    def wake_model(dc_vector, spread_factor=1.):
         # TODO: verify that the code produces the right geometry & deficit!
         downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
         downwind_factor = _np.cbrt(
             6 * entrainment_coeff / scaler * downwind + offset)
         del downwind
         wake_radius = scaler * (downwind_factor + 1 / downwind_factor)
-        rel_waked_area = (
-            relative_area(is_downwind, _np.abs(crosswind), wake_radius))
+        rel_waked_area = relative_area(
+            is_downwind, _np.abs(crosswind), spread_factor * wake_radius)
         del crosswind, is_downwind, wake_radius
         return rel_waked_area / (1 + _np.square(downwind_factor))
 
@@ -182,7 +182,7 @@ def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
     expansion_coeff_sqrt2 = (
         _np.sqrt(2) * (0.3837 * turbulence_intensity + 0.003678))
 
-    def wake_model(dc_vector):
+    def wake_model(dc_vector, spread_factor=1.):
         """Return wind speed deficit due to wake
 
         The argument must be an xarray DataArray of dimensional
@@ -191,12 +191,14 @@ def bpa_iea37(thrust_curve, rotor_radius, turbulence_intensity):
         """
         downwind, crosswind, is_downwind = _common(dc_vector / rotor_radius)
         # infinite sigma for upwind ensures zero deficit there
-        two_sigma_sqr = (
-            1. + expansion_coeff_sqrt2 * downwind.where(is_downwind, _np.inf)
-        ) ** 2
-        exponent = - crosswind ** 2 / two_sigma_sqr
-        radical = 1 - thrust_curve / two_sigma_sqr
-        return (1. - _np.sqrt(radical)) * _np.exp(exponent)
+        sqrt2_sigma = (
+            1. + expansion_coeff_sqrt2 * downwind.where(is_downwind, _np.inf))
+        del downwind, is_downwind
+        exponent = - _np.square(crosswind / (spread_factor * sqrt2_sigma))
+        del crosswind
+        max_deficit = 1. - _np.sqrt(1 - thrust_curve / _np.square(sqrt2_sigma))
+        del sqrt2_sigma
+        return max_deficit * _np.exp(exponent)
 
     return wake_model
 

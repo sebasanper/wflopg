@@ -68,13 +68,13 @@ def _step_generator(owflop, method):
 
 
 def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
-                  multiplier=1, scaling=True,
+                  multiplier=1, scaling=True, wake_spreading=False,
                   visualize=False):
     if methods is None:
         methods = ['away', 'back', 'cross']
     elif isinstance(methods, str):
         methods = [methods]
-    
+
     if scaling is True:
         scaling = [.8, 1.1]
     elif scaling is False:
@@ -83,7 +83,14 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
         _xr.DataArray(_np.float64(scaling), dims=('scale',))
         * _xr.DataArray(_np.ones(len(methods)), coords=[('method', methods)])
     )
-    
+
+    initial_multiplier = multiplier
+    minimal_multiplier = 1e-2
+    if wake_spreading:
+        spread_multiplier = initial_multiplier
+    else:
+        spread_multiplier = minimal_multiplier
+
     owflop.calculate_deficit()
     owflop.calculate_power()
     _update_history(owflop, owflop._ds.layout, owflop.objective())
@@ -93,7 +100,10 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
     for iteration in range(1, max_iterations+1):
         print(iteration, end=': ')
         owflop.process_layout(owflop.history[-1].layout)
-        owflop.calculate_deficit()
+        owflop.calculate_deficit(
+            spread_factor=2 ** (2 * (spread_multiplier - minimal_multiplier)
+                                / (initial_multiplier - minimal_multiplier))
+        )
         # calculate step
         owflop.calculate_relative_wake_loss_vector()
         step = _xr.concat(
@@ -119,7 +129,9 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
         layout = owflop._ds.layout
         current = owflop.objective()
         bound = best + (start - best) / iteration
-        multiplier = multiplier.isel(scale=i)
+        multiplier = _np.maximum(multiplier.isel(scale=i, drop=True),
+                                 minimal_multiplier)
+        current_multiplier = multiplier.isel(method=j, drop=True)
         max_distance = (rss(layout - owflop.history[-1].layout, dim='xy').max()
                         / owflop.rotor_diameter_adim)
         _update_history(owflop, layout, current, bound, corrections,
@@ -131,5 +143,10 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
             best = current
         elif current > bound:
             break
-        if max_distance < .01:
+        if max_distance < 1e-3:
             break
+        if wake_spreading and current_multiplier < spread_multiplier:
+            spread_multiplier = (
+                (iteration * spread_multiplier + current_multiplier)
+                / (iteration + 1)
+            )

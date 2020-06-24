@@ -379,14 +379,14 @@ class Owflop():
             / (self._ds.distance + (self._ds.distance == 0))
         )  # we change 0-distances in the denumerator to 1 to avoid divide by 0
 
-    def calculate_deficit(self):
+    def calculate_deficit(self, spread_factor=1.):
         # downwind/crosswind coordinates for vectors
         # between all source and target turbines, for all directions
         self._ds['dc_vector'] = layout_geometry.generate_dc_vector(
             self._ds.vector, self._ds.downwind, self._ds.crosswind)
         # deficit
         self._ds['deficit'] = self.wake_model(
-            self._ds.dc_vector * self.site_radius)
+            self._ds.dc_vector * self.site_radius, spread_factor)
         self._ds['combined_deficit'], self._ds['relative_deficit'] = (
             self.combination_rule(self._ds.deficit))
 
