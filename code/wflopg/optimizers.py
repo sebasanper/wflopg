@@ -117,15 +117,19 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
         # normalize the step to the largest pseudo-gradient
         distance = rss(step, dim='xy')
         step /= distance.max('target')
+        del distance
         # take step
         multiplier = scaler * multiplier
         step = step * multiplier * owflop.rotor_diameter_adim
         owflop.process_layout(owflop._ds.layout + step)
+        del step
         # fix any constraint violation
         corrections = fix_constraints(owflop)
         # evaluate new layout
+        owflop._ds = owflop._ds.chunk({'scale': 1, 'method': 1})
         owflop.calculate_deficit()
         owflop.calculate_power()
+        owflop._ds.load()
         i = owflop.objective().argmin('scale')
         owflop._ds = owflop._ds.isel(scale=i, drop=True)
         j = owflop.objective().argmin('method').item()
