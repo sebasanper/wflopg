@@ -9,17 +9,12 @@ from wflopg.create_layout import fix_constraints
 from wflopg.helpers import rss
 
 
-def _update_history(owflop, layout,
-                    objective, bound=_np.nan, corrections='',
-                    multiplier=_np.nan, max_distance=_np.nan, method=''):
+def _update_history(owflop, arrays={}, attrs={}):
     owflop.history.append(_xr.Dataset())
-    owflop.history[-1]['layout'] = layout
-    owflop.history[-1]['objective'] = objective
-    owflop.history[-1]['objective_bound'] = bound
-    owflop.history[-1].attrs['corrections'] = corrections
-    owflop.history[-1].attrs['max_step'] = multiplier
-    owflop.history[-1].attrs['actual_step'] = max_distance
-    owflop.history[-1].attrs['method'] = method
+    for name, array in arrays.items():
+        owflop.history[-1][name] = array
+    for name, attr in attrs.items():
+        owflop.history[-1].attrs[name] = attr
 
 def _setup_visualization(owflop):
     axes = {}
@@ -93,7 +88,15 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
 
     owflop.calculate_deficit()
     owflop.calculate_power()
-    _update_history(owflop, owflop._ds.layout, owflop.objective())
+    _update_history(owflop,
+                    arrays={'layout': owflop._ds.layout,
+                            'objective': owflop.objective(),
+                            'objective_bound': _np.nan},
+                    attrs={'corrections': '',
+                           'max_step': _np.nan,
+                           'actual_step': _np.nan,
+                           'method': '',
+                           'spread': _np.nan})
     best = start = owflop.history[0].objective
     if visualize:
         axes = _setup_visualization(owflop)
@@ -134,8 +137,15 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
         current_multiplier = multiplier.isel(method=j, drop=True)
         max_distance = (rss(layout - owflop.history[-1].layout, dim='xy').max()
                         / owflop.rotor_diameter_adim)
-        _update_history(owflop, layout, current, bound, corrections,
-                        multiplier.isel(method=j), max_distance, methods[j])
+        _update_history(owflop,
+                        arrays={'layout': layout,
+                                'objective': current,
+                                'objective_bound': bound},
+                        attrs={'corrections': corrections,
+                               'max_step': current_multiplier,
+                               'actual_step': max_distance,
+                               'method': methods[j],
+                               'spread': spread_multiplier})
         if visualize:
             _iterate_visualization(axes, owflop)
         # check best layout and criteria for early termination
