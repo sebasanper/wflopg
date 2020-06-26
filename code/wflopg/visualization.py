@@ -239,6 +239,7 @@ def draw_step_size(axes, history, max_length=None):
     axes.set_xlim(-1, max_length)
     max_step = _np.array([ds.max_step for ds in history])
     actual_step = _np.array([ds.actual_step for ds in history])
+    spread = _np.array([ds.spread for ds in history])
     if len(max_step) > 0:
         min_scales = _np.nanmin(_np.fmin(max_step, actual_step)) * 0.9
         max_scales = _np.nanmax(_np.fmax(max_step, actual_step)) / 0.9
@@ -254,4 +255,4 @@ def draw_step_size(axes, history, max_length=None):
     cross = methods == 'cross'
     axes.semilogy(_np.flatnonzero(cross), max_step[cross], 'X')
     axes.semilogy(_np.arange(len(actual_step)), actual_step, '.', c='gray')
-    
+    axes.semilogy(_np.arange(len(spread)), spread, '--', c='gray')

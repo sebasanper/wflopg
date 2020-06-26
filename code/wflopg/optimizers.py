@@ -81,13 +81,15 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
     )
 
     initial_multiplier = multiplier
-    minimal_multiplier = 1e-2
     if wake_spreading:
         spread_multiplier = initial_multiplier
     else:
-        spread_multiplier = minimal_multiplier
+        spread_multiplier = 0
+    def spread_factor(spread_multiplier):
+        return (1 + 3 * (spread_multiplier - 0)
+                      / (initial_multiplier - 0))
 
-    owflop.calculate_deficit()
+    owflop.calculate_deficit(spread_factor(spread_multiplier))
     owflop.calculate_power()
     _update_history(owflop,
                     arrays={'layout': owflop._ds.layout,
@@ -104,10 +106,8 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
     for iteration in range(1, max_iterations+1):
         print(iteration, end=': ')
         owflop.process_layout(owflop.history[-1].layout)
-        owflop.calculate_deficit(
-            spread_factor=2 ** (2 * (spread_multiplier - minimal_multiplier)
-                                / (initial_multiplier - minimal_multiplier))
-        )
+        spread = spread_factor(spread_multiplier)
+        owflop.calculate_deficit(spread)
         # calculate step
         owflop.calculate_relative_wake_loss_vector()
         step = _xr.concat(
@@ -127,7 +127,7 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
         corrections = fix_constraints(owflop)
         # evaluate new layout
         owflop._ds = owflop._ds.chunk({'scale': 1, 'method': 1})
-        owflop.calculate_deficit()
+        owflop.calculate_deficit(spread)
         owflop.calculate_power()
         owflop._ds.load()
         i = owflop.objective().argmin('scale')
@@ -136,6 +136,8 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
         owflop._ds = owflop._ds.isel(method=j, drop=True)
         layout = owflop._ds.layout
         current = owflop.objective()
+        print(f"(wfl: {_np.round(current.item() * 100, 4)};",
+              f"spread: {_np.round(spread, 2)})", sep=' ')
         bound = best + (start - best) / iteration
         multiplier = _np.maximum(multiplier.isel(scale=i, drop=True),
                                  minimal_multiplier)
@@ -158,10 +160,13 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
             best = current
         elif current > bound:
             break
-        if max_distance < 1e-3:
-            break
-        if wake_spreading and current_multiplier < spread_multiplier:
-            spread_multiplier = (
-                (iteration * spread_multiplier + current_multiplier)
-                / (iteration + 1)
-            )
+        if wake_spreading:
+            if current_multiplier < spread_multiplier:
+                weight = _np.log2(iteration + 1)
+                spread_multiplier = (
+                    (spread_multiplier * weight + current_multiplier)
+                    / (weight + 1)
+                )
+            else:
+                # force reduction of spread multiplier to avoid getting stuck
+                spread_multiplier /= 10**0.01
