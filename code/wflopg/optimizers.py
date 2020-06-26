@@ -65,6 +65,7 @@ def _step_generator(owflop, method):
 def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
                   multiplier=1, scaling=True, wake_spreading=False,
                   visualize=False):
+
     if methods is None:
         methods = ['away', 'back', 'cross']
     elif isinstance(methods, str):
