@@ -139,11 +139,10 @@ def step_iterator(owflop, methods=None, max_iterations=_sys.maxsize,
         print(f"(wfl: {_np.round(current.item() * 100, 4)};",
               f"spread: {_np.round(spread, 2)})", sep=' ')
         bound = best + (start - best) / iteration
-        multiplier = _np.maximum(multiplier.isel(scale=i, drop=True),
-                                 minimal_multiplier)
-        current_multiplier = multiplier.isel(method=j, drop=True)
+        multiplier = multiplier.isel(scale=i, drop=True)
+        current_multiplier = multiplier.isel(method=j, drop=True).item()
         max_distance = (rss(layout - owflop.history[-1].layout, dim='xy').max()
-                        / owflop.rotor_diameter_adim)
+                        / owflop.rotor_diameter_adim).item()
         _update_history(owflop,
                         arrays={'layout': layout,
                                 'objective': current,
