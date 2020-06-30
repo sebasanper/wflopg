@@ -28,8 +28,6 @@ class Owflop():
         # _ds is the main working Dataset
         self._ds = _xr.Dataset(coords={dim: COORDS[dim]
                                        for dim in {'xy', 'dc'}})
-        # history of layouts and friends as a list of _xr.DataSets
-        self.history = []
 
     def load_problem(self, filename,
                      wind_resource=None, layout=None, wake_model=None,

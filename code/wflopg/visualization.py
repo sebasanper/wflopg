@@ -16,7 +16,6 @@ Example usage (given some problem object `o`):
 import numpy as _np
 import matplotlib.pyplot as _plt
 import matplotlib.ticker as _tkr
-import xarray as _xr
 
 
 def draw_windrose(axes, wind_direction_pmf, color='b'):
@@ -113,7 +112,7 @@ def draw_zones(axes, owflop):
     draw_zone(owflop.parcels)
 
 
-def draw_turbines(axes, owflop, layout=None, proximity=False, in_or_out=False):
+def draw_turbines(axes, owflop, layout, proximity=False, in_or_out=False):
     """Draw the turbines and their proximity exclusion zones
 
     Parameters
@@ -131,8 +130,6 @@ def draw_turbines(axes, owflop, layout=None, proximity=False, in_or_out=False):
         whether or not to show whether a turbine is outside the site
 
     """
-    if layout is None:
-        layout = owflop.history[-1].layout
     turbine_size = owflop.rotor_radius_adim
     turbine_color = 'k'
     if in_or_out:
@@ -178,18 +175,19 @@ def connect_layouts(axes, layouts):
     axes
         matplotlib `axes` object
     layout
-        an iterator of farm layouts, i.e., of xarray `DataArray`s with an
-        `'xy'` dimension and one non-`'xy'`-dimension
+        an xarray `DataArray` of farm layouts, i.e., with an `'iteration'`
+        dimension`, an 'xy'` dimension, and one further-dimension identifying
+        the turbines
 
     """
-    xs = _xr.concat(
-        [layout.sel(xy='x', drop=True) for layout in layouts], dim='layout')
-    ys = _xr.concat(
-        [layout.sel(xy='y', drop=True) for layout in layouts], dim='layout')
-    axes.plot(xs, ys, '-k')
+    axes.plot(
+        layouts.sel(xy='x', drop=True).transpose(),
+        layouts.sel(xy='y', drop=True).transpose(),
+        '-k'
+    )
 
 
-def draw_convergence(axes, history, max_length=None):
+def draw_convergence(axes, history):
     """Draw a convergence plot for an optimization run.
 
     Parameters
@@ -197,29 +195,17 @@ def draw_convergence(axes, history, max_length=None):
     axes
         matplotlib `axes` object
     history
-        sequence of xarray `Dataset` objects with direction dimension
-        No normalization is applied to the `DataArray` values
-    max_length
-        a positive integer that determines the plot's upper y limit;
-        useful when plotting iteratively
+        an xarray `Dataset` with `'iteration'` coordinate and `'objective'` and
+        `'objective_bound'` `DataArray`s
 
     """
     axes.xaxis.set_major_locator(_tkr.MaxNLocator(integer=True))
-    max_length = len(history) if max_length is None else max_length
-    loss_percentage = 100 * _np.array([ds.objective for ds in history])
-    bound_percentage = 100 * _np.array([ds.objective_bound for ds in history])
-    ymin = loss_percentage.min()
-    ymax = _np.fmax(
-        _np.where(_np.isnan(loss_percentage), ymin, loss_percentage).max(),
-        _np.where(_np.isnan(bound_percentage), ymin, bound_percentage).max()
-    )
-    axes.set_xlim(-1, max_length)
-    axes.set_ylim(ymin - 0.1, ymax + 0.1)
-    axes.plot(loss_percentage)
-    axes.plot(bound_percentage, c='gray', ls='--')
+    (100 * history.objective).plot.line(ax=axes)
+    (100 * history.objective_bound).plot.line('--', c='gray', ax=axes)
+    axes.set_ylabel('')
 
 
-def draw_step_size(axes, history, max_length=None):
+def draw_step_size(axes, history):
     """Draw a relative scale factor plot.
 
     Parameters
@@ -227,32 +213,15 @@ def draw_step_size(axes, history, max_length=None):
     axes
         matplotlib `axes` object
     history
-        sequence of xarray `Dataset` objects with direction dimension
-        No normalization is applied to the `DataArray` values
-    max_length
-        a positive integer that determines the plot's upper y limit;
-        useful when plotting iteratively
+        an xarray `Dataset` with `'iteration'` coordinate and `'max_step'`,
+        `'actual_step'`, `'spread'`, and `'method'` `DataArray`s
 
     """
     axes.xaxis.set_major_locator(_tkr.MaxNLocator(integer=True))
-    max_length = len(history) if max_length is None else max_length
-    axes.set_xlim(-1, max_length)
-    max_step = _np.array([ds.max_step for ds in history])
-    actual_step = _np.array([ds.actual_step for ds in history])
-    spread = _np.array([ds.spread for ds in history])
-    if len(max_step) > 0:
-        min_scales = _np.nanmin(_np.fmin(max_step, actual_step)) * 0.9
-        max_scales = _np.nanmax(_np.fmax(max_step, actual_step)) / 0.9
-    else:
-        min_scales = 0.5
-        max_scales = 2
-    axes.set_ylim(min_scales, max_scales)
-    methods = _np.array([ds.method for ds in history])
-    away = methods == 'away'
-    axes.semilogy(_np.flatnonzero(away), max_step[away], '>')
-    back = methods == 'back'
-    axes.semilogy(_np.flatnonzero(back), max_step[back], '<')
-    cross = methods == 'cross'
-    axes.semilogy(_np.flatnonzero(cross), max_step[cross], 'X')
-    axes.semilogy(_np.arange(len(actual_step)), actual_step, '.', c='gray')
-    axes.semilogy(_np.arange(len(spread)), spread, '--', c='gray')
+    kwargs = {'ax': axes, 'yscale': 'log'}
+    history.max_step.where(history.method == 'a').plot.line('>', **kwargs)
+    history.max_step.where(history.method == 'b').plot.line('<', **kwargs)
+    history.max_step.where(history.method == 'c').plot.line('X', **kwargs)
+    history.actual_step.plot.line('.', c='gray', **kwargs)
+    history.spread.plot.line('--', c='gray', **kwargs)
+    axes.set_ylabel('')
