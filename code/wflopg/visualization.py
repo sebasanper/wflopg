@@ -4,9 +4,9 @@ Example usage (given some problem object `o`):
 
     import wflopg.visualization as vis
     fig, ax = plt.subplots()
-    vis.draw_boundaries(ax, o)
-    vis.draw_zones(ax, o)
-    vis.draw_turbines(ax, o)
+    vis.draw_boundaries(ax, o.site_boundaries)
+    vis.draw_zones(ax, o.site_parcels)
+    vis.draw_turbines(ax, o.rotor_radius_adim)
     plt.axis('equal')
     plt.axis('off')
     plt.show()
@@ -58,15 +58,15 @@ def site_setup(axes):
     axes.set_ylim(-1.01, 1.01)
 
 
-def draw_boundaries(axes, owflop):
+def draw_boundaries(axes, boundaries):
     """Draw the boundaries of a site
 
     Parameters
     ----------
     axes
         matplotlib `axes` object
-    owflop
-        wflopg `Owflop` object
+    boundaries
+        the applicable Owflop.site_boundaries attribute
 
     """
     def draw_boundary(boundary):
@@ -81,19 +81,19 @@ def draw_boundaries(axes, owflop):
             for exclusion_boundary in boundary['exclusions']:
                 draw_boundary(exclusion_boundary)
 
-    for boundary in owflop.boundaries:
+    for boundary in boundaries:
         draw_boundary(boundary)
 
 
-def draw_zones(axes, owflop):
+def draw_zones(axes, parcels):
     """Draw the parcels of a site, i.e., all enclaves and exclaves
 
     Parameters
     ----------
     axes
         matplotlib `axes` object
-    owflop
-        wflopg `Owflop` object
+    parcels
+        the applicable Owflop.site_parcels attribute
 
     """
     def draw_zone(zone, exclusion=True):
@@ -109,59 +109,59 @@ def draw_zones(axes, owflop):
             for exclusion_zone in zone['exclusions']:
                 draw_zone(exclusion_zone, not exclusion)
 
-    draw_zone(owflop.parcels)
+    draw_zone(parcels)
 
 
-def draw_turbines(axes, owflop, layout, proximity=False, in_or_out=False):
+def draw_turbines(axes, layout, turbine_size,
+                  minimal_proximity=0, inside=None):
     """Draw the turbines and their proximity exclusion zones
 
     Parameters
     ----------
     axes
         matplotlib `axes` object
-    owflop
-        wflopg `Owflop` object
     layout
         a farm layout, i.e., an xarray `DataArray` with an `'xy'` dimension and
         one non-`'xy'`-dimension
+    turbine_size
+        the adimensional rotor radius
     proximity
-        whether or not to show turbine distance constraints
-    in_or_out
-        whether or not to show whether a turbine is outside the site
+        the minimal proximity defining the rotor distance constraint
+        (0 to ignore)
+    inside
+        the applicable Owflop.inside function (`None` to ignore)
 
     """
-    turbine_size = owflop.rotor_radius_adim
     turbine_color = 'k'
-    if in_or_out:
-        inside = owflop.inside(layout)['in_site']
+    if inside is not None:
+        in_site = inside(layout)['in_site']
     for (i, position) in enumerate(layout.values):
-        if in_or_out:
-            turbine_color = 'b' if inside.values[i] else 'r'
-        if proximity:
+        if inside is not None:
+            turbine_color = 'b' if in_site.values[i] else 'r'
+        if minimal_proximity > 0:
             axes.add_patch(
-                _plt.Circle(position, owflop.minimal_proximity / 2,
+                _plt.Circle(position, minimal_proximity / 2,
                             color='r', linestyle=':', fill=False))
         axes.add_patch(
             _plt.Circle(position, turbine_size, color=turbine_color))
 
 
-def draw_step(axes, owflop, layout, step):
+def draw_step(axes, layout, step, turbine_size):
     """Draw a layout change step using vectors
 
     Parameters
     ----------
     axes
         matplotlib `axes` object
-    owflop
-        wflopg `Owflop` object
     layout
         a farm layout, i.e., an xarray `DataArray` with an `'xy'` dimension and
         one non-`'xy'`-dimension
     step
         a layout change step; effectively a difference of two layouts
+    turbine_size
+        the adimensional rotor radius
 
     """
-    turbine_size = owflop.rotor_radius_adim
     axes.quiver(layout.sel(xy='x'), layout.sel(xy='y'),
                 step.sel(xy='x'), step.sel(xy='y'),
                 angles='xy', scale_units='xy', scale=1, width=turbine_size/2)

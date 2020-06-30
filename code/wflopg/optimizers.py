@@ -20,9 +20,11 @@ def _setup_visualization(owflop, history):
                                         sharex=axes['convergence'])
     axes['layout'] = fig.add_subplot(grid[:, 2:])
     vis.site_setup(axes['layout'])
-    vis.draw_turbines(axes['layout'], owflop, history.isel(iteration=0).layout,
-                      proximity=True, in_or_out=True)
-    vis.draw_boundaries(axes['layout'], owflop)
+    vis.draw_turbines(axes['layout'], history.isel(iteration=0).layout,
+                      owflop.rotor_radius_adim,
+                      minimal_proximity=owflop.minimal_proximity,
+                      inside=owflop.inside)
+    vis.draw_boundaries(axes['layout'], owflop.boundaries)
     grid.tight_layout(fig)
     _plt.pause(.10)
     return axes
@@ -35,10 +37,13 @@ def _iterate_visualization(axes, owflop, history):
     axes['layout'].clear()
     vis.site_setup(axes['layout'])
     vis.connect_layouts(axes['layout'], history.layout)
-    vis.draw_turbines(axes['layout'], owflop, history.isel(iteration=0).layout)
-    vis.draw_turbines(axes['layout'], owflop, history.isel(iteration=-1).layout,
-                      proximity=True, in_or_out=True)
-    vis.draw_boundaries(axes['layout'], owflop)
+    vis.draw_turbines(axes['layout'], history.isel(iteration=0).layout,
+                      owflop.rotor_radius_adim)
+    vis.draw_turbines(axes['layout'], history.isel(iteration=-1).layout,
+                      owflop.rotor_radius_adim,
+                      minimal_proximity=owflop.minimal_proximity,
+                      inside=owflop.inside)
+    vis.draw_boundaries(axes['layout'], owflop.boundaries)
     _plt.pause(0.1)
 
 def _step_generator(owflop, method):
