@@ -111,9 +111,9 @@ def step_iterator(owflop, max_iterations=100,
     best = start = history.isel(iteration=0).objective
     if visualize:
         axes = _setup_visualization(owflop, history)
-    for iteration in range(1, max_iterations+1):
-        print(iteration, end=': ')
-        owflop.process_layout(history.isel(iteration=iteration-1).layout)
+    for k in range(1, max_iterations+1):
+        print(k, end=': ')
+        owflop.process_layout(history.isel(iteration=k-1).layout)
         spread = spread_factor(spread_multiplier)
         owflop.calculate_deficit(spread)
         # calculate step
@@ -146,16 +146,15 @@ def step_iterator(owflop, max_iterations=100,
         current = owflop.objective()
         print(f"(wfl: {_np.round(current.item() * 100, 4)};",
               f"spread: {_np.round(spread, 2)})", sep=' ')
-        bound = best + (start - best) / iteration
+        bound = best + (start - best) / k
         multiplier = multiplier.isel(scale=i, drop=True)
         current_multiplier = multiplier.isel(method=j, drop=True).item()
         max_distance = (
-            rss(layout - history.isel(iteration=iteration-1).layout,
-                dim='xy').max()
+            rss(layout - history.isel(iteration=k-1).layout, dim='xy').max()
             / owflop.rotor_diameter_adim
         ).item()
         # update history
-        selector = dict(iteration=iteration)
+        selector = dict(iteration=k)
         history.layout[selector]= layout
         history.objective[selector]= current
         history.objective_bound[selector]= bound
@@ -167,15 +166,15 @@ def step_iterator(owflop, max_iterations=100,
         # visualization
         if visualize:
             _iterate_visualization(
-                axes, owflop, history.isel(iteration=slice(0, iteration+1)))
+                axes, owflop, history.isel(iteration=slice(0, k+1)))
         # check best layout and criteria for early termination
         if current < best:
             best = current
         elif current > bound:
-            return history.isel(iteration=slice(0, iteration+1))
+            return history.isel(iteration=slice(0, k+1))
         if wake_spreading:
             if current_multiplier < spread_multiplier:
-                weight = _np.log2(iteration + 1)
+                weight = _np.log2(k + 1)
                 spread_multiplier = (
                     (spread_multiplier * weight + current_multiplier)
                     / (weight + 1)
