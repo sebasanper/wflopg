@@ -1,4 +1,3 @@
-import sys as _sys
 import numpy as _np
 import xarray as _xr
 import matplotlib.pyplot as _plt
