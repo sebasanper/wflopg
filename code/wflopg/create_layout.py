@@ -2,9 +2,89 @@ import numpy as _np
 import xarray as _xr
 
 from wflopg.constants import COORDS
+import wflopg.helpers as _hs
 from wflopg import create_site
 from wflopg import create_constraint
 
+
+class Layout():
+    """A wind farm layout object."""
+    def __init__(self, filename=None, **kwargs):
+        """Create a wind farm layout object.
+        
+        Parameters
+        ----------
+        filename
+            The path to a file containing a wind farm layout
+            description satisfying the wind farm layout schema.
+        kwargs
+            A (nested) `dict` containing a (partial) description
+            of a wind farm layout according to the wind farm layout
+            schema. It can be used both to override elements of
+            the description given in `filename` or to define
+            a wind farm layout in its entirety.
+        
+        """
+        # TODO: add reference to actual wind farm layout schema
+        layout_dict = {}
+        if filename is not None:
+            with open(filename) as f:
+                layout_dict.update(_hs.yaml_load(f))
+        layout_dict.update(kwargs)
+        # TODO: check layout_dict with schema using jsonschema
+        
+        layout_array = _np.array(layout_dict['layout'])
+        self.layout = _xr.Dataset(
+            coords={'loc': range(len(layout_array))})
+        for name, index in {('x', 0), ('y', 1)}:
+            self.layout[name] = ('loc', layout_array[:, index])
+        for name in {'target', 'source', 'movable'}:
+            self.layout[name] = _xr.full_like(self.layout.loc, True)
+            
+        # TODO: add other layout_dict properties as attributes to self?
+
+    def initialize_relative_positions(self, frm, to):
+        """Add and initialize relative positions to wind farm layout object.
+        
+        Parameters
+        ----------
+        frm
+            Boolean array identifying locations
+            to calculate relative positions from.
+        to
+            Boolean array identifying locations
+            to calculate relative positions to.
+        
+        """
+        self.rel = _xr.Dataset(coords={'frm': self.layout.loc[frm],
+                                       'to': self.layout.loc[to]})
+        for z in {'x', 'y'}:
+            da = self.layout[z]
+            self.rel[z] = (
+                da.sel(at=self.rel['to']).rename({'loc': 'to'})
+                - da.sel(at=self.rel['frm']).rename({'loc': 'frm'})
+            )
+    
+    def _has_rel_check(self):
+        if not hasattr(self, 'rel'):
+            raise AttributeError(
+                "Call the ‘initialize_relative_positions’ method first.")
+
+    def get_distances(self):
+        """Get distances between locations."""
+        self._has_rel_check()
+        if 'distance' not in self.rel:
+            self.rel['distance'] = (
+                _np.sqrt(_np.square(self.rel.x) + _np.square(self.rel.y)))
+        return self.rel.distance
+        
+    def get_angles(self):
+        """Get angles between locations."""
+        self._has_rel_check()
+        if 'angle' not in self.rel:
+            self.rel['angle'] = _np.atan2(self.rel.y, self.rel.x)
+        return self.rel.angle
+        
 
 def hexagonal(turbines, site_parcels, site_violation_distance, to_border):
     """Create hexagonal—so densest—packing to cover site

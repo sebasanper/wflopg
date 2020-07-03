@@ -1,5 +1,10 @@
+from ruamel.yaml import YAML as _yaml
 import numpy as _np
 import xarray as _xr
+
+
+def yaml_load(f):
+    return _yaml(typ='safe').load(f)
 
 
 def rss(array, dim):
