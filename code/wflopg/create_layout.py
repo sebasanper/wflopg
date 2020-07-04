@@ -1,5 +1,6 @@
 import numpy as _np
 import xarray as _xr
+import copy as _cp
 
 from wflopg.constants import COORDS
 import wflopg.helpers as _hs
@@ -8,23 +9,41 @@ from wflopg import create_constraint
 
 
 class Layout():
-    """A wind farm layout object."""
+    """A wind farm layout object.
+        
+    Parameters
+    ----------
+    filename
+        The path to a file containing a wind farm layout
+        description satisfying the wind farm layout schema.
+    kwargs
+        A (nested) `dict` containing a (partial) description
+        of a wind farm layout according to the wind farm layout
+        schema. It can be used both to override elements of
+        the description given in `filename` or to define
+        a wind farm layout in its entirety.
+        
+    Attributes
+    ----------
+    abspos
+        ***
+    relpos
+        ***
+
+    Methods
+    -------
+    initialize_relative_positions(frm, to)
+        Add and initialize relative positions to wind farm layout object.
+    get_distances()
+        Get and, as needed, calculate distances between locations.
+    get_angles()
+        Get and, as needed, calculate angles between locations.
+    shift(step):
+        Shift the layout by a given step.
+        
+    """
     def __init__(self, filename=None, **kwargs):
-        """Create a wind farm layout object.
-        
-        Parameters
-        ----------
-        filename
-            The path to a file containing a wind farm layout
-            description satisfying the wind farm layout schema.
-        kwargs
-            A (nested) `dict` containing a (partial) description
-            of a wind farm layout according to the wind farm layout
-            schema. It can be used both to override elements of
-            the description given in `filename` or to define
-            a wind farm layout in its entirety.
-        
-        """
+        """Create a wind farm layout object."""
         # TODO: add reference to actual wind farm layout schema
         layout_dict = {}
         if filename is not None:
@@ -34,57 +53,101 @@ class Layout():
         # TODO: check layout_dict with schema using jsonschema
         
         layout_array = _np.array(layout_dict['layout'])
-        self.layout = _xr.Dataset(
-            coords={'loc': range(len(layout_array))})
+        self.abspos = _xr.Dataset(coords={'pos': range(len(layout_array))})
         for name, index in {('x', 0), ('y', 1)}:
-            self.layout[name] = ('loc', layout_array[:, index])
-        for name in {'target', 'source', 'movable'}:
-            self.layout[name] = _xr.full_like(self.layout.loc, True)
+            self.abspos[name] = ('pos', layout_array[:, index])
+        for name, val in {'target': True, 'source': True,
+                          'movable': True, 'context': False}.items():
+            self.abspos[name] = _xr.full_like(self.abspos.pos, val, dtype=bool)
             
         # TODO: add other layout_dict properties as attributes to self?
 
-    def initialize_relative_positions(self, frm, to):
+    def initialize_relative_positions(self, pos_from, pos_to):
         """Add and initialize relative positions to wind farm layout object.
         
         Parameters
         ----------
-        frm
-            Boolean array identifying locations
+        pos_from
+            Boolean array identifying positions
             to calculate relative positions from.
-        to
-            Boolean array identifying locations
+        pos_to
+            Boolean array identifying positions
             to calculate relative positions to.
         
         """
-        self.rel = _xr.Dataset(coords={'frm': self.layout.loc[frm],
-                                       'to': self.layout.loc[to]})
+        ds = self.abspos
+        self.relpos = _xr.Dataset(
+            coords={'pos_from': ds.pos[pos_from].rename({'pos': 'pos_from'}),
+                    'pos_to': ds.pos[pos_to].rename({'pos': 'pos_to'})}
+        )
         for z in {'x', 'y'}:
-            da = self.layout[z]
-            self.rel[z] = (
-                da.sel(at=self.rel['to']).rename({'loc': 'to'})
-                - da.sel(at=self.rel['frm']).rename({'loc': 'frm'})
-            )
+            da = ds[z]
+            self.relpos[z] = (da.sel(pos=self.relpos['pos_to'])
+                              - da.sel(pos=self.relpos['pos_from']))
     
-    def _has_rel_check(self):
-        if not hasattr(self, 'rel'):
+    def _has_relpos_check(self):
+        """Raise AttributeError if the relpos attribute is not present."""
+        if not hasattr(self, 'relpos'):
             raise AttributeError(
                 "Call the ‘initialize_relative_positions’ method first.")
 
     def get_distances(self):
-        """Get distances between locations."""
-        self._has_rel_check()
-        if 'distance' not in self.rel:
-            self.rel['distance'] = (
-                _np.sqrt(_np.square(self.rel.x) + _np.square(self.rel.y)))
-        return self.rel.distance
+        """Get and, as needed, calculate distances between positions.
+            
+        Returns
+        -------
+        `xarray.DataArray`
+            ***
+        
+        """
+        self._has_relpos_check()
+        if 'distance' not in self.relpos:
+            self.relpos['distance'] = (
+                _np.sqrt(_np.square(self.relpos.x) + _np.square(self.relpos.y))
+            )
+        return self.relpos.distance
         
     def get_angles(self):
-        """Get angles between locations."""
-        self._has_rel_check()
-        if 'angle' not in self.rel:
-            self.rel['angle'] = _np.atan2(self.rel.y, self.rel.x)
-        return self.rel.angle
+        """Get and, as needed, calculate angles between positions.
+            
+        Returns
+        -------
+        `xarray.DataArray`
+            ***
         
+        """
+        self._has_relpos_check()
+        if 'angle' not in self.relpos:
+            self.relpos['angle'] = _np.arctan2(self.relpos.y, self.relpos.x)
+        return self.relpos.angle
+        
+    def shift(self, step):
+        """Shift the layout by a given step.
+        
+        Parameters
+        ----------
+        step
+            An `xarray.Dataset` with `x` and `y` `xarray.DataArray`s
+            with a `pos` coordinate array containing a subset of
+            positions present in the object's own `layout` attribute.
+            
+        Returns
+        -------
+        `Layout`
+            The layout shifted by the given step.
+            The original layout is unaffected.
+        
+        """
+        other = _cp.deepcopy(self)
+        try:
+            del other.relpos  # rel becomes outdated when layout is changed
+        except AttributeError:
+            pass
+        if not other.abspos.movable.sel(pos=step.pos).all():
+            raise IndexError("The step may not shift non-movable turbines.")
+        for z in {'x', 'y'}:
+            other.abspos[z].loc[dict(pos=step.pos)] += step[z]
+        return other
 
 def hexagonal(turbines, site_parcels, site_violation_distance, to_border):
     """Create hexagonal—so densest—packing to cover site
