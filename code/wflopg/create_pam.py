@@ -27,7 +27,7 @@ def context():
     This returns a context with a single turbine at the origin.
 
     """
-    return _xr.DataArray([[0, 0]],
+    return _xr.DataArray([[0., 0.]],
                          dims=['source', 'xy'], coords={'xy': COORDS['xy']})
 
 

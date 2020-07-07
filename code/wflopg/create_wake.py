@@ -232,6 +232,6 @@ def no_combination():
 
         """
         squeezed = deficit.squeeze('source')
-        return squeezed, _xr.ones_like(squeezed)
+        return squeezed, _xr.ones_like(deficit)
 
     return combination_rule
