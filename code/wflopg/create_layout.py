@@ -98,7 +98,6 @@ class Layout():
         
         """
         return self._state[['x', 'y']]
-    
 
     def set_positions(self, positions):
         """Set the positions of the layout.
@@ -118,7 +117,7 @@ class Layout():
         if not self._state.movable.sel(pos=positions.pos).all():
             raise IndexError("You may not change non-movable turbines.")
         for z in {'x', 'y'}:
-            self._state[z].loc[dict(pos=positions.pos)] += positions[z]
+            self._state[z].loc[dict(pos=positions.pos)] = positions[z]
             # TODO: do this in one go?
 
     def shift_positions(self, step):
