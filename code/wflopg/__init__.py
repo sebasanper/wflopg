@@ -78,6 +78,10 @@ class Owflop():
         # process information for wake model-related properties
         if wake_model is None:
             wake_model = problem['wake_model']
+        else:
+            problem_wake_model = problem['wake_model']
+            problem_wake_model.update(wake_model)
+            wake_model = problem_wake_model
         self.process_wake_model(wake_model)
         self.process_objective(problem['objective'])
 
