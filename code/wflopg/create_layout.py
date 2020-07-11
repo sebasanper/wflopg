@@ -93,8 +93,8 @@ class Layout():
         
         Returns
         -------
-        `xarray.DataSet`
-            ***
+        An `xarray.Dataset` with `x` and `y` variables
+        for absolute positions.
         
         """
         return self._state[['x', 'y']]
@@ -139,12 +139,12 @@ class Layout():
         Parameters
         ----------
         args
-            ***
+            State identifiers of `'STATE_TYPES'`.
         
         Returns
         -------
-        `xarray.Dataset`
-            ***
+        An `xarray.Dataset` with the state information
+        requested as member variables.
         
         """
         illegal = set(args) - self.STATE_TYPES
@@ -164,7 +164,10 @@ class Layout():
         Parameters
         ----------
         kwargs
-            ***
+            A mapping from state identifiers of `'STATE_TYPES'`
+            to state values. These can be either `bool`
+            or `xarray.DataArray` with `bool` values and with
+            the same dimensions as the layout's position variables.
         
         """
         args = kwargs.keys()
@@ -177,8 +180,8 @@ class Layout():
             elif isinstance(val, bool):
                 da = _xr.full_like(self._state.pos, val, dtype=bool)
             else:
-                raise ValueError(
-                    f"Incorrect type of description for state {state}: {val}.")
+                raise ValueError("Incorrect type of description "
+                                 f"for state ‘{state}’: ‘{val}’.")
             self._state[state] = da
 
     def initialize_relative_positions(self, pos_from, pos_to):
@@ -211,8 +214,9 @@ class Layout():
             
         Returns
         -------
-        `xarray.DataSet`
-            ***
+        An `xarray.Dataset` with `x` and `y` variables
+        of relative positions, i.e., differences in coordinate
+        values between two absolute positions.
         
         """
         self._has_rel_check()
@@ -229,8 +233,7 @@ class Layout():
             
         Returns
         -------
-        `xarray.DataArray`
-            ***
+        An `xarray.DataArray` of angles between absolute positions.
         
         """
         self._has_rel_check()
@@ -244,8 +247,7 @@ class Layout():
             
         Returns
         -------
-        `xarray.DataArray`
-            ***
+        An `xarray.DataArray` of distances between absolute positions.
         
         """
         self._has_rel_check()
@@ -260,8 +262,10 @@ class Layout():
             
         Returns
         -------
-        `xarray.DataArray`
-            ***
+        An `xarray.Dataset` with `x` and `y` variables of
+        normed relative positions, i.e., differences in
+        coordinate values between two absolute positions
+        normalized by the distance between them.
         
         """
         self._has_rel_check()
