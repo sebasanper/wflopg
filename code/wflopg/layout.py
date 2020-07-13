@@ -115,7 +115,13 @@ class Layout():
             raise IndexError("You may not change non-movable turbines.")
         for z in {'x', 'y'}:
             self._state[z].loc[dict(pos=positions.pos)] = positions[z]
-            # TODO: do this in one go?
+        # TODO: do this in one go with
+        #
+        #   self._state = positions.combine_first(self._state)
+        #
+        #   Wait until resolution of
+        #
+        #       https://github.com/pydata/xarray/issues/4220
 
     def shift_positions(self, step):
         """Shift the positions of the layout by a given step.
@@ -218,11 +224,9 @@ class Layout():
         """
         self._has_rel_check()
         if ('x' not in self._rel) or ('y' not in self._rel):
-            for z in {'x', 'y'}:
-                da = self._state[z]
-                self._rel[z] = (da.sel(pos=self._rel['pos_to'])
-                                - da.sel(pos=self._rel['pos_from']))
-                # TODO: do this in one go using self._state[['x', 'y']]?
+            xy = self.get_positions()
+            self._rel.update(xy.sel(pos=self._rel['pos_to'])
+                             - xy.sel(pos=self._rel['pos_from']))
         return self._rel[['x', 'y']]
     
     def get_angles(self):
@@ -269,10 +273,8 @@ class Layout():
         if ('x_normed' not in self._rel) or ('y_normed' not in self._rel):
             relxy = self.get_relative_positions()
             dists = self.get_distances()
-            dists = dists.where(dists != 0, 1)  # avoid division by zero
-            for z in {'x', 'y'}:
-                self._rel[z + '_normed'] = relxy[z] / dists
-                # TODO: do this in one go with relxy / dists?
+            self._rel.update(
+                (relxy / dists).rename({'x': 'x_normed', 'y': 'y_normed'}))
         return self._rel[['x_normed', 'y_normed']]
 
     @classmethod
