@@ -281,7 +281,7 @@ class Layout():
     def hexagonal(cls, turbines, acceptable):
         """Create hexagonal layout.
         
-        An hexagonal layout provides a densest packing of discs.
+        A hexagonal layout provides a densest packing of discs.
         So it can be used to create a regular layout with
         a relatively large distance between the turbines.
         
