@@ -278,6 +278,35 @@ class Layout():
                 # TODO: do this in one go with relxy / dists?
         return self._rel[['x_normed', 'y_normed']]
 
+    @classmethod
+    def hexagonal(cls, turbines, acceptable):
+        """Create hexagonal layout.
+        
+        An hexagonal layout provides a densest packing of discs.
+        So it can be used to create a regular layout with
+        a relatively large distance between the turbines.
+        
+        Parameters
+        ----------
+        turbines : int
+            The number of turbines needed in the layout.
+        acceptable
+            A function that maps a `Layout` to a boolean
+            `xarray.DataArray` that indicates which turbines
+            are to be considered acceptable. Usually this will
+            be the turbines inside the site considered, but it
+            may also be different. For example, also turbines
+            slightly outside the site may be acceptable, because
+            they are used to generate border turbines in a
+            subsequent processing step.
+        
+        Returns
+        -------
+        A `Layout` object with the description of the hexagonal layout.
+        
+        """
+        return NotImplementedError
+
 def hexagonal(turbines, site_parcels, site_violation_distance, to_border):
     """Create hexagonal—so densest—packing to cover site
 
