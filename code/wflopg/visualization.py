@@ -38,12 +38,13 @@ def draw_windrose(axes, wind_direction_pmf, color='b'):
     axes.set_ylim(0, 1.1 * wind_direction_pmf.max().item())
     axes.bar(
         wind_direction_pmf.direction / 360 * 2 * _np.pi, wind_direction_pmf,
-        width=2 * _np.pi / len(wind_direction_pmf),
+        width=_np.minimum(5 * _np.pi / 180,
+                          2 * _np.pi / len(wind_direction_pmf)),
         color=color
     )
 
 
-def site_setup(axes):
+def site_setup(axes, extra_space=0.01):
     """Setup the axes for site plots.
 
     Parameters
@@ -54,8 +55,8 @@ def site_setup(axes):
     """
     axes.set_aspect('equal')
     axes.set_axis_off()
-    axes.set_xlim(-1.01, 1.01)
-    axes.set_ylim(-1.01, 1.01)
+    axes.set_xlim(-1 - extra_space, 1 + extra_space)
+    axes.set_ylim(-1 - extra_space, 1 + extra_space)
 
 
 def draw_boundaries(axes, boundaries):
@@ -113,7 +114,7 @@ def draw_zones(axes, parcels):
 
 
 def draw_turbines(axes, layout, turbine_size,
-                  minimal_proximity=0, inside=None):
+                  minimal_proximity=0, inside=None, turbine_color='k'):
     """Draw the turbines and their proximity exclusion zones
 
     Parameters
@@ -132,7 +133,6 @@ def draw_turbines(axes, layout, turbine_size,
         the applicable Owflop.inside function (`None` to ignore)
 
     """
-    turbine_color = 'k'
     if inside is not None:
         in_site = inside(layout)['in_site']
     for (i, position) in enumerate(layout.values):
@@ -146,7 +146,7 @@ def draw_turbines(axes, layout, turbine_size,
             _plt.Circle(position, turbine_size, color=turbine_color))
 
 
-def draw_step(axes, layout, step, turbine_size):
+def draw_step(axes, layout, step, turbine_size, scale=1):
     """Draw a layout change step using vectors
 
     Parameters
@@ -160,11 +160,14 @@ def draw_step(axes, layout, step, turbine_size):
         a layout change step; effectively a difference of two layouts
     turbine_size
         the adimensional rotor radius
+    scale
+        scaling of the vectors
 
     """
     axes.quiver(layout.sel(xy='x'), layout.sel(xy='y'),
                 step.sel(xy='x'), step.sel(xy='y'),
-                angles='xy', scale_units='xy', scale=1, width=turbine_size/2)
+                angles='xy', scale_units='xy', scale=scale, width=turbine_size/5,
+                zorder=2)
 
 
 def connect_layouts(axes, layouts):
