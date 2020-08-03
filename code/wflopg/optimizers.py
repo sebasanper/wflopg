@@ -48,7 +48,9 @@ def _iterate_visualization(axes, owflop, history):
 
 
 def _step_generator(owflop, method):
-    if method == 'a':  # away
+    if method == 's':  # simple
+        return owflop.calculate_simple_vector()
+    elif method == 'a':  # away
         return owflop.calculate_push_away_vector()
     elif method == 'b':  # back
         return owflop.calculate_push_back_vector()

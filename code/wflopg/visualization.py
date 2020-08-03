@@ -222,6 +222,8 @@ def draw_step_size(axes, history):
     """
     axes.xaxis.set_major_locator(_tkr.MaxNLocator(integer=True))
     kwargs = {'ax': axes, 'yscale': 'log'}
+    history.max_step.where(history.method == 's').plot.line(ls='', marker=5,
+                                                            **kwargs)
     history.max_step.where(history.method == 'a').plot.line('>', **kwargs)
     history.max_step.where(history.method == 'b').plot.line('<', **kwargs)
     history.max_step.where(history.method == 'c').plot.line('X', **kwargs)

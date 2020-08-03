@@ -428,6 +428,12 @@ class Owflop():
         self._ds['dir_AEP'] = hrs_per_yr * dir_power * self._ds.direction_pmf
         self._ds['AEP'] = self._ds['dir_AEP'].sum(dim='direction')
 
+    def calculate_simple_vector(self):
+        return self.expectation_direction(
+            self.conditional_expectation_wind_speed(self._ds.wake_loss_factor)
+            * self._ds.downwind
+        )
+
     def calculate_relative_wake_loss_vector(self):
         self._ds['relative_wake_loss_vector'] = (
             self._ds.relative_deficit
