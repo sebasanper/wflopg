@@ -189,7 +189,7 @@ class Owflop():
                 ) * 1e3  # km to m
         self.site_parcels = site['parcels']
         self.site_boundaries = site.get('boundaries', None)
-        
+
     def process_site(self):
         # Process parcels
         self.parcels = create_site.parcels(self.site_parcels,

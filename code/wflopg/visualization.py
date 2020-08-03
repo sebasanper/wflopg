@@ -166,8 +166,8 @@ def draw_step(axes, layout, step, turbine_size, scale=1):
     """
     axes.quiver(layout.sel(xy='x'), layout.sel(xy='y'),
                 step.sel(xy='x'), step.sel(xy='y'),
-                angles='xy', scale_units='xy', scale=scale, width=turbine_size/5,
-                zorder=2)
+                angles='xy', scale_units='xy', scale=scale,
+                width=turbine_size/5, zorder=2)
 
 
 def connect_layouts(axes, layouts):

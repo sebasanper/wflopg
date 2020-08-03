@@ -28,6 +28,7 @@ def _setup_visualization(owflop, history):
     _plt.pause(.10)
     return axes
 
+
 def _iterate_visualization(axes, owflop, history):
     axes['convergence'].clear()
     vis.draw_convergence(axes['convergence'], history)
@@ -44,6 +45,7 @@ def _iterate_visualization(axes, owflop, history):
                       inside=owflop.inside)
     vis.draw_boundaries(axes['layout'], owflop.boundaries)
     _plt.pause(0.1)
+
 
 def _step_generator(owflop, method):
     if method == 'a':  # away
@@ -81,9 +83,9 @@ def step_iterator(owflop, max_iterations=100,
         spread_multiplier = initial_multiplier
     else:
         spread_multiplier = 0
+
     def spread_factor(spread_multiplier):
-        return (1 + 3 * (spread_multiplier - 0)
-                      / (initial_multiplier - 0))
+        return 1 + 3 * (spread_multiplier - 0) / (initial_multiplier - 0)
 
     # prepare history
     iterations = _xr.DataArray(
@@ -155,14 +157,14 @@ def step_iterator(owflop, max_iterations=100,
         ).item()
         # update history
         selector = dict(iteration=k)
-        history.layout[selector]= layout
-        history.objective[selector]= current
-        history.objective_bound[selector]= bound
-        history.max_step[selector]= current_multiplier
-        history.actual_step[selector]= max_distance
-        history.spread[selector]= spread_multiplier
-        history.corrections[selector]= corrections
-        history.method[selector]= methods[j]
+        history.layout[selector] = layout
+        history.objective[selector] = current
+        history.objective_bound[selector] = bound
+        history.max_step[selector] = current_multiplier
+        history.actual_step[selector] = max_distance
+        history.spread[selector] = spread_multiplier
+        history.corrections[selector] = corrections
+        history.method[selector] = methods[j]
         # visualization
         if visualize:
             _iterate_visualization(
