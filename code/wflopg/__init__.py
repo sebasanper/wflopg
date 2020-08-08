@@ -112,7 +112,8 @@ class Owflop():
                             turbines,
                             self.site_parcels,
                             layout.get('site_violation_distance', 0),
-                            self.to_border
+                            self.to_border,
+                            **layout.get('kwargs', {})
                         )
                     )
                 elif layout['type'] == 'pam':
