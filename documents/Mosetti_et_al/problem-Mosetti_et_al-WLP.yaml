@@ -1,0 +1,30 @@
+uuid: a8045b96-d1d1-430f-a71b-57b133aa4e43
+name: Square site optimization following Mosetti et al (1994)
+particulars:
+  - >-
+    We follow
+
+    Mosetti, G., Poloni, C., and Diviacco, B. (1994) Optimization of wind
+    turbine positioning in large windfarms by means of a genetic algorithm.
+    Journal of Wind Engineering and Industrial Aerodynamics 51(1):105–116.
+
+  - The partial wake model is not clear from the paper.
+  - >-
+    The 5D turbine distance is based on the paper's 5D discretization cell
+    size.
+  - >-
+    The upper bound on the number of turbines is equal to the number of
+    discrete cells in the paper.
+
+site: "site-Mosetti_et_al.yaml"
+wind_resource: "wind_resource-Mosetti_et_al.yaml"
+turbine: "turbine-Mosetti_et_al.yaml"
+turbine_distance: 5
+turbines: 15
+layout: "layout-Mosetti_et_al.yaml"
+objective: "maximize expected power"
+wake_model:
+  wake_type: "linear top hat"
+  stream_tube_assumption: "Frandsen"
+  deficit_type: "Jensen"
+  averaging: true
