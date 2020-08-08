@@ -13,22 +13,26 @@ particulars:
     Mosetti, G., Poloni, C., and Diviacco, B. (1994) Optimization of wind
     turbine positioning in large windfarms by means of a genetic algorithm.
     Journal of Wind Engineering and Industrial Aerodynamics 51(1):105–116.
-
+  - >-
+    The positive angle direction is counterclockwise instead of the currently
+    customary clockwise direction also assumed in the software for which this
+    input file is intended. Therefore, negative angles are used to make the
+    correspondence as clear as possible.
 reference_height: 60 # hub height taken
 wind_rose:
   directions: [
-      0.,  10.,  20.,
-     30.,  40.,  50.,
-     60.,  70.,  80.,
-     90., 100., 110.,
-    120., 130., 140.,
-    150., 160., 170.,
-    180., 190., 200.,
-    210., 220., 230.,
-    240., 250., 260.,
-    270., 280., 290.,
-    300., 310., 320.,
-    330., 340., 350.]
+      -0.,  -10.,  -20.,
+     -30.,  -40.,  -50.,
+     -60.,  -70.,  -80.,
+     -90., -100., -110.,
+    -120., -130., -140.,
+    -150., -160., -170.,
+    -180., -190., -200.,
+    -210., -220., -230.,
+    -240., -250., -260.,
+    -270., -280., -290.,
+    -300., -310., -320.,
+    -330., -340., -350.]
   direction_pmf: [
     1.263, 1.263, 1.263,
     1.263, 1.263, 1.263,
