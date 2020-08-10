@@ -168,7 +168,7 @@ class Owflop():
             self.power_curve = create_turbine.cubic_power_curve(
                  self.rated_power, self.rated_speed, self.cut_in, self.cut_out)
         # define thrust curve
-        if self.thrust_curve is not None:
+        if self.thrust_curve_data is not None:
             self.thrust_curve = create_turbine.interpolated_thrust_curve(
                 self.cut_in, self.cut_out, self.thrust_curve_data)
         elif self.thrust_coefficient is not None:  # constant thrust curve
