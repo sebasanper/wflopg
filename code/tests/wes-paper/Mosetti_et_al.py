@@ -45,6 +45,9 @@ o.load_problem(
     layout={
         'type': 'hex', 'kwargs': {'offset': [0, 0], 'angle': np.radians(-307)}
     }
+    # using -310, i.e., perfectly aligned with wind rose, results in
+    # a low-wake loss initial layout that turns out to be a local minimum
+    # from which it is apparently impossible to escape with our optimizer
 )
 o.calculate_wakeless_power()
 history['H'] = opt.step_iterator(o, max_iterations=20,
