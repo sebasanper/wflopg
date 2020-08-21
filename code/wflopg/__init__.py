@@ -56,24 +56,25 @@ class Owflop():
         self.rotor_diameter_adim = 2 * self.rotor_radius_adim
         self.process_turbine()
         self.process_site()
-        dir_subs = problem.get('wind_direction_subdivisions', None)
-        speeds = problem.get('wind_speeds', None)
-        if wind_resource is None:
+        wind_resource_options = {}
+        if 'wind_direction_subdivisions' in problem:
+            wind_resource_options['dir_subs'] = (
+                problem['wind_direction_subdivisions'])
+        if 'wind_speeds' in problem:
+            wind_resource_options['speeds'] = problem['wind_speeds']
+        wind_resource_file = problem['wind_resource']
+        if isinstance(wind_resource, str):
             wind_resource_file = problem['wind_resource']
         elif isinstance(wind_resource, dict):
-            wind_resource_file = wind_resource.get('filename',
-                                                   problem['wind_resource'])
-            if 'dir_subs' in wind_resource:
-                dir_subs = wind_resource['dir_subs']
-            if 'speeds' in wind_resource:
-                speeds = wind_resource['speeds']
-        elif isinstance(wind_resource, str):
-            wind_resource_file = wind_resource
+            if 'filename' in wind_resource:
+                wind_resource_file = wind_resource['filename']
+                del wind_resource['filename']
+            wind_resource_options.update(wind_resource)
         self.load_wind_resource(wind_resource_file)
         self.wind_shear = create_wind.logarithmic_wind_shear(
             self.reference_height, self.roughness_length)
         self.process_wind_resource(
-            self.hub_height, self.cut_in, self.cut_out, dir_subs, speeds)
+            self.hub_height, self.cut_in, self.cut_out, wind_resource_options)
 
         # process information for wake model-related properties
         if wake_model is None:
@@ -242,8 +243,7 @@ class Owflop():
                 "should be given either as parameters for conditional Weibull "
                 "distributions or as a conditional probability mass function.")
 
-    def process_wind_resource(self, hub_height, cut_in, cut_out,
-                              dir_subs=None, speeds=None):
+    def process_wind_resource(self, hub_height, cut_in, cut_out, options):
         # Create the conditional wind speed probability mass function
         #
         # NOTE: Of the conditional wind speed probability mass function, only
@@ -251,6 +251,7 @@ class Owflop():
         #       self._ds['wind_speed_cpmf'] (defined below), as the others give
         #       no contribution to the power production.
         #
+        speeds = options.get('speeds')
         if 'speed_cweibull' in self.wind_rose:
             if speeds is None:
                 raise ValueError(
@@ -273,9 +274,12 @@ class Owflop():
 
         # Subdivide wind direction and speed pmfs if needed
         dir_weights = self.wind_rose['dir_weights']
+        dir_subs = options.get('dir_subs')
         if dir_subs:
             dir_weights, speed_probs = create_wind.subdivide(
-                dir_weights, speed_probs, dir_subs)
+                dir_weights, speed_probs, dir_subs,
+                interpolation_method=options.get('interpolation')
+            )
 
         # Store pmfs
         self._ds['direction_pmf'] = dir_weights / dir_weights.sum()
