@@ -10,10 +10,12 @@ $id: "https://bitbucket.org/equaeghe/pseudo_gradients-code/\
 title: Geographical coordinates
 description: Coordinates for a location on Earth
 type: object
-required:
-  anyOf:
+anyOf:
+  - required:
     - geo
+  - required:
     - utm
+  - required:
     - adhoc
 additionalProperties: false
 

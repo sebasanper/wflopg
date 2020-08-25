@@ -23,9 +23,11 @@ required:
   - hub_height
   - rated_power
   - rated_wind_speed
-  - oneOf:
-      - thrust_coefficient
-      - thrust_curve
+oneOf:
+  - required:
+    - thrust_coefficient
+  - required:
+    - thrust_curve
 additionalProperties: false
 
 # PROPERTIES
