@@ -51,8 +51,7 @@ def conformize_cpmf(speed_weights, cut_in, cut_out, speeds):
     """Return relevant speeds and wind speed probabilities"""
     speed_probs = speed_weights / speed_weights.sum(dim='speed')
     wc = (speeds >= cut_in) & (speeds <= cut_out)  # within cut
-    speeds = speeds[wc]
-    return speed_probs.sel(speed=speeds)
+    return speed_probs.sel(speed=speed_probs.speed[wc])
 
 
 def subdivide(dir_weights, speed_probs, dir_subs,
