@@ -54,9 +54,9 @@ for kind, multiplier, scaling in [('soft', 3, [0.9, 1.1]),
 
 # %% create and save figure giving overview of optimizations
 for turbines in cases:
-    fig = plt.figure(figsize=(3.4, 4.4))
+    fig = plt.figure(figsize=(3.4, 3.6))
     gs = fig.add_gridspec(ncols=2, nrows=3, wspace=0., hspace=0.,
-                          width_ratios=[1] * 2, height_ratios=[1.1, 1, 1])
+                          width_ratios=[1] * 2, height_ratios=[1.1, .9, .9])
     #
     axp = {}
     shareyp = None
@@ -81,7 +81,7 @@ for turbines in cases:
         )
         vis.connect_layouts(axp[kind], history[(kind, turbines)].layout)
         axp[kind].set_xlim([-1, 1])
-        axp[kind].set_ylim([-1, .5])
+        axp[kind].set_ylim([-1, .45])
         axp[kind].set_title(kind)
         axs[kind] = fig.add_subplot(gs[2, k], sharey=shareys)
         vis.draw_step_size(axs[kind], history[(kind, turbines)])
