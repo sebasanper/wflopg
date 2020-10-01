@@ -70,11 +70,14 @@ def draw_boundaries(axes, boundaries):
     def draw_boundary(boundary):
         if 'polygon' in boundary:
             axes.add_patch(
-                _plt.Polygon(boundary['polygon'], edgecolor='k', fill=False))
+                _plt.Polygon(boundary['polygon'], edgecolor='0.6',
+                             linewidth=.5, fill=False)
+            )
         if 'circle' in boundary:
             axes.add_patch(
                 _plt.Circle(boundary['circle'], boundary['circle'].radius,
-                            edgecolor='k', fill=False))
+                            edgecolor='0.6', linewidth=.5, fill=False)
+            )
         if 'exclusions' in boundary:
             for exclusion_boundary in boundary['exclusions']:
                 draw_boundary(exclusion_boundary)
@@ -137,8 +140,8 @@ def draw_turbines(axes, layout, turbine_size,
             turbine_color = 'b' if in_site.values[i] else 'r'
         if minimal_proximity > 0:
             axes.add_patch(
-                _plt.Circle(position, minimal_proximity / 2,
-                            color='r', linestyle=':', fill=False))
+                _plt.Circle(position, minimal_proximity / 2, color='0.4',
+                            linestyle='-', linewidth=.3, fill=False))
         axes.add_patch(
             _plt.Circle(position, turbine_size, color=turbine_color))
 
@@ -183,7 +186,7 @@ def connect_layouts(axes, layouts):
     axes.plot(
         layouts.sel(xy='x', drop=True).transpose(),
         layouts.sel(xy='y', drop=True).transpose(),
-        '-k'
+        color='k', linestyle='-', linewidth=1
     )
 
 
