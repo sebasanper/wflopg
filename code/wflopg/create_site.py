@@ -2,7 +2,7 @@ import numpy as _np
 import xarray as _xr
 import pypoman.polygon as _ppmp
 
-from wflopg.constants import COORDS
+from wflopg.constants import COORDS, ε
 from wflopg.helpers import rss
 
 
@@ -100,7 +100,7 @@ def parcels(parcels_list, rotor_radius, rotor_constraint_override=False):
                 # for exclusions, turbines with a negative constraint
                 # evaluation value violate that constraint
                 processed_area['violates'] = (
-                    distance < 0).all(dim='constraint')
+                    distance < -ε).all(dim='constraint')
         elif 'circle' in area:
             processed_area['circle'] = _xr.DataArray(
                 area['circle']['center'], coords=[('xy', COORDS['xy'])])

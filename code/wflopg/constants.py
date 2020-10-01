@@ -1,3 +1,6 @@
+import numpy as _np
+
+
 # Dimensions for xarray DataSet and DataArrays
 # Coordinates that are universal over all problems are defined in COORDS below
 # Problem-specific coordinates are defined in the code
@@ -37,3 +40,7 @@ COORDS = {
     'interval': ['lower', 'upper'],
     'weibull_param': ['scale', 'shape']
 }
+
+# We work with double and need this to deal with round-off issues.
+# The multiplier has been determined experimentally, i.e., by trial-and-error.
+ε = _np.finfo(_np.double).eps * 64

@@ -3,14 +3,8 @@ import xarray as _xr
 import collections as _cl
 
 from wflopg.create_site import xy_to_monomial
-from wflopg.constants import COORDS
+from wflopg.constants import COORDS, ε
 from wflopg.helpers import rss
-
-
-# NOTE: We work with double and need this to deal with round-off issues.
-#       The multiplier has been determined experimentally,
-#       i.e., by trial-and-error.
-ε = _np.finfo(_np.double).eps * 64
 
 
 def distance(turbine_distance):

@@ -64,7 +64,7 @@ class Owflop():
             wind_resource_options['speeds'] = problem['wind_speeds']
         wind_resource_file = problem['wind_resource']
         if isinstance(wind_resource, str):
-            wind_resource_file = problem['wind_resource']
+            wind_resource_file = wind_resource
         elif isinstance(wind_resource, dict):
             if 'filename' in wind_resource:
                 wind_resource_file = wind_resource['filename']
@@ -146,7 +146,7 @@ class Owflop():
             self.power_curve_data = None
         if 'thrust_coefficient' in turbine:
             self.thrust_coefficient = turbine['thrust_coefficient']
-            self.thrust_curve = None
+            self.thrust_curve_data = None
         elif 'thrust_curve' in turbine:
             tc = _np.array(turbine['thrust_curve'])
             order = tc[:, 0].argsort()
