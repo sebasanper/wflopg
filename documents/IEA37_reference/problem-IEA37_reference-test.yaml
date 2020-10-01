@@ -6,7 +6,8 @@ particulars:
 
 site: "site-IEA37_reference.yaml"
 wind_resource: "wind_resource-IEA37_reference.yaml"
-wind_speeds: [ 4.,  7., 10., 13., 16., 19., 22., 25.]
+wind_direction_subdivisions: 10  # results in 120 3° bins
+wind_speeds: [10.]
 turbine: "turbine-IEA37_10MW-reference.yaml"
 turbine_distance: 3
 turbines: 74
