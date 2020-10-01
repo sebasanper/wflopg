@@ -19,7 +19,7 @@ o = wflopg.Owflop()
 o.load_problem(
     "problem-BWFS-IV-WES.yaml",
     wind_resource={'interpolation': 'linear'},
-    layout={'type': 'hex', 'turbines': 3}
+    layout={'type': 'hex', 'turbines': 30}
 )
 fig = plt.figure(figsize=(1.28, 1.7))
 axwr = fig.add_subplot(111, polar=True)
@@ -70,18 +70,18 @@ for turbines in cases:
         vis.draw_boundaries(axp[kind], o.boundaries)
         vis.draw_turbines(axp[kind],
                           history[(kind, turbines)].layout.sel(iteration=0),
-                          o.rotor_radius_adim, turbine_color='gray')
+                          o.rotor_radius_adim, turbine_color='#87f')
         vis.draw_turbines(
             axp[kind],
             history[(kind, turbines)].layout.isel(
                 iteration=history[(kind, turbines)].objective.argmin()),
             o.rotor_radius_adim,
             o.minimal_proximity,
-            turbine_color='b'
+            turbine_color='#f56'
         )
         vis.connect_layouts(axp[kind], history[(kind, turbines)].layout)
-        axp[kind].set_xlim([-1, 1])
-        axp[kind].set_ylim([-1, .45])
+        axp[kind].set_xlim([-1.02, 1])
+        axp[kind].set_ylim([-1.02, .47])
         axp[kind].set_title(kind)
         axs[kind] = fig.add_subplot(gs[2, k], sharey=shareys)
         vis.draw_step_size(axs[kind], history[(kind, turbines)])

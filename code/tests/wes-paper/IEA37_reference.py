@@ -39,18 +39,20 @@ o.load_problem("problem-IEA37_reference-high.yaml",
                wind_resource={'interpolation': 'linear'})
 o.calculate_wakeless_power()
 history['S'] = opt.step_iterator(o, max_iterations=20,
-                                 multiplier=3, scaling=[.7, 1.1])
+                                 multiplier=2, scaling=[.8, 1.1])
 # %% start from hex layout
 o = wflopg.Owflop()
 o.load_problem(
     "problem-IEA37_reference-high.yaml",
     wind_resource={'interpolation': 'linear'},
     layout={
-        'type': 'hex', 'kwargs': {'offset': [0, 0], 'angle': np.radians(30)}}
+        'type': 'hex', 'kwargs': {'offset': [0, 0], 'angle': np.radians(30)},
+        'site_violation_distance': -0.25
+    }
 )
 o.calculate_wakeless_power()
 history['H'] = opt.step_iterator(o, max_iterations=20,
-                                 multiplier=3, scaling=[.8, 1.1])
+                                 multiplier=3, scaling=[.7, 1.5])
 # %% create and save figure giving overview of optimizations
 fig = plt.figure(figsize=(3.4, 5.6))
 gs = fig.add_gridspec(ncols=2, nrows=5, wspace=0., hspace=0.,
@@ -74,29 +76,29 @@ for k, pg in enumerate({'S': "Sanchez", 'H': "hexagonal"}.items()):
     vis.site_setup(axp[pg[0]], o.minimal_proximity)
     vis.draw_boundaries(axp[pg[0]], o.boundaries)
     vis.draw_turbines(axp[pg[0]], history[pg[0]].layout.sel(iteration=0),
-                      o.rotor_radius_adim, turbine_color='gray')
+                      o.rotor_radius_adim, turbine_color='#87f')
     vis.draw_turbines(
         axp[pg[0]],
         history[pg[0]].layout.isel(
             iteration=history[pg[0]].objective.argmin()),
         o.rotor_radius_adim,
         o.minimal_proximity,
-        turbine_color='b'
+        turbine_color='#f56'
     )
     vis.connect_layouts(axp[pg[0]], history[pg[0]].layout)
     axp[pg[0]].set_xlim([-np.sqrt(.5)-.2, np.sqrt(.5)+.2])
-    axp[pg[0]].set_ylim([-np.sqrt(.5)-.2, np.sqrt(.5)+.2])
+    axp[pg[0]].set_ylim([-np.sqrt(.5)-.2, np.sqrt(.5)+.22])
     axp[pg[0]].set_title(pg[1])
     axs[pg[0]] = fig.add_subplot(gs[4, k], sharey=shareys)
     vis.draw_step_size(axs[pg[0]], history[pg[0]])
     axs[pg[0]].set_xlim([-2.5, 22.5])
-    # axs[pg[0]].set_ylim([.004, 14])
+    axs[pg[0]].set_ylim([.21, 35])
     axs[pg[0]].set_xticks([0, 5, 10, 15, 20])
     axc[pg[0]] = fig.add_subplot(gs[3, k], sharex=axs[pg[0]], sharey=shareyc)
     plt.setp(axc[pg[0]].get_xticklabels(), visible=False)
     vis.draw_convergence(axc[pg[0]], history[pg[0]])
     axc[pg[0]].set_xlim([-2.5, 22.5])
-    # axc[pg[0]].set_ylim([1.5, 5])
+    axc[pg[0]].set_ylim([3.8, 6.4])
     axc[pg[0]].set_xticks([0, 5, 10, 15, 20])
     axc[pg[0]].set_xlabel('')
     if pg[0] == 'S':
@@ -107,9 +109,9 @@ for k, pg in enumerate({'S': "Sanchez", 'H': "hexagonal"}.items()):
         plt.setp(axc[pg[0]].get_yticklabels(), visible=False)
         plt.setp(axs[pg[0]].get_yticklabels(), visible=False)
 axc['S'].set_ylabel(r"wake loss [\%]")
-axc['S'].set_yticks([4.25, 4.5, 4.75, 5.0, 5.25])
-axc['S'].set_yticklabels(['', '4.5', '', '5.0', ''])
+axc['S'].set_yticks([4.0, 4.5, 5.0, 5.5, 6.0])
+axc['S'].set_yticklabels(['', '4.5', '', '5.5', ''])
 axs['S'].set_ylabel("step size [$D$]")
-axs['S'].set_yticks([0.1, 1])
-axs['S'].set_yticklabels([0.1, 1])
+axs['S'].set_yticks([1, 10])
+axs['S'].set_yticklabels(['1', '10'])
 fig.savefig("IEA37_reference-overview.pdf", bbox_inches="tight")

@@ -74,14 +74,14 @@ for k, pg in enumerate({'M': "Horns Rev", 'H': "hexagonal"}.items()):
     vis.site_setup(axp[pg[0]], o.minimal_proximity)
     vis.draw_boundaries(axp[pg[0]], o.boundaries)
     vis.draw_turbines(axp[pg[0]], history[pg[0]].layout.sel(iteration=0),
-                      o.rotor_radius_adim, turbine_color='gray')
+                      o.rotor_radius_adim, turbine_color='#87f')
     vis.draw_turbines(
         axp[pg[0]],
         history[pg[0]].layout.isel(
             iteration=history[pg[0]].objective.argmin()),
         o.rotor_radius_adim,
         o.minimal_proximity,
-        turbine_color='b'
+        turbine_color='#f56'
     )
     vis.connect_layouts(axp[pg[0]], history[pg[0]].layout)
     axp[pg[0]].set_xlim([-np.sqrt(.5)-.2, np.sqrt(.5)+.2])

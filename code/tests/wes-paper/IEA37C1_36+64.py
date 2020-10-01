@@ -45,14 +45,14 @@ for k, n in enumerate([36, 64]):
     vis.site_setup(axp[n], os[n].minimal_proximity)
     vis.draw_boundaries(axp[n], os[n].boundaries)
     vis.draw_turbines(axp[n], histories[n].layout.sel(iteration=0),
-                      os[n].rotor_radius_adim, turbine_color='gray')
+                      os[n].rotor_radius_adim, turbine_color='#87f')
     vis.draw_turbines(
         axp[n],
         histories[n].layout.isel(
             iteration=histories[n].objective.argmin()),
         os[n].rotor_radius_adim,
         os[n].minimal_proximity,
-        turbine_color='b'
+        turbine_color='#f56'
     )
     vis.connect_layouts(axp[n], histories[n].layout)
     axp[n].set_title(f"{n} turbines")

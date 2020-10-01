@@ -60,7 +60,7 @@ for k, pg in enumerate([
     vis.site_setup(ax, o.minimal_proximity)
     vis.draw_boundaries(ax, o.boundaries)
     vis.draw_turbines(ax, o._ds.layout, o.rotor_radius_adim,
-                      turbine_color='gray')
+                      turbine_color='#87f')
     vis.draw_step(ax, o._ds.layout, step, o.rotor_radius_adim,
                   scale=pg['scale'])
     ax.set_xlim([-1.5, 1.5])
@@ -110,14 +110,14 @@ for k, pg in enumerate({'s': "simple",
     vis.site_setup(axp[pg[0]], o.minimal_proximity)
     vis.draw_boundaries(axp[pg[0]], o.boundaries)
     vis.draw_turbines(axp[pg[0]], history[pg[0]].layout.sel(iteration=0),
-                      o.rotor_radius_adim, turbine_color='gray')
+                      o.rotor_radius_adim, turbine_color='#87f')
     vis.draw_turbines(
         axp[pg[0]],
         history[pg[0]].layout.isel(
             iteration=history[pg[0]].objective.argmin()),
         o.rotor_radius_adim,
         o.minimal_proximity,
-        turbine_color='b'
+        turbine_color='#f56'
     )
     vis.connect_layouts(axp[pg[0]], history[pg[0]].layout)
     axp[pg[0]].set_title(pg[1])
