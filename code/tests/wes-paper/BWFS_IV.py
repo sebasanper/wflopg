@@ -37,8 +37,8 @@ cases = {30: ([4, 4.5, 5, 5.5], ['4', '', '5', '']),
          50: ([7.5, 8.0, 8.5], ['7.5', '8.0', '8.5']),
          70: ([10, 10.5, 11, 11.5, 12, 12.5], ['10', '', '11', '', '12', '']),
          90: ([13.5, 14, 14.5, 15, 15.5], ['', '14', '', '15', ''])}
-for kind, multiplier, scaling in [('soft', 3, [0.9, 1.1]),
-                                  ('aggressive', 3, [.5, 2])]:
+for kind, multiplier, scaling in [('soft', 2, [0.9, 1.1]),
+                                  ('aggressive', 2, [.5, 2])]:
     for turbines in cases:
         o = wflopg.Owflop()
         o.load_problem(
