@@ -1,0 +1,1 @@
+This directory contains the scripts used to generate the figures in Section 4.3, ‘Results’, of the Wind Energy Science paper that describes the pseudo-gradient approach to layout optimization implemented in this code base.
