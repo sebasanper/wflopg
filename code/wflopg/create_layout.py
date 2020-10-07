@@ -1,3 +1,5 @@
+"""Functions for creating or modifying layouts."""
+
 import numpy as _np
 import xarray as _xr
 
@@ -75,6 +77,7 @@ def hexagonal(turbines, site_parcels, site_violation_distance, to_border,
 
 
 def fix_constraints(owflop, output=True):
+    """Fixes any constraint violations in the problem object's layout(s)."""
     corrections = ''
     maybe_violations = True
     while maybe_violations:

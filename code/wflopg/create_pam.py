@@ -1,3 +1,5 @@
+"""Functions for creating and working with a pre-averaged model (PAM)."""
+
 import numpy as _np
 import xarray as _xr
 

@@ -1,3 +1,5 @@
+"""Constants used throughout the modules."""
+
 import numpy as _np
 
 

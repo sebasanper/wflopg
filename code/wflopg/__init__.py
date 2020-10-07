@@ -1,3 +1,5 @@
+"""The definition of the wind farm layout optimization problem object."""
+
 import numpy as _np
 import xarray as _xr
 from ruamel.yaml import YAML as _yaml
@@ -24,6 +26,7 @@ class Owflop():
     wind farm layout optimization problem.
 
     """
+
     def __init__(self):
         # _ds is the main working Dataset
         self._ds = _xr.Dataset(coords={dim: COORDS[dim]
@@ -41,6 +44,8 @@ class Owflop():
         The keyword arguments make it possible to override problem aspects by
         specifying a file (for `wind_resource` and `layout`) or a `dict` with
         appropriate information (all; see code for what can be done).
+
+        The `turbine_distance` keyword is deprecated and should not be used.
 
         """
         with open(filename) as f:

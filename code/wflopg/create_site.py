@@ -1,3 +1,5 @@
+"""Functions to generate and work with site description objects."""
+
 import numpy as _np
 import xarray as _xr
 import pypoman.polygon as _ppmp
@@ -21,6 +23,11 @@ def xy_to_monomial(xy):
 
 
 def boundaries(boundaries_list):
+    """Return a nested list of processed parcels.
+
+    The boundaries list must be of the form described in the site schema.
+
+    """
     processed_boundaries = []
     for boundary_nesting in boundaries_list:
         processed_boundary_nesting = {}
@@ -48,7 +55,7 @@ def boundaries(boundaries_list):
 
 
 def parcels(parcels_list, rotor_radius, rotor_constraint_override=False):
-    """Return a recursive list of processed parcels
+    """Return a nested list of processed parcels.
 
     The parcel list must be of the form described in the site schema.
     The rotor radius must be the site-adimensional rotor radius.

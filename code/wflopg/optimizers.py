@@ -1,3 +1,5 @@
+"""Functions for producing optimized layouts."""
+
 import numpy as _np
 import xarray as _xr
 import matplotlib.pyplot as _plt
@@ -64,16 +66,39 @@ def _step_generator(owflop, method):
 
 
 def step_iterator(owflop, max_iterations=100,
-                  methods=None, multiplier=1, scaling=True,
+                  methods='abc', multiplier=1, scaling=[.8, 1.1],
                   wake_spreading=False, visualize=False):
-    if methods is None:
-        methods = ['a', 'b', 'c']
-    elif isinstance(methods, str):
-        methods = [methods]
+    """Iteratively optimize a layout using pseudo-gradients.
 
-    if scaling is True:
-        scaling = [.8, 1.1]
-    elif scaling is False:
+    Parameters
+    ----------
+        owflop
+            `wflopg.Owflop` wind farm layout optimization object
+        max_iterations : int
+            The maximum number of iterations.
+        methods : str
+            String of pseudo-gradient variants to use.
+            Each is identified by a single character: `'s'` for simple,
+            `'a'` for push-away, `'b'` for push-back, `'c'` for push-cross, and
+            `'m'` for a uniform mixture of push-away and push-back.
+        multiplier : float
+            Starting step multiplier.
+        scaling
+            List of scaling values (floats) or `'False'` for no scaling.
+        wake_spreading: bool
+            Whether to apply a wake spreading heuristic or not.
+        visualize : bool
+            Whether to visualize the optimization run or not.
+
+    Returns
+    -------
+    xarray.Dataset
+        The optimization run history
+
+    """
+    methods = list(methods)
+
+    if scaling is False:
         scaling = [1]
     scaler = (
         _xr.DataArray(_np.float64(scaling), dims=('scale',))

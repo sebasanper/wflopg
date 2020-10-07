@@ -1,3 +1,5 @@
+"""Helper functions used in multiple places throughout the module."""
+
 import numpy as _np
 import xarray as _xr
 

@@ -1,3 +1,5 @@
+"""Functions for constraint handling."""
+
 import numpy as _np
 import xarray as _xr
 import collections as _cl

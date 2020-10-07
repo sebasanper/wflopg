@@ -1,3 +1,5 @@
+"""Functions generating functions that model wakes effects on wind speed."""
+
 import numpy as _np
 import xarray as _xr
 

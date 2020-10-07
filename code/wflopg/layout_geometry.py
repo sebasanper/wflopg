@@ -1,3 +1,5 @@
+"""Functions generating information about the layout geometry."""
+
 import numpy as _np
 import xarray as _xr
 
